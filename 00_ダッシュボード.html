@@ -84,6 +84,23 @@
     .page-header__sub { margin-left: 0; }
   }
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyBVebyezaA9TxKBqfNjCZKhU44DtHqpG98",
+    authDomain: "ankenkanri-cfce2.firebaseapp.com",
+    projectId: "ankenkanri-cfce2",
+    storageBucket: "ankenkanri-cfce2.firebasestorage.app",
+    messagingSenderId: "1086701651367",
+    appId: "1:1086701651367:web:b59fe9f49a1e0335aba282"
+  };
+  try {
+    firebase.initializeApp(firebaseConfig);
+    window.db = firebase.firestore();
+  } catch (e) { window.db = null; }
+</script>
+
 </head>
 <body>
 
@@ -182,7 +199,14 @@
 
   function storageGet(key) {
     return new Promise(function (resolve) {
-      if (window.storage && typeof window.storage.get === "function") {
+      if (window.db) {
+        window.db.collection("taiho_app_data").doc(key).get().then(function (doc) {
+          resolve(doc.exists ? { value: doc.data().value } : null);
+        }).catch(function () {
+          try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
+          catch (e) { resolve(null); }
+        });
+      } else if (window.storage && typeof window.storage.get === "function") {
         window.storage.get(key, false).then(resolve).catch(function () { resolve(null); });
       } else {
         try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
