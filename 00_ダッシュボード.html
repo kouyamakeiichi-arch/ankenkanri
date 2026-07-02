@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ダッシュボード | 太豊建設アプリ</title>
+<style>
+  :root {
+    --bg: #F6F5FB; --surface: #FFFFFF; --primary: #6C47FF; --primary-dark: #5636D9;
+    --primary-soft: #EFEAFF; --text: #1E1B2E; --text-secondary: #6B6580; --text-tertiary: #9C97AE;
+    --border: #E7E4F0; --danger: #F0525C; --success: #10B981; --radius: 12px;
+    --shadow-sm: 0 1px 2px rgba(30,27,46,0.06); --shadow-md: 0 8px 24px rgba(30,27,46,0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Hiragino Sans','Yu Gothic','Noto Sans JP',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; }
+  .shell { max-width: 1240px; margin: 0 auto; padding: 20px 20px 60px; }
+
+  .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .page-header__title { font-weight: 900; font-size: 22px; }
+  .page-header__sub { color: var(--text-secondary); font-size: 13px; margin: 0 0 22px 50px; }
+
+  .hamburger-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; flex-shrink: 0; }
+  .hamburger-btn:hover { background: #F1EFFB; }
+  .shell-wrap { transition: margin-left .2s ease; }
+  @media (min-width: 961px) { .shell-wrap.sidebar-open { margin-left: 232px; } }
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 232px; background: var(--surface);
+    border-right: 1px solid var(--border); padding: 18px 12px; display: flex; flex-direction: column;
+    gap: 2px; overflow-y: auto; z-index: 150; transform: translateX(-100%); transition: transform .2s ease;
+  }
+  .sidebar.is-open { transform: translateX(0); box-shadow: var(--shadow-md); }
+  .sidebar__brand { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 15px; color: var(--primary); padding: 6px 10px 16px; text-decoration:none; }
+  .sidebar__section { font-size: 11px; font-weight: 700; color: var(--text-tertiary); padding: 14px 12px 4px; }
+  .sidebar__link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13.5px; font-weight: 700; color: var(--text-secondary); text-decoration: none; }
+  .sidebar__link:hover { background: #F1EFFB; color: var(--text); }
+  .sidebar__link.is-active { background: var(--primary-soft); color: var(--primary); }
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); z-index: 140; display: none; }
+  .sidebar-overlay.is-open { display: block; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; box-shadow: var(--shadow-sm); }
+  .stat-card__label { font-size: 12px; color: var(--text-tertiary); font-weight: 700; display:flex; align-items:center; gap:6px; }
+  .stat-card__value { font-family: 'Courier New', monospace; font-weight: 900; font-size: 26px; margin-top: 6px; }
+  .stat-card__sub { font-size: 11.5px; color: var(--text-tertiary); margin-top: 4px; }
+  .stat-card--accent .stat-card__value { color: var(--primary); }
+  .stat-card--danger .stat-card__value { color: var(--danger); }
+  .stat-card--success .stat-card__value { color: var(--success); }
+
+  .grid-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+  .panel__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .panel__header h2 { font-size: 15px; margin: 0; }
+  .panel__header a { font-size: 12px; font-weight: 700; color: var(--primary); text-decoration: none; }
+
+  .status-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12.5px; }
+  .status-bar-row .label { width: 96px; color: var(--text-secondary); flex-shrink: 0; }
+  .status-bar-row .bar-track { flex: 1; height: 8px; border-radius: 999px; background: var(--bg); overflow: hidden; }
+  .status-bar-row .bar-fill { height: 100%; border-radius: 999px; }
+  .status-bar-row .count { width: 28px; text-align: right; font-family: 'Courier New', monospace; font-weight: 700; }
+
+  .list-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; gap: 10px; }
+  .list-row:last-child { border-bottom: none; }
+  .list-row__name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .list-row__meta { color: var(--text-tertiary); font-size: 11.5px; }
+  .list-row a { color: inherit; text-decoration: none; flex: 1; min-width: 0; }
+  .list-row .amt { font-family: 'Courier New', monospace; font-weight: 700; }
+
+  .quick-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .quick-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); text-decoration: none; color: var(--text); transition: transform .1s, box-shadow .15s; }
+  .quick-tile:hover { box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+  .quick-tile__icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; }
+  .quick-tile__label { font-size: 13px; font-weight: 700; }
+
+  .empty-line { color: var(--text-tertiary); font-size: 12.5px; padding: 12px 0; }
+  .loading-wrap { display:flex; align-items:center; justify-content:center; padding: 60px 0; color: var(--text-tertiary); font-size: 13px; }
+  .spinner { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--primary-soft); border-top-color: var(--primary); animation: spin .7s linear infinite; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 640px) {
+    .shell { padding: 14px 12px 80px; }
+    .page-header__sub { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <a class="sidebar__brand" href="00_ダッシュボード.html">太豊建設アプリ</a>
+  <a class="sidebar__link is-active" href="00_ダッシュボード.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    ホーム
+  </a>
+  <a class="sidebar__link" href="01_案件管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    案件
+  </a>
+  <a class="sidebar__link" href="02_顧客建物管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    顧客・建物
+  </a>
+  <a class="sidebar__link" href="03_ファイル管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    ファイル
+  </a>
+  <a class="sidebar__link" href="04_日報社内申請.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    日報・社内申請
+  </a>
+  <a class="sidebar__link" href="05_金銭管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9 9a3 3 0 0 1 3-1c1.5 0 3 .8 3 2.2S13.5 12 12 12s-3 .8-3 2.2S10.5 16 12 16a3 3 0 0 0 3-1"/></svg>
+    金銭管理
+  </a>
+  <a class="sidebar__link" href="06_設定.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    設定
+  </a>
+  <a class="sidebar__link" href="07_工程表カレンダー.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    工程表・カレンダー
+  </a>
+  <div class="sidebar__section">サポート</div>
+  <a class="sidebar__link" href="99_ヘルプ.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
+    ヘルプ
+  </a>
+</nav>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="shell-wrap" id="shellWrap">
+<div class="shell">
+  <div class="page-header">
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニュー">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <div class="page-header__title">太豊建設アプリ</div>
+  </div>
+  <p class="page-header__sub" id="todayLabel"></p>
+
+  <div id="loadingArea" class="loading-wrap"><span class="spinner"></span> 読み込み中...</div>
+  <div id="dashboardArea" style="display:none;">
+
+    <div class="stat-grid" id="statGrid"></div>
+
+    <div class="grid-2">
+      <div>
+        <div class="panel">
+          <div class="panel__header"><h2>案件ステータスの内訳</h2><a href="01_案件管理.html">案件管理へ →</a></div>
+          <div id="statusBreakdown"></div>
+        </div>
+        <div class="panel">
+          <div class="panel__header"><h2>最近の案件</h2><a href="01_案件管理.html">すべて見る →</a></div>
+          <div id="recentProjects"></div>
+        </div>
+      </div>
+      <div>
+        <div class="panel">
+          <div class="panel__header"><h2>承認待ちの申請</h2><a href="04_日報社内申請.html">社内申請へ →</a></div>
+          <div id="pendingRequests"></div>
+        </div>
+        <div class="panel">
+          <div class="panel__header"><h2>支払い予定</h2><a href="05_金銭管理.html">金銭管理へ →</a></div>
+          <div id="upcomingPayments"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__header"><h2>クイックアクセス</h2></div>
+      <div class="quick-tiles" id="quickTiles"></div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  function storageGet(key) {
+    return new Promise(function (resolve) {
+      if (window.storage && typeof window.storage.get === "function") {
+        window.storage.get(key, false).then(resolve).catch(function () { resolve(null); });
+      } else {
+        try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
+        catch (e) { resolve(null); }
+      }
+    });
+  }
+  function parseArr(res) { try { var v = res && res.value ? JSON.parse(res.value) : null; return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+
+  function esc(str) {
+    return String(str == null ? "" : str).replace(/[&<>"']/g, function (s) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s];
+    });
+  }
+  function fmtYen(v) {
+    if (v === "" || v === null || v === undefined || isNaN(Number(v))) return "¥0";
+    return "¥" + Math.round(Number(v)).toLocaleString("ja-JP");
+  }
+  function fmtDate(v) {
+    if (!v) return "-";
+    var d = new Date(v + "T00:00:00");
+    if (isNaN(d.getTime())) return "-";
+    return (d.getMonth()+1) + "/" + d.getDate();
+  }
+
+  var STATUS_LIST = [
+    { id: "inquiry",      label: "依頼受付",     color: "#94A3B8", done: false },
+    { id: "survey",       label: "現調",         color: "#60A5FA", done: false },
+    { id: "estimating",   label: "見積中",       color: "#FBBF24", done: false },
+    { id: "estimated",    label: "見積提出済",   color: "#F59E0B", done: false },
+    { id: "ordered",      label: "受注",         color: "#6C47FF", done: false },
+    { id: "before_start", label: "着工前",       color: "#22D3EE", done: false },
+    { id: "in_progress",  label: "着工(施工中)", color: "#FB923C", done: false },
+    { id: "completed",    label: "完工",         color: "#34D399", done: false },
+    { id: "cost_fixed",   label: "原価確定",     color: "#2DD4BF", done: false },
+    { id: "lost",         label: "失注",         color: "#F87171", done: true  },
+    { id: "settled",      label: "精算完了",     color: "#10B981", done: true  }
+  ];
+  function statusOf(id) { for (var i=0;i<STATUS_LIST.length;i++) if (STATUS_LIST[i].id===id) return STATUS_LIST[i]; return STATUS_LIST[0]; }
+
+  var ICON_FOLDER = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>';
+  var ICON_USERS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>';
+  var ICON_CLOCK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
+  var ICON_MONEY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9 9a3 3 0 0 1 3-1c1.5 0 3 .8 3 2.2S13.5 12 12 12s-3 .8-3 2.2S10.5 16 12 16a3 3 0 0 0 3-1"/></svg>';
+  var ICON_GEAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+  var ICON_CAL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+
+  function statCard(label, value, sub, variant) {
+    return '<div class="stat-card' + (variant?" stat-card--"+variant:"") + '"><div class="stat-card__label">' + label + '</div>' +
+      '<div class="stat-card__value">' + value + '</div>' + (sub ? '<div class="stat-card__sub">' + sub + '</div>' : '') + '</div>';
+  }
+
+  function setSidebar(open) {
+    document.getElementById("sidebar").classList.toggle("is-open", open);
+    document.getElementById("shellWrap").classList.toggle("sidebar-open", open);
+    document.getElementById("sidebarOverlay").classList.toggle("is-open", open && window.innerWidth <= 960);
+  }
+  document.getElementById("hamburgerBtn").addEventListener("click", function () {
+    setSidebar(!document.getElementById("sidebar").classList.contains("is-open"));
+  });
+  document.getElementById("sidebarOverlay").addEventListener("click", function () { setSidebar(false); });
+  setSidebar(window.innerWidth > 960);
+
+  var now = new Date();
+  document.getElementById("todayLabel").textContent =
+    now.getFullYear() + "年" + (now.getMonth()+1) + "月" + now.getDate() + "日(" + ["日","月","火","水","木","金","土"][now.getDay()] + ") の状況";
+
+  Promise.all([
+    storageGet("taiho_projects_v2"),
+    storageGet("taiho_customers_v2"),
+    storageGet("taiho_requests_v1"),
+    storageGet("taiho_billings_v1"),
+    storageGet("taiho_payments_v1"),
+    storageGet("taiho_orders_v1")
+  ]).then(function (res) {
+    var projects = parseArr(res[0]);
+    var customers = parseArr(res[1]);
+    var requests = parseArr(res[2]);
+    var billings = parseArr(res[3]);
+    var payments = parseArr(res[4]);
+    var orders = parseArr(res[5]);
+
+    var activeProjects = projects.filter(function (p) { return !statusOf(p.status).done; });
+    var totalBilling = billings.reduce(function (s,b) { return s + (Number(b.totalAmount)||0); }, 0);
+    var totalReceived = billings.reduce(function (s,b) { return s + (Number(b.receivedAmount)||0); }, 0);
+    var totalOrders = orders.reduce(function (s,o) { return s + (o.status!=="cancelled" ? (Number(o.orderAmount)||0) : 0); }, 0);
+    var profit = totalBilling - totalOrders;
+    var pendingReq = requests.filter(function (r) { return r.status === "pending"; });
+    var scheduledPay = payments.filter(function (p) { return p.status === "scheduled"; });
+    var scheduledPaySum = scheduledPay.reduce(function (s,p) { return s + (Number(p.amount)||0); }, 0);
+
+    document.getElementById("statGrid").innerHTML =
+      statCard(ICON_FOLDER + " 進行中の案件", activeProjects.length + "件", "全" + projects.length + "件中", "accent") +
+      statCard(ICON_USERS + " 登録顧客数", customers.length + "件", "") +
+      statCard(ICON_MONEY + " 未入金額", fmtYen(totalBilling - totalReceived), "請求合計 " + fmtYen(totalBilling), (totalBilling-totalReceived)>0 ? "danger" : "") +
+      statCard(ICON_MONEY + " 粗利合計", fmtYen(profit), "請求 − 発注", profit>=0 ? "success" : "danger") +
+      statCard(ICON_CLOCK + " 承認待ち申請", pendingReq.length + "件", "") +
+      statCard(ICON_MONEY + " 支払い予定合計", fmtYen(scheduledPaySum), scheduledPay.length + "件");
+
+    var byStatus = {};
+    projects.forEach(function (p) { byStatus[p.status] = (byStatus[p.status]||0) + 1; });
+    var maxCount = Math.max.apply(null, STATUS_LIST.map(function (s) { return byStatus[s.id] || 0; }).concat([1]));
+    var sbHtml = "";
+    STATUS_LIST.forEach(function (s) {
+      var c = byStatus[s.id] || 0;
+      if (c === 0) return;
+      sbHtml += '<div class="status-bar-row"><span class="label">' + esc(s.label) + '</span>' +
+        '<span class="bar-track"><span class="bar-fill" style="width:' + Math.round(c/maxCount*100) + '%;background:' + s.color + ';"></span></span>' +
+        '<span class="count">' + c + '</span></div>';
+    });
+    document.getElementById("statusBreakdown").innerHTML = sbHtml || '<div class="empty-line">案件がまだありません</div>';
+
+    var recent = projects.slice().sort(function (a,b) { return (b.no||0)-(a.no||0); }).slice(0, 6);
+    document.getElementById("recentProjects").innerHTML = recent.length ? recent.map(function (p) {
+      var s = statusOf(p.status);
+      return '<div class="list-row"><a href="01_案件管理.html"><div class="list-row__name">' + esc(p.name) + '</div>' +
+        '<div class="list-row__meta">No.' + esc(p.no) + ' ・ ' + esc(p.customerName||"-") + '</div></a>' +
+        '<span style="background:' + s.color + ';color:white;font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;">' + esc(s.label) + '</span></div>';
+    }).join("") : '<div class="empty-line">案件がまだありません</div>';
+
+    document.getElementById("pendingRequests").innerHTML = pendingReq.length ? pendingReq.slice(0,6).map(function (r) {
+      return '<div class="list-row"><a href="04_日報社内申請.html"><div class="list-row__name">' + esc(r.title) + '</div>' +
+        '<div class="list-row__meta">' + esc(r.applicant||"-") + ' → ' + esc(r.approver||"-") + '</div></a></div>';
+    }).join("") : '<div class="empty-line">承認待ちの申請はありません</div>';
+
+    document.getElementById("upcomingPayments").innerHTML = scheduledPay.length ? scheduledPay.slice(0,6).sort(function(a,b){return (a.dueDate<b.dueDate)?-1:1;}).map(function (p) {
+      return '<div class="list-row"><a href="05_金銭管理.html"><div class="list-row__name">' + fmtDate(p.dueDate) + ' 期限</div>' +
+        '<div class="list-row__meta">' + esc(p.bankInfo||"-") + '</div></a><span class="amt">' + fmtYen(p.amount) + '</span></div>';
+    }).join("") : '<div class="empty-line">支払い予定はありません</div>';
+
+    document.getElementById("quickTiles").innerHTML = [
+      { href: "01_案件管理.html", icon: ICON_FOLDER, color: "#6C47FF", label: "案件管理" },
+      { href: "02_顧客建物管理.html", icon: ICON_USERS, color: "#60A5FA", label: "顧客・建物" },
+      { href: "03_ファイル管理.html", icon: ICON_FOLDER, color: "#34D399", label: "ファイル" },
+      { href: "04_日報社内申請.html", icon: ICON_CLOCK, color: "#F59E0B", label: "日報・申請" },
+      { href: "05_金銭管理.html", icon: ICON_MONEY, color: "#F472B6", label: "金銭管理" },
+      { href: "06_設定.html", icon: ICON_GEAR, color: "#94A3B8", label: "設定" },
+      { href: "07_工程表カレンダー.html", icon: ICON_CAL, color: "#22D3EE", label: "工程表・カレンダー" }
+    ].map(function (t) {
+      return '<a class="quick-tile" href="' + t.href + '"><span class="quick-tile__icon" style="background:' + t.color + '">' + t.icon + '</span><span class="quick-tile__label">' + t.label + '</span></a>';
+    }).join("");
+
+    document.getElementById("loadingArea").style.display = "none";
+    document.getElementById("dashboardArea").style.display = "block";
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>金銭管理 | 太豊建設アプリ</title>
+<style>
+  :root {
+    --bg: #F6F5FB; --surface: #FFFFFF; --primary: #6C47FF; --primary-dark: #5636D9;
+    --primary-soft: #EFEAFF; --text: #1E1B2E; --text-secondary: #6B6580; --text-tertiary: #9C97AE;
+    --border: #E7E4F0; --danger: #F0525C; --success: #10B981; --radius: 12px;
+    --shadow-sm: 0 1px 2px rgba(30,27,46,0.06); --shadow-md: 0 8px 24px rgba(30,27,46,0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Hiragino Sans','Yu Gothic','Noto Sans JP',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; }
+
+  .shell { max-width: 1240px; margin: 0 auto; padding: 20px 20px 60px; }
+
+  .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .page-header__title { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 22px; letter-spacing: 0.01em; }
+  .page-header__title .badge-count { font-family: 'Courier New', monospace; font-size: 12px; font-weight: 600; color: var(--primary); background: var(--primary-soft); padding: 3px 9px; border-radius: 100px; }
+  .page-header__actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+  .search-box { position: relative; flex: 1; min-width: 180px; max-width: 280px; }
+  .search-box svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); pointer-events: none; }
+  .search-box input { width: 100%; padding: 10px 12px 10px 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); font-size: 14px; font-family: inherit; color: var(--text); outline: none; }
+  .search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 10px 16px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; transition: transform .1s, background .15s, box-shadow .15s; white-space: nowrap; }
+  .btn:active { transform: scale(0.97); }
+  .btn--primary { background: var(--primary); color: white; box-shadow: var(--shadow-sm); }
+  .btn--primary:hover { background: var(--primary-dark); }
+  .btn--ghost { background: transparent; color: var(--text-secondary); border-color: var(--border); }
+  .btn--ghost:hover { background: #F1EFFB; }
+  .btn--danger-ghost { background: transparent; color: var(--danger); border-color: #FBD5D8; }
+  .btn--danger-ghost:hover { background: #FEF1F2; }
+  .btn--sm { padding: 7px 12px; font-size: 12.5px; }
+
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; }
+  .icon-btn:hover { background: #F1EFFB; color: var(--text); }
+
+  .module-tabs { display: flex; gap: 6px; margin-bottom: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 5px; width: fit-content; flex-wrap: wrap; }
+  .module-tab { display:flex; align-items:center; gap:6px; font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 9px 16px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; transition: all .15s; }
+  .module-tab.is-active { background: var(--primary); color: white; }
+  .module-tab.is-disabled { color: var(--text-tertiary); cursor: default; }
+  .module-tab .soon { font-size: 9px; font-weight: 700; background: var(--bg); border: 1px solid var(--border); color: var(--text-tertiary); padding: 1px 6px; border-radius: 999px; }
+
+  .type-tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; scrollbar-width: none; }
+  .type-tabs::-webkit-scrollbar { display: none; }
+  .type-tab { font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 8px 14px; border-radius: 999px; border: 1px solid transparent; background: transparent; color: var(--text-secondary); cursor: pointer; white-space: nowrap; transition: all .15s; }
+  .type-tab:hover { background: #EDEAFA; }
+  .type-tab.is-active { background: var(--text); color: white; }
+
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; overflow-x: auto; }
+  table.data-table { width: 100%; border-collapse: collapse; }
+  .data-table thead th { text-align: left; font-size: 12px; font-weight: 700; color: var(--text-tertiary); padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .data-table tbody tr { border-bottom: 1px solid var(--border); transition: background .12s; }
+  .data-table tbody tr:last-child { border-bottom: none; }
+  .data-table tbody tr:hover { background: #FBFAFF; }
+  .data-table td { padding: 13px 16px; font-size: 13.5px; vertical-align: middle; white-space: nowrap; }
+  .cell-name { font-weight: 700; background:none; border:none; cursor:pointer; text-align:left; color:inherit; font-family:inherit; font-size:inherit; padding:0; }
+  .cell-actions { text-align: right; }
+  .muted { color: var(--text-tertiary); }
+
+  .rank-badge { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:6px; font-size:11px; font-weight:800; color:white; background: var(--rank-color); }
+
+  .status-pill { position: relative; display: inline-flex; align-items: center; gap: 6px; background: var(--pill-color); border-radius: 999px; padding: 5px 26px 5px 10px; }
+  .status-pill__dot { width: 6px; height: 6px; border-radius: 50%; background: white; opacity: .9; flex-shrink:0; }
+  .status-pill select { appearance: none; background: transparent; border: none; color: white; font-family: inherit; font-weight: 700; font-size: 12px; cursor: pointer; outline: none; }
+  .status-pill select option { color: var(--text); }
+  .status-pill__chev { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: white; pointer-events:none; }
+  .type-tag { font-size: 11.5px; font-weight: 700; color: var(--tag-color); background: color-mix(in srgb, var(--tag-color) 12%, white); padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .amount-text { font-family: 'Courier New', monospace; font-weight: 700; }
+  .amount-text--profit { color: var(--success); }
+  .amount-text--danger { color: var(--danger); }
+
+  .card-list { display: none; flex-direction: column; gap: 10px; }
+  .data-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; border-left: 4px solid var(--bar-color); }
+  .data-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .data-card__name { font-weight: 700; font-size: 15px; }
+  .data-card__meta { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 12.5px; color: var(--text-secondary); }
+  .data-card__meta span { display: flex; align-items: center; gap: 4px; }
+
+  @media (max-width: 860px) {
+    .table-wrap { display: none; }
+    .card-list { display: flex; }
+    .shell { padding: 14px 12px 80px; }
+    .page-header__title { font-size: 19px; }
+    .search-box { max-width: none; order: 3; flex-basis: 100%; }
+  }
+
+  .empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 60px 20px; color: var(--text-tertiary); gap: 8px; }
+  .empty-state__title { font-weight: 700; color: var(--text); font-size: 15px; margin-top: 6px; }
+  .empty-state__desc { font-size: 13px; margin-bottom: 10px; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 100; }
+  .modal { background: var(--surface); border-radius: 16px; width: 100%; max-width: 480px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--shadow-md); }
+  .modal__header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); }
+  .modal__header h2 { font-size: 17px; font-weight: 700; margin: 0; }
+  .modal__body { padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+  .modal__footer { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1px solid var(--border); }
+  .modal__footer-right { display: flex; gap: 8px; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12.5px; font-weight: 700; color: var(--text-secondary); }
+  .field .req { color: var(--danger); }
+  .field input, .field select, .field textarea { font-family: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; outline: none; color: var(--text); background: var(--surface); width: 100%; }
+  .field textarea { resize: vertical; min-height: 60px; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+  .field input.is-error { border-color: var(--danger); }
+  .field__error { color: var(--danger); font-size: 11.5px; margin: 0; }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; min-width: 0; }
+  @media (max-width: 480px) { .field-row { flex-direction: column; } }
+
+  .confirm-box { background: var(--surface); border-radius: 14px; padding: 20px; max-width: 360px; width: 100%; box-shadow: var(--shadow-md); }
+  .confirm-box__icon { color: var(--danger); margin-bottom: 8px; }
+  .confirm-box h3 { margin: 0 0 6px; font-size: 15px; }
+  .confirm-box p { margin: 0 0 16px; font-size: 13px; color: var(--text-secondary); }
+  .confirm-box__actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--text); color: white; padding: 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-md); z-index: 200; display: flex; align-items: center; gap: 8px; }
+
+  .loading-wrap { display:flex; align-items:center; justify-content:center; padding: 80px 0; color: var(--text-tertiary); font-size: 13px; }
+  .spinner { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--primary-soft); border-top-color: var(--primary); animation: spin .7s linear infinite; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------------- サイドバー / ハンバーガー ---------------- */
+  .hamburger-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; flex-shrink: 0; }
+  .hamburger-btn:hover { background: #F1EFFB; }
+  .shell-wrap { transition: margin-left .2s ease; }
+  @media (min-width: 961px) { .shell-wrap.sidebar-open { margin-left: 232px; } }
+
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 232px; background: var(--surface);
+    border-right: 1px solid var(--border); padding: 18px 12px; display: flex; flex-direction: column;
+    gap: 2px; overflow-y: auto; z-index: 150; transform: translateX(-100%); transition: transform .2s ease;
+  }
+  .sidebar.is-open { transform: translateX(0); box-shadow: var(--shadow-md); }
+  .sidebar__brand { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 15px; color: var(--primary); padding: 6px 10px 16px; text-decoration:none; }
+  .sidebar__section { font-size: 11px; font-weight: 700; color: var(--text-tertiary); padding: 14px 12px 4px; }
+  .sidebar__link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13.5px; font-weight: 700; color: var(--text-secondary); text-decoration: none; }
+  .sidebar__link:hover { background: #F1EFFB; color: var(--text); }
+  .sidebar__link.is-active { background: var(--primary-soft); color: var(--primary); }
+  .sidebar__link.is-disabled { color: var(--text-tertiary); cursor: default; pointer-events: none; }
+  .sidebar__link .soon { margin-left: auto; font-size: 9.5px; font-weight: 700; background: var(--bg); border: 1px solid var(--border); color: var(--text-tertiary); padding: 2px 6px; border-radius: 999px; white-space: nowrap; }
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); z-index: 140; display: none; }
+  .sidebar-overlay.is-open { display: block; }
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <a class="sidebar__brand" href="00_ダッシュボード.html">太豊建設アプリ</a>
+  <a class="sidebar__link" href="00_ダッシュボード.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    ホーム
+  </a>
+  <a class="sidebar__link" href="01_案件管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    案件
+  </a>
+  <a class="sidebar__link" href="02_顧客建物管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    顧客・建物
+  </a>
+  <a class="sidebar__link" href="03_ファイル管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    ファイル
+  </a>
+  <a class="sidebar__link" href="04_日報社内申請.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    日報・社内申請
+  </a>
+  <a class="sidebar__link is-active" href="05_金銭管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9 9a3 3 0 0 1 3-1c1.5 0 3 .8 3 2.2S13.5 12 12 12s-3 .8-3 2.2S10.5 16 12 16a3 3 0 0 0 3-1"/></svg>
+    金銭管理
+  </a>
+  <a class="sidebar__link" href="06_設定.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    設定
+  </a>
+  <a class="sidebar__link" href="07_工程表カレンダー.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    工程表・カレンダー
+  </a>
+  <div class="sidebar__section">サポート</div>
+  <a class="sidebar__link" href="99_ヘルプ.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
+    ヘルプ
+  </a>
+</nav>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="shell-wrap" id="shellWrap">
+<div class="shell">
+  <div class="page-header">
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニュー">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <div class="page-header__title">金銭管理<span class="badge-count" id="countBadge">0件</span></div>
+    <div class="page-header__actions">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="searchInput" placeholder="事業者名・職種で検索" />
+      </div>
+      <button class="btn btn--primary" id="btnCreate">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        <span id="btnCreateLabel">協力業者を登録</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="module-tabs">
+    <button class="module-tab is-active" id="tabContractors">協力業者</button>
+    <button class="module-tab" id="tabOrders">発注</button>
+    <button class="module-tab" id="tabPayments">支払い</button>
+    <button class="module-tab" id="tabBillings">請求</button>
+  </div>
+
+  <div class="type-tabs" id="occupationTabs"></div>
+  <div class="type-tabs" id="orderStatusTabs" style="display:none"></div>
+  <div class="type-tabs" id="paymentStatusTabs" style="display:none"></div>
+  <div class="type-tabs" id="billingStatusTabs" style="display:none"></div>
+
+  <div id="resultsArea"></div>
+</div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  function storageGet(key) {
+    return new Promise(function (resolve) {
+      if (window.storage && typeof window.storage.get === "function") {
+        window.storage.get(key, false).then(resolve).catch(function () { resolve(null); });
+      } else {
+        try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
+        catch (e) { resolve(null); }
+      }
+    });
+  }
+  function storageSet(key, value) {
+    return new Promise(function (resolve) {
+      if (window.storage && typeof window.storage.set === "function") {
+        window.storage.set(key, value, false).then(resolve).catch(function () {
+          try { window.localStorage.setItem(key, value); } catch (e) {}
+          resolve({ value: value });
+        });
+      } else {
+        try { window.localStorage.setItem(key, value); } catch (e) {}
+        resolve({ value: value });
+      }
+    });
+  }
+
+  var CONTRACTORS_KEY = "taiho_contractors_v1";
+  var PROJECTS_KEY = "taiho_projects_v2"; // ①案件管理を参照
+  var ORDERS_KEY = "taiho_orders_v1";
+
+  var ORDER_STATUS = [
+    { id: "estimating", label: "見積中",   color: "#F59E0B" },
+    { id: "ordered",    label: "発注済み", color: "#6C47FF" },
+    { id: "completed",  label: "完了",     color: "#10B981" },
+    { id: "cancelled",  label: "キャンセル", color: "#F87171" }
+  ];
+  function orderStatusOf(id) { for (var i=0;i<ORDER_STATUS.length;i++) if (ORDER_STATUS[i].id===id) return ORDER_STATUS[i]; return ORDER_STATUS[0]; }
+
+  var PAYMENTS_KEY = "taiho_payments_v1";
+  var PAYMENT_STATUS = [
+    { id: "scheduled", label: "支払予定", color: "#F59E0B" },
+    { id: "completed", label: "支払完了", color: "#10B981" }
+  ];
+  function paymentStatusOf(id) { for (var i=0;i<PAYMENT_STATUS.length;i++) if (PAYMENT_STATUS[i].id===id) return PAYMENT_STATUS[i]; return PAYMENT_STATUS[0]; }
+
+  var BILLINGS_KEY = "taiho_billings_v1";
+  var BILLING_STATUS = [
+    { id: "unbilled", label: "未請求",  color: "#94A3B8" },
+    { id: "billed",   label: "請求済み", color: "#F59E0B" },
+    { id: "received", label: "入金済み", color: "#10B981" }
+  ];
+  function billingStatusOf(id) { for (var i=0;i<BILLING_STATUS.length;i++) if (BILLING_STATUS[i].id===id) return BILLING_STATUS[i]; return BILLING_STATUS[0]; }
+
+  var OCCUPATIONS = [
+    { id: "carpentry",  label: "大工",     color: "#F59E0B" },
+    { id: "electric",   label: "電気工事", color: "#38BDF8" },
+    { id: "plumbing",   label: "水道・配管", color: "#22D3EE" },
+    { id: "paint",      label: "塗装",     color: "#F472B6" },
+    { id: "exterior",   label: "外構・土木", color: "#34D399" },
+    { id: "demolition", label: "解体",     color: "#94A3B8" },
+    { id: "other",      label: "その他",   color: "#A78BFA" }
+  ];
+  var RANKS = [
+    { id: "S", color: "#6C47FF" }, { id: "A", color: "#10B981" },
+    { id: "B", color: "#F59E0B" }, { id: "C", color: "#94A3B8" }
+  ];
+
+  function occOf(id) { for (var i=0;i<OCCUPATIONS.length;i++) if (OCCUPATIONS[i].id===id) return OCCUPATIONS[i]; return OCCUPATIONS[OCCUPATIONS.length-1]; }
+  function rankColor(id) { for (var i=0;i<RANKS.length;i++) if (RANKS[i].id===id) return RANKS[i].color; return "#9C97AE"; }
+
+  function esc(str) {
+    return String(str == null ? "" : str).replace(/[&<>"']/g, function (s) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s];
+    });
+  }
+
+  function seedContractors() {
+    return [
+      { id: "k-1", name: "山田塗装", occupation: "paint", area: "苫小牧市・恵庭市", contactName: "山田一郎", phone: "090-1111-2222", email: "", rank: "A", note: "" },
+      { id: "k-2", name: "北海電気工業", occupation: "electric", area: "苫小牧市", contactName: "北海太郎", phone: "090-3333-4444", email: "", rank: "B", note: "" },
+      { id: "k-3", name: "苫小牧解体サービス", occupation: "demolition", area: "苫小牧市", contactName: "", phone: "0144-00-0000", email: "", rank: "B", note: "" }
+    ];
+  }
+
+  function seedOrders() {
+    return [
+      { id: "o-seed-1", title: "屋根外壁塗装工事", contractorId: "k-1", projectId: "seed-3", status: "completed", startDate: "2026-05-12", completionDate: "2026-06-15", orderAmount: 850000, createdAt: Date.now() - 300000 },
+      { id: "o-seed-2", title: "解体工事一式(双葉)", contractorId: "k-3", projectId: "seed-13", status: "ordered", startDate: "", completionDate: "", orderAmount: 420000, createdAt: Date.now() - 200000 },
+      { id: "o-seed-3", title: "電気設備工事", contractorId: "k-2", projectId: "seed-12", status: "estimating", startDate: "", completionDate: "", orderAmount: 620000, createdAt: Date.now() - 100000 }
+    ];
+  }
+  function seedPayments() {
+    return [
+      { id: "pay-seed-1", contractorId: "k-1", orderId: "o-seed-1", status: "completed", bankInfo: "北洋銀行 苫小牧支店", dueDate: "2026-06-20", amount: 850000 },
+      { id: "pay-seed-2", contractorId: "k-3", orderId: "o-seed-2", status: "scheduled", bankInfo: "北海道銀行 苫小牧西支店", dueDate: "2026-07-15", amount: 420000 }
+    ];
+  }
+  function seedBillings() {
+    return [
+      { id: "bl-seed-1", projectId: "seed-3", status: "billed", completionDate: "2026-06-15", nextPaymentDate: "2026-07-10", totalAmount: 1870000, receivedAmount: 1000000, createdAt: Date.now() - 250000 },
+      { id: "bl-seed-2", projectId: "seed-6", status: "received", completionDate: "2026-08-31", nextPaymentDate: "", totalAmount: 303000, receivedAmount: 303000, createdAt: Date.now() - 150000 }
+    ];
+  }
+
+  function fmtYen(v) {
+    if (v === "" || v === null || v === undefined || isNaN(Number(v)) || Number(v) === 0) return "-";
+    return "¥" + Math.round(Number(v)).toLocaleString("ja-JP");
+  }
+  function fmtDate(v) {
+    if (!v) return "-";
+    var d = new Date(v + "T00:00:00");
+    if (isNaN(d.getTime())) return "-";
+    var w = ["日","月","火","水","木","金","土"][d.getDay()];
+    return d.getFullYear() + "年" + (d.getMonth()+1) + "月" + d.getDate() + "日(" + w + ")";
+  }
+
+  var ICON_X = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+  var ICON_TRASH = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/><path d="M10 11v6M14 11v6"/></svg>';
+  var ICON_PENCIL = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+  var ICON_CHECK = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>';
+  var ICON_ALERT = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="confirm-box__icon"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>';
+  var ICON_USERS40 = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+  var ICON_PHONE = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.34 1.79.65 2.65a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.43-1.43a2 2 0 0 1 2.11-.45c.86.31 1.75.53 2.65.65A2 2 0 0 1 22 16.92z"/></svg>';
+  var ICON_PIN = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>';
+  var ICON_CHEV = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="status-pill__chev"><path d="m6 9 6 6 6-6"/></svg>';
+
+  var state = { tab: "contractors", contractors: [], orders: [], payments: [], billings: [], projects: [], loading: true, search: "", activeOcc: "all", activeOrderStatus: "all", activePaymentStatus: "all", activeBillingStatus: "all" };
+  var editModal = null;
+  var confirmDelete = null;
+
+  var toastTimer = null;
+  function showToast(msg) {
+    var root = document.getElementById("toastRoot");
+    root.innerHTML = '<div class="toast">' + ICON_CHECK + ' ' + esc(msg) + '</div>';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { root.innerHTML = ""; }, 2200);
+  }
+  function persistContractors(next) {
+    state.contractors = next;
+    storageSet(CONTRACTORS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+  }
+  function persistOrders(next) {
+    state.orders = next;
+    storageSet(ORDERS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+  }
+  function persistPayments(next) {
+    state.payments = next;
+    storageSet(PAYMENTS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+  }
+  function persistBillings(next) {
+    state.billings = next;
+    storageSet(BILLINGS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+  }
+  function contractorName(id) { var c = state.contractors.find(function (x) { return x.id === id; }); return c ? c.name : ""; }
+  function projectName(id) { var p = state.projects.find(function (x) { return x.id === id; }); return p ? p.name : ""; }
+  function projectOrdersTotal(projectId) {
+    return state.orders
+      .filter(function (o) { return o.projectId === projectId && o.status !== "cancelled"; })
+      .reduce(function (sum, o) { return sum + (Number(o.orderAmount) || 0); }, 0);
+  }
+  function contractorOptions(selectedId) {
+    return '<option value="">選択してください</option>' + state.contractors.map(function (c) {
+      return '<option value="' + c.id + '"' + (selectedId===c.id?" selected":"") + '>' + esc(c.name) + '</option>';
+    }).join("");
+  }
+  function projectOptions(selectedId) {
+    var sorted = state.projects.slice().sort(function (a,b) { return (b.no||0)-(a.no||0); });
+    return '<option value="">案件なし</option>' + sorted.map(function (p) {
+      return '<option value="' + p.id + '"' + (selectedId===p.id?" selected":"") + '>No.' + esc(p.no) + ' ' + esc(p.name) + '</option>';
+    }).join("");
+  }
+
+  function renderOccupationTabs() {
+    var el = document.getElementById("occupationTabs");
+    var html = '<button class="type-tab' + (state.activeOcc==="all"?" is-active":"") + '" data-occ="all">全て</button>';
+    OCCUPATIONS.forEach(function (o) {
+      html += '<button class="type-tab' + (state.activeOcc===o.id?" is-active":"") + '" data-occ="' + o.id + '">' + esc(o.label) + '</button>';
+    });
+    el.innerHTML = html;
+    el.querySelectorAll(".type-tab").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.activeOcc = btn.getAttribute("data-occ");
+        renderOccupationTabs();
+        renderResults();
+      });
+    });
+  }
+
+  function filteredContractors() {
+    var q = state.search.trim().toLowerCase();
+    return state.contractors
+      .filter(function (c) { return state.activeOcc === "all" ? true : c.occupation === state.activeOcc; })
+      .filter(function (c) {
+        if (!q) return true;
+        return (c.name||"").toLowerCase().indexOf(q) >= 0 ||
+               (c.contactName||"").toLowerCase().indexOf(q) >= 0 ||
+               (c.area||"").toLowerCase().indexOf(q) >= 0;
+      });
+  }
+
+  function setTab(tab) {
+    state.tab = tab;
+    state.search = "";
+    document.getElementById("searchInput").value = "";
+    document.getElementById("tabContractors").classList.toggle("is-active", tab === "contractors");
+    document.getElementById("tabOrders").classList.toggle("is-active", tab === "orders");
+    document.getElementById("tabPayments").classList.toggle("is-active", tab === "payments");
+    document.getElementById("tabBillings").classList.toggle("is-active", tab === "billings");
+    document.getElementById("occupationTabs").style.display = tab === "contractors" ? "" : "none";
+    document.getElementById("orderStatusTabs").style.display = tab === "orders" ? "" : "none";
+    document.getElementById("paymentStatusTabs").style.display = tab === "payments" ? "" : "none";
+    document.getElementById("billingStatusTabs").style.display = tab === "billings" ? "" : "none";
+    var labels = { contractors: "協力業者を登録", orders: "発注を追加", payments: "支払いを追加", billings: "請求を追加" };
+    var placeholders = { contractors: "事業者名・職種で検索", orders: "発注名・案件名で検索", payments: "事業者名で検索", billings: "案件名で検索" };
+    document.getElementById("btnCreateLabel").textContent = labels[tab];
+    document.getElementById("searchInput").placeholder = placeholders[tab];
+    if (tab === "orders") renderOrderStatusTabs();
+    if (tab === "payments") renderPaymentStatusTabs();
+    if (tab === "billings") renderBillingStatusTabs();
+    renderResults();
+  }
+  document.getElementById("tabContractors").addEventListener("click", function () { setTab("contractors"); });
+  document.getElementById("tabOrders").addEventListener("click", function () { setTab("orders"); });
+  document.getElementById("tabPayments").addEventListener("click", function () { setTab("payments"); });
+  document.getElementById("tabBillings").addEventListener("click", function () { setTab("billings"); });
+
+  function renderOrderStatusTabs() {
+    var el = document.getElementById("orderStatusTabs");
+    var html = '<button class="type-tab' + (state.activeOrderStatus==="all"?" is-active":"") + '" data-os="all">全て</button>';
+    ORDER_STATUS.forEach(function (s) {
+      html += '<button class="type-tab' + (state.activeOrderStatus===s.id?" is-active":"") + '" data-os="' + s.id + '">' + esc(s.label) + '</button>';
+    });
+    el.innerHTML = html;
+    el.querySelectorAll(".type-tab").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.activeOrderStatus = btn.getAttribute("data-os");
+        renderOrderStatusTabs();
+        renderResults();
+      });
+    });
+  }
+
+  function filteredOrders() {
+    var q = state.search.trim().toLowerCase();
+    return state.orders
+      .filter(function (o) { return state.activeOrderStatus === "all" ? true : o.status === state.activeOrderStatus; })
+      .filter(function (o) {
+        if (!q) return true;
+        return (o.title||"").toLowerCase().indexOf(q) >= 0 ||
+               projectName(o.projectId).toLowerCase().indexOf(q) >= 0 ||
+               contractorName(o.contractorId).toLowerCase().indexOf(q) >= 0;
+      })
+      .sort(function (a,b) { return (b.createdAt||0) - (a.createdAt||0); });
+  }
+
+  function renderPaymentStatusTabs() {
+    var el = document.getElementById("paymentStatusTabs");
+    var html = '<button class="type-tab' + (state.activePaymentStatus==="all"?" is-active":"") + '" data-ps="all">全て</button>';
+    PAYMENT_STATUS.forEach(function (s) {
+      html += '<button class="type-tab' + (state.activePaymentStatus===s.id?" is-active":"") + '" data-ps="' + s.id + '">' + esc(s.label) + '</button>';
+    });
+    el.innerHTML = html;
+    el.querySelectorAll(".type-tab").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.activePaymentStatus = btn.getAttribute("data-ps");
+        renderPaymentStatusTabs();
+        renderResults();
+      });
+    });
+  }
+
+  function filteredPayments() {
+    var q = state.search.trim().toLowerCase();
+    return state.payments
+      .filter(function (p) { return state.activePaymentStatus === "all" ? true : p.status === state.activePaymentStatus; })
+      .filter(function (p) {
+        if (!q) return true;
+        return contractorName(p.contractorId).toLowerCase().indexOf(q) >= 0;
+      })
+      .sort(function (a,b) { return (a.dueDate < b.dueDate) ? -1 : 1; });
+  }
+
+  function renderBillingStatusTabs() {
+    var el = document.getElementById("billingStatusTabs");
+    var html = '<button class="type-tab' + (state.activeBillingStatus==="all"?" is-active":"") + '" data-bs="all">全て</button>';
+    BILLING_STATUS.forEach(function (s) {
+      html += '<button class="type-tab' + (state.activeBillingStatus===s.id?" is-active":"") + '" data-bs="' + s.id + '">' + esc(s.label) + '</button>';
+    });
+    el.innerHTML = html;
+    el.querySelectorAll(".type-tab").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.activeBillingStatus = btn.getAttribute("data-bs");
+        renderBillingStatusTabs();
+        renderResults();
+      });
+    });
+  }
+
+  function filteredBillings() {
+    var q = state.search.trim().toLowerCase();
+    return state.billings
+      .filter(function (b) { return state.activeBillingStatus === "all" ? true : b.status === state.activeBillingStatus; })
+      .filter(function (b) {
+        if (!q) return true;
+        return projectName(b.projectId).toLowerCase().indexOf(q) >= 0;
+      })
+      .sort(function (a,b) { return (b.createdAt||0) - (a.createdAt||0); });
+  }
+
+  function renderResults() {
+    var area = document.getElementById("resultsArea");
+    if (state.loading) {
+      area.innerHTML = '<div class="loading-wrap"><span class="spinner"></span> 読み込み中...</div>';
+      document.getElementById("countBadge").textContent = "0件";
+      return;
+    }
+    if (state.tab === "contractors") renderContractorResults(area);
+    else if (state.tab === "orders") renderOrderResults(area);
+    else if (state.tab === "payments") renderPaymentResults(area);
+    else renderBillingResults(area);
+  }
+
+  function renderContractorResults(area) {
+    var list = filteredContractors();
+    document.getElementById("countBadge").textContent = list.length + "件";
+
+    if (list.length === 0) {
+      area.innerHTML =
+        '<div class="empty-state">' + ICON_USERS40 +
+        '<p class="empty-state__title">まだ協力業者がいません</p><p class="empty-state__desc">「協力業者を登録」から追加しましょう。</p>' +
+        '<button class="btn btn--primary" id="emptyCreateBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> 協力業者を登録</button></div>';
+      var b = document.getElementById("emptyCreateBtn");
+      if (b) b.addEventListener("click", function () { openContractorModal(false, null); });
+      return;
+    }
+
+    var rows = "", cards = "";
+    list.forEach(function (c) {
+      var o = occOf(c.occupation);
+      var rc = rankColor(c.rank);
+      rows += '<tr><td><span class="rank-badge" style="--rank-color:' + rc + '">' + esc(c.rank||"-") + '</span></td>' +
+        '<td><button class="cell-name" data-edit="' + c.id + '">' + esc(c.name) + '</button></td>' +
+        '<td><span class="type-tag" style="--tag-color:' + o.color + '">' + esc(o.label) + '</span></td>' +
+        '<td>' + esc(c.area || "-") + '</td><td>' + esc(c.contactName || "-") + '</td>' +
+        '<td>' + esc(c.phone || "-") + '</td><td>' + esc(c.email || "-") + '</td>' +
+        '<td class="cell-actions"><button class="icon-btn" data-edit="' + c.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td></tr>';
+      cards += '<div class="data-card" style="--bar-color:' + o.color + '">' +
+        '<div class="data-card__top"><div class="data-card__name">' + esc(c.name) + '</div>' +
+        '<button class="icon-btn" data-edit="' + c.id + '" aria-label="編集">' + ICON_PENCIL + '</button></div>' +
+        '<div class="data-card__meta"><span class="rank-badge" style="--rank-color:' + rc + '">' + esc(c.rank||"-") + '</span>' +
+        '<span class="type-tag" style="--tag-color:' + o.color + '">' + esc(o.label) + '</span></div>' +
+        '<div class="data-card__meta">' + (c.phone ? '<span>' + ICON_PHONE + esc(c.phone) + '</span>' : '') + (c.area ? '<span>' + ICON_PIN + esc(c.area) + '</span>' : '') + '</div></div>';
+    });
+
+    area.innerHTML =
+      '<div class="table-wrap"><table class="data-table"><thead><tr>' +
+      '<th>ランク</th><th>事業者名</th><th>職種</th><th>対応地域</th><th>担当者</th><th>電話番号</th><th>メール</th><th></th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div><div class="card-list">' + cards + '</div>';
+
+    area.querySelectorAll("[data-edit]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var c = state.contractors.find(function (x) { return x.id === el.getAttribute("data-edit"); });
+        if (c) openContractorModal(true, c);
+      });
+    });
+  }
+
+  function renderOrderResults(area) {
+    var list = filteredOrders();
+    document.getElementById("countBadge").textContent = list.length + "件";
+
+    if (list.length === 0) {
+      area.innerHTML =
+        '<div class="empty-state">' + ICON_USERS40 +
+        '<p class="empty-state__title">まだ発注がありません</p><p class="empty-state__desc">「発注を追加」から登録しましょう。</p>' +
+        '<button class="btn btn--primary" id="emptyCreateBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> 発注を追加</button></div>';
+      var b = document.getElementById("emptyCreateBtn");
+      if (b) b.addEventListener("click", function () { openOrderModal(false, null); });
+      return;
+    }
+
+    var rows = "", cards = "";
+    list.forEach(function (o) {
+      var pName = projectName(o.projectId) || "-";
+      var cName = contractorName(o.contractorId) || "-";
+      rows += '<tr><td><button class="cell-name" data-oedit="' + o.id + '">' + esc(o.title) + '</button></td>' +
+        '<td>' + esc(cName) + '</td><td>' + esc(pName) + '</td>' +
+        '<td>' + statusPillHtml(o.id, o.status) + '</td>' +
+        '<td>' + fmtDate(o.startDate) + '</td><td>' + fmtDate(o.completionDate) + '</td>' +
+        '<td class="amount-text">' + fmtYen(o.orderAmount) + '</td>' +
+        '<td class="cell-actions"><button class="icon-btn" data-oedit="' + o.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td></tr>';
+      cards += '<div class="data-card" style="--bar-color:' + orderStatusOf(o.status).color + '">' +
+        '<div class="data-card__top"><div class="data-card__name">' + esc(o.title) + '</div>' +
+        '<button class="icon-btn" data-oedit="' + o.id + '" aria-label="編集">' + ICON_PENCIL + '</button></div>' +
+        '<div class="data-card__meta"><span>' + esc(cName) + '</span>' + (pName!=="-" ? '<span>' + esc(pName) + '</span>' : '') + '</div>' +
+        '<div class="data-card__meta"><span class="amount-text">' + fmtYen(o.orderAmount) + '</span></div>' +
+        '<div class="data-card__footer">' + statusPillHtml(o.id, o.status) + '</div></div>';
+    });
+
+    area.innerHTML =
+      '<div class="table-wrap"><table class="data-table"><thead><tr>' +
+      '<th>発注名</th><th>発注先</th><th>案件</th><th>ステータス</th><th>着工日</th><th>完工日</th><th>発注金額</th><th></th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div><div class="card-list">' + cards + '</div>';
+
+    area.querySelectorAll("[data-oedit]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var o = state.orders.find(function (x) { return x.id === el.getAttribute("data-oedit"); });
+        if (o) openOrderModal(true, o);
+      });
+    });
+    area.querySelectorAll("[data-status-change]").forEach(function (el) {
+      el.addEventListener("change", function () {
+        var id = el.getAttribute("data-status-change");
+        persistOrders(state.orders.map(function (o) { return o.id === id ? Object.assign({}, o, { status: el.value }) : o; }));
+        renderResults();
+      });
+    });
+  }
+
+  function statusPillHtml(id, statusId) {
+    var s = orderStatusOf(statusId);
+    var opts = ORDER_STATUS.map(function (st) {
+      return '<option value="' + st.id + '"' + (st.id===statusId?" selected":"") + '>' + esc(st.label) + '</option>';
+    }).join("");
+    return '<div class="status-pill" style="--pill-color:' + s.color + '"><span class="status-pill__dot"></span>' +
+      '<select data-status-change="' + id + '" aria-label="発注ステータスを変更">' + opts + '</select>' + ICON_CHEV + '</div>';
+  }
+
+  function paymentStatusPillHtml(id, statusId) {
+    var s = paymentStatusOf(statusId);
+    var opts = PAYMENT_STATUS.map(function (st) {
+      return '<option value="' + st.id + '"' + (st.id===statusId?" selected":"") + '>' + esc(st.label) + '</option>';
+    }).join("");
+    return '<div class="status-pill" style="--pill-color:' + s.color + '"><span class="status-pill__dot"></span>' +
+      '<select data-pstatus-change="' + id + '" aria-label="支払いステータスを変更">' + opts + '</select>' + ICON_CHEV + '</div>';
+  }
+
+  function renderPaymentResults(area) {
+    var list = filteredPayments();
+    document.getElementById("countBadge").textContent = list.length + "件";
+
+    if (list.length === 0) {
+      area.innerHTML =
+        '<div class="empty-state">' + ICON_USERS40 +
+        '<p class="empty-state__title">まだ支払いがありません</p><p class="empty-state__desc">「支払いを追加」から登録しましょう。</p>' +
+        '<button class="btn btn--primary" id="emptyCreateBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> 支払いを追加</button></div>';
+      var b = document.getElementById("emptyCreateBtn");
+      if (b) b.addEventListener("click", function () { openPaymentModal(false, null); });
+      return;
+    }
+
+    var rows = "", cards = "";
+    list.forEach(function (p) {
+      var cName = contractorName(p.contractorId) || "-";
+      rows += '<tr><td><button class="cell-name" data-pedit="' + p.id + '">' + esc(cName) + '</button></td>' +
+        '<td>' + paymentStatusPillHtml(p.id, p.status) + '</td>' +
+        '<td>' + esc(p.bankInfo || "-") + '</td><td>' + fmtDate(p.dueDate) + '</td>' +
+        '<td class="amount-text">' + fmtYen(p.amount) + '</td>' +
+        '<td class="cell-actions"><button class="icon-btn" data-pedit="' + p.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td></tr>';
+      cards += '<div class="data-card" style="--bar-color:' + paymentStatusOf(p.status).color + '">' +
+        '<div class="data-card__top"><div class="data-card__name">' + esc(cName) + '</div>' +
+        '<button class="icon-btn" data-pedit="' + p.id + '" aria-label="編集">' + ICON_PENCIL + '</button></div>' +
+        '<div class="data-card__meta"><span>期限 ' + fmtDate(p.dueDate) + '</span><span class="amount-text">' + fmtYen(p.amount) + '</span></div>' +
+        '<div class="data-card__footer">' + paymentStatusPillHtml(p.id, p.status) + '</div></div>';
+    });
+
+    area.innerHTML =
+      '<div class="table-wrap"><table class="data-table"><thead><tr>' +
+      '<th>事業者</th><th>ステータス</th><th>振込先</th><th>期限</th><th>金額</th><th></th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div><div class="card-list">' + cards + '</div>';
+
+    area.querySelectorAll("[data-pedit]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var p = state.payments.find(function (x) { return x.id === el.getAttribute("data-pedit"); });
+        if (p) openPaymentModal(true, p);
+      });
+    });
+    area.querySelectorAll("[data-pstatus-change]").forEach(function (el) {
+      el.addEventListener("change", function () {
+        var id = el.getAttribute("data-pstatus-change");
+        persistPayments(state.payments.map(function (p) { return p.id === id ? Object.assign({}, p, { status: el.value }) : p; }));
+        renderResults();
+      });
+    });
+  }
+
+  function billingStatusPillHtml(id, statusId) {
+    var s = billingStatusOf(statusId);
+    var opts = BILLING_STATUS.map(function (st) {
+      return '<option value="' + st.id + '"' + (st.id===statusId?" selected":"") + '>' + esc(st.label) + '</option>';
+    }).join("");
+    return '<div class="status-pill" style="--pill-color:' + s.color + '"><span class="status-pill__dot"></span>' +
+      '<select data-bstatus-change="' + id + '" aria-label="請求ステータスを変更">' + opts + '</select>' + ICON_CHEV + '</div>';
+  }
+
+  function renderBillingResults(area) {
+    var list = filteredBillings();
+    document.getElementById("countBadge").textContent = list.length + "件";
+
+    if (list.length === 0) {
+      area.innerHTML =
+        '<div class="empty-state">' + ICON_USERS40 +
+        '<p class="empty-state__title">まだ請求がありません</p><p class="empty-state__desc">「請求を追加」から登録しましょう。</p>' +
+        '<button class="btn btn--primary" id="emptyCreateBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> 請求を追加</button></div>';
+      var b = document.getElementById("emptyCreateBtn");
+      if (b) b.addEventListener("click", function () { openBillingModal(false, null); });
+      return;
+    }
+
+    var sumBilling = 0, sumOrders = 0;
+    var rows = "", cards = "";
+    list.forEach(function (bl) {
+      var pName = projectName(bl.projectId) || "-";
+      var total = Number(bl.totalAmount) || 0;
+      var received = Number(bl.receivedAmount) || 0;
+      var unpaid = total - received;
+      var rate = total > 0 ? Math.round((received / total) * 100) : 0;
+      var ordersTotal = projectOrdersTotal(bl.projectId);
+      var profit = total - ordersTotal;
+      sumBilling += total; sumOrders += ordersTotal;
+      var profitClass = profit < 0 ? "amount-text amount-text--danger" : "amount-text amount-text--profit";
+      rows += '<tr><td><button class="cell-name" data-bledit="' + bl.id + '">' + esc(pName) + '</button></td>' +
+        '<td>' + statusPillGeneric(bl.id, bl.status) + '</td>' +
+        '<td>' + fmtDate(bl.completionDate) + '</td><td>' + fmtDate(bl.nextPaymentDate) + '</td>' +
+        '<td class="amount-text">' + fmtYen(total) + '</td>' +
+        '<td class="amount-text">' + fmtYen(ordersTotal) + '</td>' +
+        '<td class="' + profitClass + '">' + fmtYen(profit) + '</td>' +
+        '<td class="amount-text">' + fmtYen(unpaid) + '</td>' +
+        '<td>' + rate + '%</td>' +
+        '<td class="cell-actions"><button class="icon-btn" data-bledit="' + bl.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td></tr>';
+      cards += '<div class="data-card" style="--bar-color:' + billingStatusOf(bl.status).color + '">' +
+        '<div class="data-card__top"><div class="data-card__name">' + esc(pName) + '</div>' +
+        '<button class="icon-btn" data-bledit="' + bl.id + '" aria-label="編集">' + ICON_PENCIL + '</button></div>' +
+        '<div class="data-card__meta"><span class="amount-text">請求 ' + fmtYen(total) + '</span><span class="amount-text">発注 ' + fmtYen(ordersTotal) + '</span></div>' +
+        '<div class="data-card__meta"><span class="' + profitClass + '">粗利 ' + fmtYen(profit) + '</span><span>回収率 ' + rate + '%</span></div>' +
+        '<div class="data-card__footer">' + statusPillGeneric(bl.id, bl.status) + '</div></div>';
+    });
+
+    var totalProfit = sumBilling - sumOrders;
+    var summaryHtml =
+      '<div class="summary-bar" style="margin-bottom:14px;">' +
+      '<div class="summary-item">請求合計<b>' + fmtYen(sumBilling) + '</b></div>' +
+      '<div class="summary-item">発注合計<b>' + fmtYen(sumOrders) + '</b></div>' +
+      '<div class="summary-item">粗利合計<b style="color:' + (totalProfit<0?"var(--danger)":"var(--success)") + '">' + fmtYen(totalProfit) + '</b></div>' +
+      '</div>';
+
+    area.innerHTML = summaryHtml +
+      '<div class="table-wrap"><table class="data-table"><thead><tr>' +
+      '<th>案件名</th><th>ステータス</th><th>完工日</th><th>次回入金予定日</th><th>請求(売上)</th><th>発注合計</th><th>粗利</th><th>未入金</th><th>回収率</th><th></th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div><div class="card-list">' + cards + '</div>';
+
+    area.querySelectorAll("[data-bledit]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var bl = state.billings.find(function (x) { return x.id === el.getAttribute("data-bledit"); });
+        if (bl) openBillingModal(true, bl);
+      });
+    });
+    area.querySelectorAll("[data-bstatus-change]").forEach(function (el) {
+      el.addEventListener("change", function () {
+        var id = el.getAttribute("data-bstatus-change");
+        persistBillings(state.billings.map(function (bl) { return bl.id === id ? Object.assign({}, bl, { status: el.value }) : bl; }));
+        renderResults();
+      });
+    });
+  }
+  function statusPillGeneric(id, statusId) { return billingStatusPillHtml(id, statusId); }
+
+  function openContractorModal(isEdit, data) {
+    editModal = { kind: "contractor", isEdit: isEdit, data: data ? Object.assign({}, data) : { name: "", occupation: "carpentry", area: "", contactName: "", phone: "", email: "", rank: "B", note: "" } };
+    renderEditModal();
+  }
+  function openOrderModal(isEdit, data) {
+    editModal = { kind: "order", isEdit: isEdit, data: data ? Object.assign({}, data) : { title: "", contractorId: "", projectId: "", status: "estimating", startDate: "", completionDate: "", orderAmount: "", createdAt: Date.now() } };
+    renderEditModal();
+  }
+  function openPaymentModal(isEdit, data) {
+    editModal = { kind: "payment", isEdit: isEdit, data: data ? Object.assign({}, data) : { contractorId: "", orderId: "", bankInfo: "", dueDate: "", amount: "", status: "scheduled" } };
+    renderEditModal();
+  }
+  function openBillingModal(isEdit, data) {
+    editModal = { kind: "billing", isEdit: isEdit, data: data ? Object.assign({}, data) : { projectId: "", status: "unbilled", completionDate: "", nextPaymentDate: "", totalAmount: "", receivedAmount: "", createdAt: Date.now() } };
+    renderEditModal();
+  }
+  function closeModal() { editModal = null; document.getElementById("modalRoot").innerHTML = ""; }
+
+  function renderEditModal() {
+    if (!editModal) { document.getElementById("modalRoot").innerHTML = ""; return; }
+    if (editModal.kind === "contractor") renderContractorModal();
+    else if (editModal.kind === "order") renderOrderModal();
+    else if (editModal.kind === "payment") renderPaymentModal();
+    else renderBillingModal();
+  }
+
+  function renderContractorModal() {
+    var root = document.getElementById("modalRoot");
+    var d = editModal.data, isEdit = editModal.isEdit;
+    var occOptions = OCCUPATIONS.map(function (o) { return '<option value="' + o.id + '"' + (d.occupation===o.id?" selected":"") + '>' + esc(o.label) + '</option>'; }).join("");
+    var rankOptions = RANKS.map(function (r) { return '<option value="' + r.id + '"' + (d.rank===r.id?" selected":"") + '>' + r.id + '</option>'; }).join("");
+
+    root.innerHTML =
+      '<div class="modal-overlay" id="modalOverlay"><div class="modal" role="dialog" aria-modal="true">' +
+      '<div class="modal__header"><h2>' + (isEdit ? "協力業者を編集" : "協力業者を登録") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
+      '<div class="modal__body">' +
+      '<div class="field"><label>事業者名 <span class="req">*</span></label><input type="text" id="f_name" placeholder="例: 山田塗装" value="' + esc(d.name) + '" /><p class="field__error" id="err_name" style="display:none"></p></div>' +
+      '<div class="field-row">' +
+      '<div class="field"><label>職種</label><select id="f_occupation">' + occOptions + '</select></div>' +
+      '<div class="field" style="max-width:100px"><label>ランク</label><select id="f_rank">' + rankOptions + '</select></div>' +
+      '</div>' +
+      '<div class="field"><label>対応地域</label><input type="text" id="f_area" placeholder="例: 苫小牧市・恵庭市" value="' + esc(d.area) + '" /></div>' +
+      '<div class="field-row">' +
+      '<div class="field"><label>担当者氏名</label><input type="text" id="f_contactName" value="' + esc(d.contactName) + '" /></div>' +
+      '<div class="field"><label>電話番号</label><input type="text" id="f_phone" value="' + esc(d.phone) + '" /></div>' +
+      '</div>' +
+      '<div class="field"><label>メールアドレス</label><input type="text" id="f_email" value="' + esc(d.email) + '" /></div>' +
+      '<div class="field"><label>備考</label><textarea id="f_note">' + esc(d.note) + '</textarea></div>' +
+      '</div><div class="modal__footer">' +
+      (isEdit ? '<button class="btn btn--danger-ghost" id="modalDeleteBtn">' + ICON_TRASH + ' 削除</button>' : '<span></span>') +
+      '<div class="modal__footer-right"><button class="btn btn--ghost" id="modalCancelBtn">キャンセル</button><button class="btn btn--primary" id="modalSaveBtn">' + (isEdit ? "保存" : "登録") + '</button></div>' +
+      '</div></div></div>';
+
+    document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+    document.getElementById("modalCancelBtn").addEventListener("click", closeModal);
+    document.getElementById("modalOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "modalOverlay") closeModal(); });
+    document.getElementById("f_name").focus();
+    if (isEdit) document.getElementById("modalDeleteBtn").addEventListener("click", function () { confirmDelete = { kind: "contractor", id: d.id }; closeModal(); renderConfirm(); });
+
+    document.getElementById("modalSaveBtn").addEventListener("click", function () {
+      var name = document.getElementById("f_name").value.trim();
+      if (!name) { document.getElementById("err_name").textContent = "事業者名を入力してください"; document.getElementById("err_name").style.display = "block"; document.getElementById("f_name").classList.add("is-error"); return; }
+      var form = {
+        id: d.id, name: name,
+        occupation: document.getElementById("f_occupation").value,
+        rank: document.getElementById("f_rank").value,
+        area: document.getElementById("f_area").value.trim(),
+        contactName: document.getElementById("f_contactName").value.trim(),
+        phone: document.getElementById("f_phone").value.trim(),
+        email: document.getElementById("f_email").value.trim(),
+        note: document.getElementById("f_note").value.trim()
+      };
+      if (isEdit) {
+        persistContractors(state.contractors.map(function (c) { return c.id === form.id ? Object.assign({}, c, form) : c; }));
+        showToast("協力業者を更新しました");
+      } else {
+        form.id = "k-" + Date.now();
+        persistContractors([form].concat(state.contractors));
+        showToast("協力業者を登録しました");
+      }
+      closeModal();
+      renderResults();
+    });
+  }
+
+  function renderOrderModal() {
+    var root = document.getElementById("modalRoot");
+    var d = editModal.data, isEdit = editModal.isEdit;
+    var statusOptions = ORDER_STATUS.map(function (s) { return '<option value="' + s.id + '"' + (d.status===s.id?" selected":"") + '>' + esc(s.label) + '</option>'; }).join("");
+
+    root.innerHTML =
+      '<div class="modal-overlay" id="modalOverlay"><div class="modal" role="dialog" aria-modal="true">' +
+      '<div class="modal__header"><h2>' + (isEdit ? "発注を編集" : "発注を追加") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
+      '<div class="modal__body">' +
+      '<div class="field"><label>発注名 <span class="req">*</span></label><input type="text" id="f_title" placeholder="例: 外壁塗装工事" value="' + esc(d.title) + '" /><p class="field__error" id="err_title" style="display:none"></p></div>' +
+      '<div class="field"><label>発注先(協力業者)</label><select id="f_contractorId">' + contractorOptions(d.contractorId) + '</select></div>' +
+      '<div class="field"><label>案件</label><select id="f_projectId">' + projectOptions(d.projectId) + '</select></div>' +
+      '<div class="field"><label>ステータス</label><select id="f_status">' + statusOptions + '</select></div>' +
+      '<div class="field-row">' +
+      '<div class="field"><label>着工日</label><input type="date" id="f_startDate" value="' + esc(d.startDate) + '" /></div>' +
+      '<div class="field"><label>完工日</label><input type="date" id="f_completionDate" value="' + esc(d.completionDate) + '" /></div>' +
+      '</div>' +
+      '<div class="field"><label>発注金額</label><input type="number" id="f_orderAmount" placeholder="例: 500000" value="' + esc(d.orderAmount) + '" /></div>' +
+      '</div><div class="modal__footer">' +
+      (isEdit ? '<button class="btn btn--danger-ghost" id="modalDeleteBtn">' + ICON_TRASH + ' 削除</button>' : '<span></span>') +
+      '<div class="modal__footer-right"><button class="btn btn--ghost" id="modalCancelBtn">キャンセル</button><button class="btn btn--primary" id="modalSaveBtn">' + (isEdit ? "保存" : "追加") + '</button></div>' +
+      '</div></div></div>';
+
+    document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+    document.getElementById("modalCancelBtn").addEventListener("click", closeModal);
+    document.getElementById("modalOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "modalOverlay") closeModal(); });
+    document.getElementById("f_title").focus();
+    if (isEdit) document.getElementById("modalDeleteBtn").addEventListener("click", function () { confirmDelete = { kind: "order", id: d.id }; closeModal(); renderConfirm(); });
+
+    document.getElementById("modalSaveBtn").addEventListener("click", function () {
+      var title = document.getElementById("f_title").value.trim();
+      if (!title) { document.getElementById("err_title").textContent = "発注名を入力してください"; document.getElementById("err_title").style.display = "block"; document.getElementById("f_title").classList.add("is-error"); return; }
+      var form = {
+        id: d.id, title: title,
+        contractorId: document.getElementById("f_contractorId").value,
+        projectId: document.getElementById("f_projectId").value,
+        status: document.getElementById("f_status").value,
+        startDate: document.getElementById("f_startDate").value,
+        completionDate: document.getElementById("f_completionDate").value,
+        orderAmount: document.getElementById("f_orderAmount").value,
+        createdAt: d.createdAt || Date.now()
+      };
+      if (isEdit) {
+        persistOrders(state.orders.map(function (o) { return o.id === form.id ? Object.assign({}, o, form) : o; }));
+        showToast("発注を更新しました");
+      } else {
+        form.id = "o-" + Date.now();
+        persistOrders([form].concat(state.orders));
+        showToast("発注を追加しました");
+      }
+      closeModal();
+      renderResults();
+    });
+  }
+
+  function orderOptionsForContractor(contractorId, selectedId) {
+    var list = state.orders.filter(function (o) { return !contractorId || o.contractorId === contractorId; });
+    return '<option value="">発注を指定しない</option>' + list.map(function (o) {
+      return '<option value="' + o.id + '"' + (selectedId===o.id?" selected":"") + '>' + esc(o.title) + '</option>';
+    }).join("");
+  }
+
+  function renderPaymentModal() {
+    var root = document.getElementById("modalRoot");
+    var d = editModal.data, isEdit = editModal.isEdit;
+    var statusOptions = PAYMENT_STATUS.map(function (s) { return '<option value="' + s.id + '"' + (d.status===s.id?" selected":"") + '>' + esc(s.label) + '</option>'; }).join("");
+
+    root.innerHTML =
+      '<div class="modal-overlay" id="modalOverlay"><div class="modal" role="dialog" aria-modal="true">' +
+      '<div class="modal__header"><h2>' + (isEdit ? "支払いを編集" : "支払いを追加") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
+      '<div class="modal__body">' +
+      '<div class="field"><label>事業者 <span class="req">*</span></label><select id="f_contractorId">' + contractorOptions(d.contractorId) + '</select><p class="field__error" id="err_contractorId" style="display:none"></p></div>' +
+      '<div class="field"><label>関連する発注 <span class="hint">(任意)</span></label><select id="f_orderId">' + orderOptionsForContractor(d.contractorId, d.orderId) + '</select></div>' +
+      '<div class="field"><label>ステータス</label><select id="f_status">' + statusOptions + '</select></div>' +
+      '<div class="field-row">' +
+      '<div class="field"><label>振込先</label><input type="text" id="f_bankInfo" placeholder="例: ○○銀行 △△支店" value="' + esc(d.bankInfo) + '" /></div>' +
+      '<div class="field"><label>期限</label><input type="date" id="f_dueDate" value="' + esc(d.dueDate) + '" /></div>' +
+      '</div>' +
+      '<div class="field"><label>金額</label><input type="number" id="f_amount" placeholder="例: 300000" value="' + esc(d.amount) + '" /></div>' +
+      '</div><div class="modal__footer">' +
+      (isEdit ? '<button class="btn btn--danger-ghost" id="modalDeleteBtn">' + ICON_TRASH + ' 削除</button>' : '<span></span>') +
+      '<div class="modal__footer-right"><button class="btn btn--ghost" id="modalCancelBtn">キャンセル</button><button class="btn btn--primary" id="modalSaveBtn">' + (isEdit ? "保存" : "追加") + '</button></div>' +
+      '</div></div></div>';
+
+    document.getElementById("f_contractorId").addEventListener("change", function (e) {
+      document.getElementById("f_orderId").innerHTML = orderOptionsForContractor(e.target.value, "");
+    });
+    document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+    document.getElementById("modalCancelBtn").addEventListener("click", closeModal);
+    document.getElementById("modalOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "modalOverlay") closeModal(); });
+    document.getElementById("f_contractorId").focus();
+    if (isEdit) document.getElementById("modalDeleteBtn").addEventListener("click", function () { confirmDelete = { kind: "payment", id: d.id }; closeModal(); renderConfirm(); });
+
+    document.getElementById("modalSaveBtn").addEventListener("click", function () {
+      var contractorId = document.getElementById("f_contractorId").value;
+      if (!contractorId) { document.getElementById("err_contractorId").textContent = "事業者を選択してください"; document.getElementById("err_contractorId").style.display = "block"; document.getElementById("f_contractorId").classList.add("is-error"); return; }
+      var form = {
+        id: d.id, contractorId: contractorId,
+        orderId: document.getElementById("f_orderId").value,
+        status: document.getElementById("f_status").value,
+        bankInfo: document.getElementById("f_bankInfo").value.trim(),
+        dueDate: document.getElementById("f_dueDate").value,
+        amount: document.getElementById("f_amount").value
+      };
+      if (isEdit) {
+        persistPayments(state.payments.map(function (p) { return p.id === form.id ? Object.assign({}, p, form) : p; }));
+        showToast("支払いを更新しました");
+      } else {
+        form.id = "pay-" + Date.now();
+        persistPayments([form].concat(state.payments));
+        showToast("支払いを追加しました");
+      }
+      closeModal();
+      renderResults();
+    });
+  }
+
+  function renderBillingModal() {
+    var root = document.getElementById("modalRoot");
+    var d = editModal.data, isEdit = editModal.isEdit;
+    var statusOptions = BILLING_STATUS.map(function (s) { return '<option value="' + s.id + '"' + (d.status===s.id?" selected":"") + '>' + esc(s.label) + '</option>'; }).join("");
+
+    root.innerHTML =
+      '<div class="modal-overlay" id="modalOverlay"><div class="modal" role="dialog" aria-modal="true">' +
+      '<div class="modal__header"><h2>' + (isEdit ? "請求を編集" : "請求を追加") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
+      '<div class="modal__body">' +
+      '<div class="field"><label>案件 <span class="req">*</span></label><select id="f_projectId">' + projectOptions(d.projectId) + '</select><p class="field__error" id="err_projectId" style="display:none"></p></div>' +
+      '<div class="field"><label>ステータス</label><select id="f_status">' + statusOptions + '</select></div>' +
+      '<div class="field-row">' +
+      '<div class="field"><label>完工日</label><input type="date" id="f_completionDate" value="' + esc(d.completionDate) + '" /></div>' +
+      '<div class="field"><label>次回入金予定日</label><input type="date" id="f_nextPaymentDate" value="' + esc(d.nextPaymentDate) + '" /></div>' +
+      '</div>' +
+      '<div class="field-row">' +
+      '<div class="field"><label>売上合計</label><input type="number" id="f_totalAmount" placeholder="例: 1250000" value="' + esc(d.totalAmount) + '" /></div>' +
+      '<div class="field"><label>入金済み金額</label><input type="number" id="f_receivedAmount" placeholder="例: 500000" value="' + esc(d.receivedAmount) + '" /></div>' +
+      '</div>' +
+      '<p class="field-note" id="billingPreview"></p>' +
+      '</div><div class="modal__footer">' +
+      (isEdit ? '<button class="btn btn--danger-ghost" id="modalDeleteBtn">' + ICON_TRASH + ' 削除</button>' : '<span></span>') +
+      '<div class="modal__footer-right"><button class="btn btn--ghost" id="modalCancelBtn">キャンセル</button><button class="btn btn--primary" id="modalSaveBtn">' + (isEdit ? "保存" : "追加") + '</button></div>' +
+      '</div></div></div>';
+
+    function updatePreview() {
+      var total = Number(document.getElementById("f_totalAmount").value) || 0;
+      var received = Number(document.getElementById("f_receivedAmount").value) || 0;
+      var unpaid = total - received;
+      var rate = total > 0 ? Math.round((received / total) * 100) : 0;
+      document.getElementById("billingPreview").textContent = "未入金 " + fmtYen(unpaid) + " ・ 回収率 " + rate + "%";
+    }
+    ["f_totalAmount","f_receivedAmount"].forEach(function (id) {
+      document.getElementById(id).addEventListener("input", updatePreview);
+    });
+    updatePreview();
+
+    document.getElementById("f_projectId").addEventListener("change", function (e) {
+      if (isEdit) return;
+      var p = state.projects.find(function (x) { return x.id === e.target.value; });
+      if (p && p.contractAmount && !document.getElementById("f_totalAmount").value) {
+        document.getElementById("f_totalAmount").value = p.contractAmount;
+        updatePreview();
+      }
+    });
+
+    document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+    document.getElementById("modalCancelBtn").addEventListener("click", closeModal);
+    document.getElementById("modalOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "modalOverlay") closeModal(); });
+    document.getElementById("f_projectId").focus();
+    if (isEdit) document.getElementById("modalDeleteBtn").addEventListener("click", function () { confirmDelete = { kind: "billing", id: d.id }; closeModal(); renderConfirm(); });
+
+    document.getElementById("modalSaveBtn").addEventListener("click", function () {
+      var projectId = document.getElementById("f_projectId").value;
+      if (!projectId) { document.getElementById("err_projectId").textContent = "案件を選択してください"; document.getElementById("err_projectId").style.display = "block"; document.getElementById("f_projectId").classList.add("is-error"); return; }
+      var form = {
+        id: d.id, projectId: projectId,
+        status: document.getElementById("f_status").value,
+        completionDate: document.getElementById("f_completionDate").value,
+        nextPaymentDate: document.getElementById("f_nextPaymentDate").value,
+        totalAmount: document.getElementById("f_totalAmount").value,
+        receivedAmount: document.getElementById("f_receivedAmount").value,
+        createdAt: d.createdAt || Date.now()
+      };
+      if (isEdit) {
+        persistBillings(state.billings.map(function (bl) { return bl.id === form.id ? Object.assign({}, bl, form) : bl; }));
+        showToast("請求を更新しました");
+      } else {
+        form.id = "bl-" + Date.now();
+        persistBillings([form].concat(state.billings));
+        showToast("請求を追加しました");
+      }
+      closeModal();
+      renderResults();
+    });
+  }
+
+  function renderConfirm() {
+    var root = document.getElementById("modalRoot");
+    if (!confirmDelete) { root.innerHTML = ""; return; }
+    var labelMap = { contractor: "協力業者", order: "発注", payment: "支払い", billing: "請求" };
+    root.innerHTML =
+      '<div class="modal-overlay" id="confirmOverlay"><div class="confirm-box">' + ICON_ALERT +
+      '<h3>この' + labelMap[confirmDelete.kind] + 'を削除しますか?</h3><p>削除すると元に戻せません。</p>' +
+      '<div class="confirm-box__actions"><button class="btn btn--ghost btn--sm" id="confirmCancelBtn">キャンセル</button>' +
+      '<button class="btn btn--danger-ghost btn--sm" id="confirmDeleteBtn">削除する</button></div></div></div>';
+    document.getElementById("confirmOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "confirmOverlay") { confirmDelete = null; renderConfirm(); } });
+    document.getElementById("confirmCancelBtn").addEventListener("click", function () { confirmDelete = null; renderConfirm(); });
+    document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
+      if (confirmDelete.kind === "contractor") {
+        persistContractors(state.contractors.filter(function (c) { return c.id !== confirmDelete.id; }));
+        showToast("協力業者を削除しました");
+      } else if (confirmDelete.kind === "order") {
+        persistOrders(state.orders.filter(function (o) { return o.id !== confirmDelete.id; }));
+        showToast("発注を削除しました");
+      } else if (confirmDelete.kind === "payment") {
+        persistPayments(state.payments.filter(function (p) { return p.id !== confirmDelete.id; }));
+        showToast("支払いを削除しました");
+      } else {
+        persistBillings(state.billings.filter(function (bl) { return bl.id !== confirmDelete.id; }));
+        showToast("請求を削除しました");
+      }
+      confirmDelete = null;
+      renderConfirm();
+      renderResults();
+    });
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      if (editModal) closeModal();
+      if (confirmDelete) { confirmDelete = null; renderConfirm(); }
+    }
+  });
+
+  document.getElementById("searchInput").addEventListener("input", function (e) { state.search = e.target.value; renderResults(); });
+  document.getElementById("btnCreate").addEventListener("click", function () {
+    if (state.tab === "contractors") openContractorModal(false, null);
+    else if (state.tab === "orders") openOrderModal(false, null);
+    else if (state.tab === "payments") openPaymentModal(false, null);
+    else openBillingModal(false, null);
+  });
+
+  function setSidebar(open) {
+    document.getElementById("sidebar").classList.toggle("is-open", open);
+    document.getElementById("shellWrap").classList.toggle("sidebar-open", open);
+    document.getElementById("sidebarOverlay").classList.toggle("is-open", open && window.innerWidth <= 960);
+  }
+  document.getElementById("hamburgerBtn").addEventListener("click", function () {
+    setSidebar(!document.getElementById("sidebar").classList.contains("is-open"));
+  });
+  document.getElementById("sidebarOverlay").addEventListener("click", function () { setSidebar(false); });
+  setSidebar(window.innerWidth > 960);
+
+  function init() {
+    renderOccupationTabs();
+    renderResults();
+    Promise.all([storageGet(CONTRACTORS_KEY), storageGet(PROJECTS_KEY), storageGet(ORDERS_KEY), storageGet(PAYMENTS_KEY), storageGet(BILLINGS_KEY)]).then(function (res) {
+      var cData = null, pData = null, oData = null, payData = null, blData = null;
+      try { cData = res[0] && res[0].value ? JSON.parse(res[0].value) : null; } catch (e) {}
+      try { pData = res[1] && res[1].value ? JSON.parse(res[1].value) : null; } catch (e) {}
+      try { oData = res[2] && res[2].value ? JSON.parse(res[2].value) : null; } catch (e) {}
+      try { payData = res[3] && res[3].value ? JSON.parse(res[3].value) : null; } catch (e) {}
+      try { blData = res[4] && res[4].value ? JSON.parse(res[4].value) : null; } catch (e) {}
+      state.contractors = Array.isArray(cData) ? cData : seedContractors();
+      state.projects = Array.isArray(pData) ? pData : [];
+      state.orders = Array.isArray(oData) ? oData : seedOrders();
+      state.payments = Array.isArray(payData) ? payData : seedPayments();
+      state.billings = Array.isArray(blData) ? blData : seedBillings();
+      if (!Array.isArray(cData)) storageSet(CONTRACTORS_KEY, JSON.stringify(state.contractors));
+      if (!Array.isArray(oData)) storageSet(ORDERS_KEY, JSON.stringify(state.orders));
+      if (!Array.isArray(payData)) storageSet(PAYMENTS_KEY, JSON.stringify(state.payments));
+      if (!Array.isArray(blData)) storageSet(BILLINGS_KEY, JSON.stringify(state.billings));
+      state.loading = false;
+      renderResults();
+    }).catch(function () {
+      state.contractors = seedContractors();
+      state.projects = [];
+      state.orders = seedOrders();
+      state.payments = seedPayments();
+      state.billings = seedBillings();
+      state.loading = false;
+      renderResults();
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

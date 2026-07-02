@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>設定 | 太豊建設アプリ</title>
+<style>
+  :root {
+    --bg: #F6F5FB; --surface: #FFFFFF; --primary: #6C47FF; --primary-dark: #5636D9;
+    --primary-soft: #EFEAFF; --text: #1E1B2E; --text-secondary: #6B6580; --text-tertiary: #9C97AE;
+    --border: #E7E4F0; --danger: #F0525C; --success: #10B981; --radius: 12px;
+    --shadow-sm: 0 1px 2px rgba(30,27,46,0.06); --shadow-md: 0 8px 24px rgba(30,27,46,0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Hiragino Sans','Yu Gothic','Noto Sans JP',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; }
+  .shell { max-width: 1240px; margin: 0 auto; padding: 20px 20px 60px; }
+
+  .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .page-header__title { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 22px; }
+  .page-header__title .badge-count { font-family: 'Courier New', monospace; font-size: 12px; font-weight: 600; color: var(--primary); background: var(--primary-soft); padding: 3px 9px; border-radius: 100px; }
+  .page-header__actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+  .search-box { position: relative; flex: 1; min-width: 180px; max-width: 280px; }
+  .search-box svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); pointer-events: none; }
+  .search-box input { width: 100%; padding: 10px 12px 10px 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); font-size: 14px; font-family: inherit; color: var(--text); outline: none; }
+  .search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 10px 16px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; white-space: nowrap; }
+  .btn:active { transform: scale(0.97); }
+  .btn--primary { background: var(--primary); color: white; box-shadow: var(--shadow-sm); }
+  .btn--primary:hover { background: var(--primary-dark); }
+  .btn--ghost { background: transparent; color: var(--text-secondary); border-color: var(--border); }
+  .btn--ghost:hover { background: #F1EFFB; }
+  .btn--danger-ghost { background: transparent; color: var(--danger); border-color: #FBD5D8; }
+  .btn--danger-ghost:hover { background: #FEF1F2; }
+  .btn--sm { padding: 7px 12px; font-size: 12.5px; }
+
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; }
+  .icon-btn:hover { background: #F1EFFB; color: var(--text); }
+
+  .module-tabs { display: flex; gap: 6px; margin-bottom: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 5px; flex-wrap: wrap; }
+  .module-tab { display:flex; align-items:center; gap:6px; font-family: inherit; font-weight: 700; font-size: 13px; padding: 8px 14px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; }
+  .module-tab.is-active { background: var(--primary); color: white; }
+  .module-tab.is-disabled { color: var(--text-tertiary); cursor: default; }
+  .module-tab .soon { font-size: 9px; font-weight: 700; background: var(--bg); border: 1px solid var(--border); color: var(--text-tertiary); padding: 1px 6px; border-radius: 999px; }
+
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; overflow-x: auto; }
+  table.data-table { width: 100%; border-collapse: collapse; }
+  .data-table thead th { text-align: left; font-size: 12px; font-weight: 700; color: var(--text-tertiary); padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .data-table tbody tr { border-bottom: 1px solid var(--border); }
+  .data-table tbody tr:last-child { border-bottom: none; }
+  .data-table tbody tr:hover { background: #FBFAFF; }
+  .data-table td { padding: 13px 16px; font-size: 13.5px; vertical-align: middle; white-space: nowrap; }
+  .cell-name { font-weight: 700; background:none; border:none; cursor:pointer; text-align:left; color:inherit; font-family:inherit; font-size:inherit; padding:0; }
+  .cell-actions { text-align: right; }
+  .amount-text { font-family: 'Courier New', monospace; font-weight: 700; }
+  .tax-note { font-size: 10.5px; color: var(--text-tertiary); display:block; }
+
+  .biz-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; max-width: 640px; }
+  .biz-card h3 { font-size: 13px; color: var(--text-tertiary); margin: 20px 0 10px; text-transform: uppercase; letter-spacing: .04em; }
+  .biz-card h3:first-child { margin-top: 0; }
+  .biz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+  .biz-grid .field--full { grid-column: 1 / -1; }
+  @media (max-width: 560px) { .biz-grid { grid-template-columns: 1fr; } }
+
+  .role-badge { display:inline-block; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 999px; color: white; }
+
+  .card-list { display: none; flex-direction: column; gap: 10px; }
+  .data-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; border-left: 4px solid var(--primary); }
+  .data-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .data-card__name { font-weight: 700; font-size: 15px; }
+  .data-card__meta { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 12.5px; color: var(--text-secondary); }
+
+  @media (max-width: 860px) {
+    .table-wrap { display: none; }
+    .card-list { display: flex; }
+    .shell { padding: 14px 12px 80px; }
+    .page-header__title { font-size: 19px; }
+    .search-box { max-width: none; order: 3; flex-basis: 100%; }
+  }
+
+  .empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 60px 20px; color: var(--text-tertiary); gap: 8px; }
+  .empty-state__title { font-weight: 700; color: var(--text); font-size: 15px; margin-top: 6px; }
+  .empty-state__desc { font-size: 13px; margin-bottom: 10px; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 100; }
+  .modal { background: var(--surface); border-radius: 16px; width: 100%; max-width: 480px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--shadow-md); }
+  .modal__header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); }
+  .modal__header h2 { font-size: 17px; font-weight: 700; margin: 0; }
+  .modal__body { padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+  .modal__footer { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1px solid var(--border); }
+  .modal__footer-right { display: flex; gap: 8px; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12.5px; font-weight: 700; color: var(--text-secondary); }
+  .field .req { color: var(--danger); }
+  .field input, .field select, .field textarea { font-family: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; outline: none; color: var(--text); background: var(--surface); width: 100%; }
+  .field input:focus, .field select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+  .field input.is-error, .field select.is-error { border-color: var(--danger); }
+  .field__error { color: var(--danger); font-size: 11.5px; margin: 0; }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; min-width: 0; }
+  .unit-row { display: flex; gap: 6px; }
+  .unit-row select { flex: 1; }
+  @media (max-width: 480px) { .field-row { flex-direction: column; } }
+
+  .confirm-box { background: var(--surface); border-radius: 14px; padding: 20px; max-width: 360px; width: 100%; box-shadow: var(--shadow-md); }
+  .confirm-box__icon { color: var(--danger); margin-bottom: 8px; }
+  .confirm-box h3 { margin: 0 0 6px; font-size: 15px; }
+  .confirm-box p { margin: 0 0 16px; font-size: 13px; color: var(--text-secondary); }
+  .confirm-box__actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--text); color: white; padding: 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-md); z-index: 200; display: flex; align-items: center; gap: 8px; }
+
+  .loading-wrap { display:flex; align-items:center; justify-content:center; padding: 80px 0; color: var(--text-tertiary); font-size: 13px; }
+  .spinner { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--primary-soft); border-top-color: var(--primary); animation: spin .7s linear infinite; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .hamburger-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; flex-shrink: 0; }
+  .hamburger-btn:hover { background: #F1EFFB; }
+  .shell-wrap { transition: margin-left .2s ease; }
+  @media (min-width: 961px) { .shell-wrap.sidebar-open { margin-left: 232px; } }
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 232px; background: var(--surface);
+    border-right: 1px solid var(--border); padding: 18px 12px; display: flex; flex-direction: column;
+    gap: 2px; overflow-y: auto; z-index: 150; transform: translateX(-100%); transition: transform .2s ease;
+  }
+  .sidebar.is-open { transform: translateX(0); box-shadow: var(--shadow-md); }
+  .sidebar__brand { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 15px; color: var(--primary); padding: 6px 10px 16px; text-decoration:none; }
+  .sidebar__section { font-size: 11px; font-weight: 700; color: var(--text-tertiary); padding: 14px 12px 4px; }
+  .sidebar__link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13.5px; font-weight: 700; color: var(--text-secondary); text-decoration: none; }
+  .sidebar__link:hover { background: #F1EFFB; color: var(--text); }
+  .sidebar__link.is-active { background: var(--primary-soft); color: var(--primary); }
+  .sidebar__link.is-disabled { color: var(--text-tertiary); cursor: default; pointer-events: none; }
+  .sidebar__link .soon { margin-left: auto; font-size: 9.5px; font-weight: 700; background: var(--bg); border: 1px solid var(--border); color: var(--text-tertiary); padding: 2px 6px; border-radius: 999px; white-space: nowrap; }
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); z-index: 140; display: none; }
+  .sidebar-overlay.is-open { display: block; }
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <a class="sidebar__brand" href="00_ダッシュボード.html">太豊建設アプリ</a>
+  <a class="sidebar__link" href="00_ダッシュボード.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    ホーム
+  </a>
+  <a class="sidebar__link" href="01_案件管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    案件
+  </a>
+  <a class="sidebar__link" href="02_顧客建物管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    顧客・建物
+  </a>
+  <a class="sidebar__link" href="03_ファイル管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    ファイル
+  </a>
+  <a class="sidebar__link" href="04_日報社内申請.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    日報・社内申請
+  </a>
+  <a class="sidebar__link" href="05_金銭管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9 9a3 3 0 0 1 3-1c1.5 0 3 .8 3 2.2S13.5 12 12 12s-3 .8-3 2.2S10.5 16 12 16a3 3 0 0 0 3-1"/></svg>
+    金銭管理
+  </a>
+  <a class="sidebar__link is-active" href="06_設定.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    設定
+  </a>
+  <a class="sidebar__link" href="07_工程表カレンダー.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    工程表・カレンダー
+  </a>
+  <div class="sidebar__section">サポート</div>
+  <a class="sidebar__link" href="99_ヘルプ.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
+    ヘルプ
+  </a>
+</nav>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="shell-wrap" id="shellWrap">
+<div class="shell">
+  <div class="page-header">
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニュー">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <div class="page-header__title">設定<span class="badge-count" id="countBadge">0件</span></div>
+    <div class="page-header__actions">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="searchInput" placeholder="名称・仕様で検索" />
+      </div>
+      <button class="btn btn--primary" id="btnCreate">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        単価を追加
+      </button>
+    </div>
+  </div>
+
+  <div class="module-tabs">
+    <button class="module-tab is-active" id="tabPriceList">単価表・単位設定</button>
+    <button class="module-tab" id="tabBizInfo">事業者情報</button>
+    <button class="module-tab" id="tabMembers">メンバー管理</button>
+    <button class="module-tab" id="tabTypeSettings">案件/顧客/建物タイプ設定</button>
+  </div>
+
+  <div class="module-tabs" id="typeSubTabs" style="display:none"></div>
+  <div id="resultsArea"></div>
+</div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  function storageGet(key) {
+    return new Promise(function (resolve) {
+      if (window.storage && typeof window.storage.get === "function") {
+        window.storage.get(key, false).then(resolve).catch(function () { resolve(null); });
+      } else {
+        try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
+        catch (e) { resolve(null); }
+      }
+    });
+  }
+  function storageSet(key, value) {
+    return new Promise(function (resolve) {
+      if (window.storage && typeof window.storage.set === "function") {
+        window.storage.set(key, value, false).then(resolve).catch(function () {
+          try { window.localStorage.setItem(key, value); } catch (e) {}
+          resolve({ value: value });
+        });
+      } else {
+        try { window.localStorage.setItem(key, value); } catch (e) {}
+        resolve({ value: value });
+      }
+    });
+  }
+
+  var PRICE_ITEMS_KEY = "taiho_price_items_v2";
+  var BIZ_INFO_KEY = "taiho_biz_info_v1";
+  var MEMBERS_KEY = "taiho_members_v1";
+  var ROLES = [
+    { id: "owner",   label: "オーナー", color: "#6C47FF" },
+    { id: "admin",   label: "管理者",   color: "#F59E0B" },
+    { id: "finance", label: "経理",     color: "#22D3EE" },
+    { id: "member",  label: "一般",     color: "#94A3B8" }
+  ];
+  function roleOf(id) { for (var i=0;i<ROLES.length;i++) if (ROLES[i].id===id) return ROLES[i]; return ROLES[ROLES.length-1]; }
+
+  var TYPE_SETTINGS_CATEGORIES = [
+    { id: "projectStatus", label: "案件ステータス設定", key: "taiho_settings_project_status_v1", hasDone: true, hasHonorific: false },
+    { id: "projectType",   label: "案件タイプ設定",     key: "taiho_settings_project_types_v1",  hasDone: false, hasHonorific: false },
+    { id: "customerType",  label: "顧客タイプ設定",     key: "taiho_settings_customer_types_v1", hasDone: false, hasHonorific: true },
+    { id: "buildingType",  label: "建物タイプ設定",     key: "taiho_settings_building_types_v1", hasDone: false, hasHonorific: false }
+  ];
+  function typeCategoryOf(id) { for (var i=0;i<TYPE_SETTINGS_CATEGORIES.length;i++) if (TYPE_SETTINGS_CATEGORIES[i].id===id) return TYPE_SETTINGS_CATEGORIES[i]; return TYPE_SETTINGS_CATEGORIES[0]; }
+
+  function seedProjectStatusList() {
+    return [
+      { id: "inquiry",      label: "依頼受付",     color: "#94A3B8", done: false },
+      { id: "survey",       label: "現調",         color: "#60A5FA", done: false },
+      { id: "estimating",   label: "見積中",       color: "#FBBF24", done: false },
+      { id: "estimated",    label: "見積提出済",   color: "#F59E0B", done: false },
+      { id: "ordered",      label: "受注",         color: "#6C47FF", done: false },
+      { id: "before_start", label: "着工前",       color: "#22D3EE", done: false },
+      { id: "in_progress",  label: "着工(施工中)", color: "#FB923C", done: false },
+      { id: "completed",    label: "完工",         color: "#34D399", done: false },
+      { id: "cost_fixed",   label: "原価確定",     color: "#2DD4BF", done: false },
+      { id: "lost",         label: "失注",         color: "#F87171", done: true  },
+      { id: "settled",      label: "精算完了",     color: "#10B981", done: true  }
+    ];
+  }
+  function seedProjectTypeList() {
+    return [
+      { id: "septic",   label: "浄化槽", color: "#38BDF8" },
+      { id: "civil",    label: "土木", color: "#A78BFA" },
+      { id: "new",      label: "新築", color: "#6C47FF" },
+      { id: "exterior", label: "外構", color: "#F59E0B" },
+      { id: "reform",   label: "リフォーム", color: "#34D399" },
+      { id: "super",    label: "スーパーハウス", color: "#F472B6" },
+      { id: "demo",     label: "解体", color: "#94A3B8" },
+      { id: "factory",  label: "工場", color: "#22D3EE" },
+      { id: "office",   label: "事務所、テナント", color: "#FB923C" }
+    ];
+  }
+  function seedCustomerTypeList() {
+    return [
+      { id: "individual", label: "個人", color: "#60A5FA", honorific: "様" },
+      { id: "sole_prop",  label: "個人事業主", color: "#F59E0B", honorific: "様" },
+      { id: "corporate",  label: "法人", color: "#6C47FF", honorific: "御中" }
+    ];
+  }
+  function seedBuildingTypeList() {
+    return [
+      { id: "house",     label: "戸建て",       color: "#34D399" },
+      { id: "apartment", label: "集合住宅",     color: "#38BDF8" },
+      { id: "factory",   label: "工場",         color: "#F472B6" },
+      { id: "office",    label: "事務所、テナント", color: "#FB923C" }
+    ];
+  }
+  function seedForCategory(catId) {
+    if (catId === "projectStatus") return seedProjectStatusList();
+    if (catId === "projectType") return seedProjectTypeList();
+    if (catId === "customerType") return seedCustomerTypeList();
+    return seedBuildingTypeList();
+  }
+  var UNITS_KEY = "taiho_units_v1";
+
+  function esc(str) {
+    return String(str == null ? "" : str).replace(/[&<>"']/g, function (s) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s];
+    });
+  }
+  function fmtYen(v) {
+    if (v === "" || v === null || v === undefined || isNaN(Number(v))) return "-";
+    return "¥" + Math.round(Number(v)).toLocaleString("ja-JP");
+  }
+
+  function seedBizInfo() {
+    return {
+      companyName: "(有)太豊建設", businessType: "工務店",
+      licenseNo: "北海道知事許可(般-7)胆 第04150号",
+      zip: "059-1262", address: "北海道苫小牧市美原町3丁目1番5号",
+      phone: "0144-82-7648", fax: "0144-72-7649",
+      taxId: "T5430002060556", closingMonth: "3月31日",
+      workStart: "08:00", workEnd: "17:00", breakMinutes: 120
+    };
+  }
+  function seedMembers() {
+    return [
+      { id: "m-1", name: "遠藤了介", email: "endo@taiho-kensetsu.co.jp", role: "owner" },
+      { id: "m-2", name: "kouyama", email: "kouyama@taiho-kensetsu.co.jp", role: "admin" },
+      { id: "m-3", name: "soumu", email: "soumu@taiho-kensetsu.co.jp", role: "finance" },
+      { id: "m-4", name: "jimu", email: "jimu@taiho-kensetsu.co.jp", role: "finance" },
+      { id: "m-5", name: "k.aotsuka", email: "k.aotsuka@taiho-kensetsu.co.jp", role: "member" }
+    ];
+  }
+
+  function seedUnits() {
+    return ["式","人工","枚","坪","本","m","m²","m³","台","回","個","ヶ所","kg","ケース","基","系統","時間","日","その他"];
+  }
+  function seedPriceItems() {
+    return [
+      { id: "u-1", name: "玄関ポスト", spec: "", qty: 1, unit: "台", sellPrice: 18000, costPrice: 15000 },
+      { id: "u-2", name: "天井点検口", spec: "", qty: 1, unit: "台", sellPrice: 18216, costPrice: 15180 },
+      { id: "u-3", name: "床下点検口", spec: "", qty: 1, unit: "台", sellPrice: 32832, costPrice: 27360 },
+      { id: "u-4", name: "ビニールクロス", spec: "天井、壁500番", qty: 316, unit: "m²", sellPrice: 455040, costPrice: 379200 },
+      { id: "u-5", name: "枕棚セット", spec: "", qty: 3, unit: "台", sellPrice: 19800, costPrice: 16500 },
+      { id: "u-6", name: "淀", spec: "平成ルーフ 同上", qty: 56, unit: "m", sellPrice: 80640, costPrice: 67200 },
+      { id: "u-7", name: "破風工事", spec: "平成ルーフ 同上", qty: 56, unit: "m", sellPrice: 255360, costPrice: 212800 },
+      { id: "u-8", name: "アスファルトルーフィング", spec: "23kg", qty: 125, unit: "m²", sellPrice: 180000, costPrice: 150000 },
+      { id: "u-9", name: "屋根工事", spec: "平成ルーフ SGL t0.35", qty: 111.6, unit: "m²", sellPrice: 709776, costPrice: 591480 },
+      { id: "u-10", name: "軒天換気", spec: "", qty: 1, unit: "式", sellPrice: 58500, costPrice: 45000 },
+      { id: "u-11", name: "軒天ボード", spec: "", qty: 8, unit: "枚", sellPrice: 29200, costPrice: 23360 },
+      { id: "u-12", name: "出隅施工費", spec: "", qty: 80, unit: "本", sellPrice: 31200, costPrice: 24000 },
+      { id: "u-13", name: "外壁施工費", spec: "", qty: 170, unit: "枚", sellPrice: 331500, costPrice: 255000 },
+      { id: "u-14", name: "施工金物", spec: "スターター、固定金", qty: 1, unit: "式", sellPrice: 182676, costPrice: 140520 },
+      { id: "u-15", name: "出隅部材", spec: "L455", qty: 80, unit: "本", sellPrice: 88400, costPrice: 68000 },
+      { id: "u-16", name: "窯業サイディング", spec: "ネオロック光セラ18", qty: 170, unit: "枚", sellPrice: 663000, costPrice: 510000 },
+      { id: "u-17", name: "トイレ", spec: "LIXIL アメージュ", qty: 1, unit: "式", sellPrice: 158400, costPrice: 144000 },
+      { id: "u-18", name: "洗面化粧台", spec: "LIXIL ピアラ W900", qty: 1, unit: "式", sellPrice: 118800, costPrice: 108000 },
+      { id: "u-19", name: "カップボード", spec: "LIXIL シエラS W2600", qty: 1, unit: "式", sellPrice: 299200, costPrice: 272000 },
+      { id: "u-20", name: "システムキッチン", spec: "LIXIL シエラS W2630", qty: 1, unit: "式", sellPrice: 492800, costPrice: 448000 },
+      { id: "u-21", name: "ユニットバス", spec: "LIXIL リデア1616", qty: 1, unit: "式", sellPrice: 457600, costPrice: 416000 },
+      { id: "u-22", name: "空調工事", spec: "エアコン2台 DAIKIN 4.0kw 2.2kw", qty: 1, unit: "式", sellPrice: 636000, costPrice: 530000 },
+      { id: "u-23", name: "暖房工事", spec: "エコジョーズ パネルヒーター", qty: 1, unit: "式", sellPrice: 1351452, costPrice: 1126210 },
+      { id: "u-24", name: "換気工事", spec: "ルフロ400 局所換気", qty: 1, unit: "式", sellPrice: 420000, costPrice: 350000 },
+      { id: "u-25", name: "給排水給湯工事", spec: "", qty: 1, unit: "式", sellPrice: 1026000, costPrice: 855000 },
+      { id: "u-26", name: "給水管分水及び撤去工事", spec: "アスファルト舗装復旧含む", qty: 1, unit: "式", sellPrice: 442853, costPrice: 369044 },
+      { id: "u-27", name: "ポリロンフィルム", spec: "ダンタイト21", qty: 3, unit: "本", sellPrice: 39600, costPrice: 33000 },
+      { id: "u-28", name: "ウレタン", spec: "", qty: 1, unit: "式", sellPrice: 96000, costPrice: 80000 },
+      { id: "u-29", name: "防水テープ", spec: "片面、両面", qty: 20, unit: "本", sellPrice: 16800, costPrice: 14000 },
+      { id: "u-30", name: "気密テープ", spec: "エースクロス", qty: 20, unit: "本", sellPrice: 10080, costPrice: 8400 },
+      { id: "u-31", name: "タイベックシート", spec: "シルバー", qty: 4, unit: "本", sellPrice: 63360, costPrice: 52800 },
+      { id: "u-32", name: "コーキング", spec: "", qty: 15, unit: "本", sellPrice: 12960, costPrice: 7200 },
+      { id: "u-33", name: "屋根断熱材", spec: "スタイロフォーム2種 t20", qty: 68, unit: "枚", sellPrice: 97920, costPrice: 81600 },
+      { id: "u-34", name: "天井断熱材", spec: "ブローイング t300", qty: 85, unit: "m²", sellPrice: 408000, costPrice: 340000 },
+      { id: "u-35", name: "壁断熱材2", spec: "スタイロフォーム3種 t50", qty: 99, unit: "枚", sellPrice: 356400, costPrice: 297000 },
+      { id: "u-36", name: "壁断熱材1", spec: "GW16kg", qty: 17, unit: "本", sellPrice: 153000, costPrice: 127500 },
+      { id: "u-37", name: "基礎断熱材", spec: "スタイロフォーム3種 t50", qty: 111, unit: "枚", sellPrice: 399600, costPrice: 333000 },
+      { id: "u-38", name: "断熱防水工事", spec: "基礎断熱+付加断熱", qty: 1, unit: "式", sellPrice: 1653720, costPrice: 1374500 },
+      { id: "u-39", name: "フローリング", spec: "DAIKEN MYフロア", qty: 72.7, unit: "m²", sellPrice: 318062, costPrice: 254450 },
+      { id: "u-40", name: "石膏ボード", spec: "", qty: 1, unit: "式", sellPrice: 231250, costPrice: 185000 },
+      { id: "u-41", name: "副資材", spec: "釘、ビス、テープ、ボンド等", qty: 92.12, unit: "m²", sellPrice: 287875, costPrice: 230300 },
+      { id: "u-42", name: "大工手間", spec: "", qty: 27.92, unit: "式", sellPrice: 1060960, costPrice: 1060960 },
+      { id: "u-43", name: "構造用金物", spec: "ホールダウン、オネガコーナー他", qty: 1, unit: "式", sellPrice: 187500, costPrice: 150000 },
+      { id: "u-44", name: "外壁用OSB合板", spec: "3*10*t9", qty: 72, unit: "m²", sellPrice: 198000, costPrice: 158400 },
+      { id: "u-45", name: "野地合板", spec: "3*6*t12 実付き", qty: 72, unit: "枚", sellPrice: 189000, costPrice: 151200 },
+      { id: "u-46", name: "厚床合板", spec: "3*6*t24 実付き", qty: 50, unit: "枚", sellPrice: 230000, costPrice: 184000 },
+      { id: "u-47", name: "キャドオプション", spec: "", qty: 92.12, unit: "m²", sellPrice: 34545, costPrice: 27636 },
+      { id: "u-48", name: "材料プレカット、加工費", spec: "", qty: 92.12, unit: "m²", sellPrice: 449085, costPrice: 359268 },
+      { id: "u-49", name: "羽柄材", spec: "", qty: 1, unit: "式", sellPrice: 919030, costPrice: 735224 },
+      { id: "u-50", name: "間柱", spec: "", qty: 1, unit: "式", sellPrice: 263416, costPrice: 210733 },
+      { id: "u-51", name: "構造材", spec: "", qty: 1, unit: "式", sellPrice: 1166046, costPrice: 932837 },
+      { id: "u-52", name: "木工事", spec: "プレカット在来工法", qty: 1, unit: "式", sellPrice: 5534770, costPrice: 4640008 },
+      { id: "u-53", name: "玄関ポーチ仕上げ", spec: "モルタル", qty: 9.7, unit: "m²", sellPrice: 93120, costPrice: 77600 },
+      { id: "u-54", name: "基礎仕上げ", spec: "ドイツ壁", qty: 25.2, unit: "m²", sellPrice: 100800, costPrice: 83992 },
+      { id: "u-55", name: "基礎天端均し", spec: "金鏝仕上げ", qty: 84.8, unit: "m", sellPrice: 76320, costPrice: 63600 },
+      { id: "u-56", name: "パイルカット", spec: "杭頭処理", qty: 45, unit: "本", sellPrice: 70200, costPrice: 58500 },
+      { id: "u-57", name: "ホールダウン", spec: "", qty: 5, unit: "本", sellPrice: 12000, costPrice: 10000 },
+      { id: "u-58", name: "コンクリートポンプ車", spec: "圧送費", qty: 3, unit: "回", sellPrice: 162000, costPrice: 135000 },
+      { id: "u-59", name: "残土運搬処分費", spec: "場外搬出", qty: 16.2, unit: "m³", sellPrice: 77760, costPrice: 64800 },
+      { id: "u-60", name: "防湿コンクリート", spec: "t70", qty: 82.2, unit: "m²", sellPrice: 493200, costPrice: 411000 },
+      { id: "u-61", name: "土間コンクリート", spec: "玄関、ポーチ t150", qty: 9.7, unit: "m²", sellPrice: 128040, costPrice: 106700 },
+      { id: "u-62", name: "断熱材施工費", spec: "防湿コン部分、立ち上げ上部", qty: 84.8, unit: "m", sellPrice: 111936, costPrice: 93280 },
+      { id: "u-63", name: "布基礎", spec: "", qty: 84.8, unit: "m", sellPrice: 2442240, costPrice: 2035200 },
+      { id: "u-64", name: "杭打ち工事", spec: "RCパイル(近隣調査データによる概算)", qty: 1, unit: "式", sellPrice: 540000, costPrice: 450000 },
+      { id: "u-65", name: "遣り方、杭芯", spec: "", qty: 1, unit: "式", sellPrice: 36000, costPrice: 30000 },
+      { id: "u-66", name: "仮設工事", spec: "共通仮設費、直接仮設費", qty: 1, unit: "式", sellPrice: 1065066, costPrice: 891336 },
+      { id: "u-67", name: "コンクリート工事", spec: "地盤改良、基礎、左官", qty: 1, unit: "式", sellPrice: 4415616, costPrice: 3679672 },
+      { id: "u-68", name: "地盤調査費", spec: "", qty: 1, unit: "式", sellPrice: 72000, costPrice: 60000 },
+      { id: "u-69", name: "各種機械器具損料", spec: "", qty: 1, unit: "式", sellPrice: 48000, costPrice: 40000 },
+      { id: "u-70", name: "産廃運搬処分費", spec: "", qty: 92.12, unit: "m²", sellPrice: 298468, costPrice: 248724 },
+      { id: "u-71", name: "竣工時美装費", spec: "", qty: 92.12, unit: "m²", sellPrice: 121598, costPrice: 101332 },
+      { id: "u-72", name: "内部養生費", spec: "", qty: 92.12, unit: "m²", sellPrice: 33163, costPrice: 27636 },
+      { id: "u-73", name: "後片付け清掃費", spec: "敷地内", qty: 92.12, unit: "m²", sellPrice: 73696, costPrice: 61444 },
+      { id: "u-74", name: "内部足場", spec: "", qty: 1, unit: "式", sellPrice: 48000, costPrice: 40000 },
+      { id: "u-75", name: "足場下養生", spec: "", qty: 1, unit: "式", sellPrice: 6000, costPrice: 5000 },
+      { id: "u-76", name: "足場養生ネット", spec: "", qty: 202, unit: "m²", sellPrice: 36360, costPrice: 30300 },
+      { id: "u-77", name: "外部足場損料", spec: "くさび緊結式本足場", qty: 202, unit: "m²", sellPrice: 242400, costPrice: 202000 },
+      { id: "u-78", name: "仮設トイレ", spec: "仮囲い含む", qty: 1, unit: "式", sellPrice: 66000, costPrice: 55000 },
+      { id: "u-79", name: "仮設電気", spec: "", qty: 1, unit: "式", sellPrice: 103500, costPrice: 90000 },
+      { id: "u-80", name: "ルーフデッキ", spec: "スチール折板", qty: 1, unit: "式", sellPrice: 190440, costPrice: 190440 },
+      { id: "u-81", name: "カーポート本体", spec: "LIXIL カーポートST3000 55-55", qty: 1, unit: "基", sellPrice: 288816, costPrice: 262560 },
+      { id: "u-82", name: "コンクリート打設費", spec: "ベース、上部", qty: 2, unit: "回", sellPrice: 100000, costPrice: 100000 },
+      { id: "u-83", name: "舗装工事", spec: "細粒アスコン", qty: 66.1, unit: "m²", sellPrice: 297450, costPrice: 297450 },
+      { id: "u-84", name: "コンクリート圧送費", spec: "ベース、上部", qty: 2, unit: "回", sellPrice: 90000, costPrice: 90000 },
+      { id: "u-85", name: "コンクリート", spec: "24*15", qty: 4.8, unit: "式", sellPrice: 144000, costPrice: 144000 },
+      { id: "u-86", name: "鉄筋", spec: "D13 @200", qty: 360, unit: "本", sellPrice: 86400, costPrice: 86400 },
+      { id: "u-87", name: "型枠", spec: "材工 ベース枠、上部枠", qty: 28, unit: "m²", sellPrice: 235200, costPrice: 196000 },
+      { id: "u-88", name: "切込砂利地業", spec: "再生骨材、路盤圧300mm", qty: 21.3, unit: "m³", sellPrice: 160602, costPrice: 123540 },
+      { id: "u-89", name: "残土処分費", spec: "場外搬出処分", qty: 49.86, unit: "m³", sellPrice: 124650, costPrice: 99720 },
+      { id: "u-90", name: "掘削", spec: "", qty: 49.86, unit: "m³", sellPrice: 149580, costPrice: 119664 }
+    ];
+  }
+
+  var ICON_X = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+  var ICON_TRASH = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/><path d="M10 11v6M14 11v6"/></svg>';
+  var ICON_PENCIL = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+  var ICON_CHECK = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>';
+  var ICON_ALERT = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="confirm-box__icon"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>';
+  var ICON_LIST40 = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>';
+  var ICON_PLUS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
+
+  var state = { tab: "priceList", items: [], units: [], bizInfo: null, members: [], typeSettings: {}, activeTypeCategory: "projectStatus", loading: true, search: "" };
+  var editModal = null;
+  var confirmDeleteId = null;
+  var bizEditing = false;
+
+  var toastTimer = null;
+  function showToast(msg) {
+    var root = document.getElementById("toastRoot");
+    root.innerHTML = '<div class="toast">' + ICON_CHECK + ' ' + esc(msg) + '</div>';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { root.innerHTML = ""; }, 2200);
+  }
+  function persistItems(next) {
+    state.items = next;
+    storageSet(PRICE_ITEMS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+  }
+  function persistUnits(next) {
+    state.units = next;
+    storageSet(UNITS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+  }
+  function persistBizInfo(next) {
+    state.bizInfo = next;
+    return storageSet(BIZ_INFO_KEY, JSON.stringify(next));
+  }
+  function persistMembers(next) {
+    state.members = next;
+    storageSet(MEMBERS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+  }
+
+  function setTab(tab) {
+    state.tab = tab;
+    bizEditing = false;
+    document.getElementById("tabPriceList").classList.toggle("is-active", tab === "priceList");
+    document.getElementById("tabBizInfo").classList.toggle("is-active", tab === "bizInfo");
+    document.getElementById("tabMembers").classList.toggle("is-active", tab === "members");
+    document.getElementById("tabTypeSettings").classList.toggle("is-active", tab === "typeSettings");
+    document.getElementById("searchInput").parentElement.style.display = tab === "priceList" ? "" : "none";
+    document.getElementById("typeSubTabs").style.display = tab === "typeSettings" ? "flex" : "none";
+    document.getElementById("btnCreate").style.display = (tab === "priceList" || tab === "members" || tab === "typeSettings") ? "inline-flex" : "none";
+    document.getElementById("btnCreate").innerHTML = tab === "members"
+      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> メンバーを招待'
+      : (tab === "typeSettings"
+        ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> 項目を追加'
+        : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> 単価を追加');
+    if (tab === "typeSettings") renderTypeSubTabs();
+    renderResults();
+  }
+  document.getElementById("tabPriceList").addEventListener("click", function () { setTab("priceList"); });
+  document.getElementById("tabBizInfo").addEventListener("click", function () { setTab("bizInfo"); });
+  document.getElementById("tabMembers").addEventListener("click", function () { setTab("members"); });
+  document.getElementById("tabTypeSettings").addEventListener("click", function () { setTab("typeSettings"); });
+
+  function renderTypeSubTabs() {
+    var el = document.getElementById("typeSubTabs");
+    el.innerHTML = TYPE_SETTINGS_CATEGORIES.map(function (c) {
+      return '<button class="module-tab' + (state.activeTypeCategory===c.id?" is-active":"") + '" data-cat="' + c.id + '" style="font-size:12.5px;">' + esc(c.label) + '</button>';
+    }).join("");
+    el.querySelectorAll("[data-cat]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.activeTypeCategory = btn.getAttribute("data-cat");
+        renderTypeSubTabs();
+        renderResults();
+      });
+    });
+  }
+
+  function unitOptions(selected) {
+    return state.units.map(function (u) { return '<option value="' + esc(u) + '"' + (selected===u?" selected":"") + '>' + esc(u) + '</option>'; }).join("");
+  }
+
+  function filteredItems() {
+    var q = state.search.trim().toLowerCase();
+    if (!q) return state.items;
+    return state.items.filter(function (it) {
+      return (it.name||"").toLowerCase().indexOf(q) >= 0 || (it.spec||"").toLowerCase().indexOf(q) >= 0;
+    });
+  }
+
+  function renderResults() {
+    var area = document.getElementById("resultsArea");
+    if (state.loading) {
+      area.innerHTML = '<div class="loading-wrap"><span class="spinner"></span> 読み込み中...</div>';
+      document.getElementById("countBadge").textContent = "0件";
+      return;
+    }
+    if (state.tab === "bizInfo") { renderBizInfoTab(area); return; }
+    if (state.tab === "members") { renderMembersTab(area); return; }
+    if (state.tab === "typeSettings") { renderTypeSettingsTab(area); return; }
+
+    var list = filteredItems();
+    document.getElementById("countBadge").textContent = list.length + "件";
+
+    if (list.length === 0) {
+      area.innerHTML =
+        '<div class="empty-state">' + ICON_LIST40 +
+        '<p class="empty-state__title">まだ単価が登録されていません</p><p class="empty-state__desc">「単価を追加」から登録しましょう。</p>' +
+        '<button class="btn btn--primary" id="emptyCreateBtn">' + ICON_PLUS + ' 単価を追加</button></div>';
+      var b = document.getElementById("emptyCreateBtn");
+      if (b) b.addEventListener("click", function () { openModal(false, null); });
+      return;
+    }
+
+    var rows = "", cards = "";
+    list.forEach(function (it) {
+      rows += '<tr>' +
+        '<td><button class="cell-name" data-edit="' + it.id + '">' + esc(it.name) + '</button></td>' +
+        '<td>' + esc(it.spec || "-") + '</td>' +
+        '<td>' + esc(it.qty) + ' ' + esc(it.unit) + '</td>' +
+        '<td class="amount-text">' + fmtYen(it.sellPrice) + (it.coef ? '<span class="tax-note">×' + esc(it.coef==="custom"?it.coefCustom:it.coef) + '</span>' : '') + '</td>' +
+        '<td class="amount-text">' + fmtYen(it.costPrice) + '</td>' +
+        '<td class="cell-actions"><button class="icon-btn" data-edit="' + it.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td></tr>';
+      cards += '<div class="data-card">' +
+        '<div class="data-card__top"><div class="data-card__name">' + esc(it.name) + '</div>' +
+        '<button class="icon-btn" data-edit="' + it.id + '" aria-label="編集">' + ICON_PENCIL + '</button></div>' +
+        '<div class="data-card__meta"><span>' + esc(it.qty) + ' ' + esc(it.unit) + '</span></div>' +
+        '<div class="data-card__meta"><span class="amount-text">販売 ' + fmtYen(it.sellPrice) + '</span><span class="amount-text">原価 ' + fmtYen(it.costPrice) + '</span></div></div>';
+    });
+
+    area.innerHTML =
+      '<div class="table-wrap"><table class="data-table"><thead><tr>' +
+      '<th>名称</th><th>仕様・摘要</th><th>数量</th><th>販売価格</th><th>予定原価</th><th></th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div><div class="card-list">' + cards + '</div>';
+
+    area.querySelectorAll("[data-edit]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var it = state.items.find(function (x) { return x.id === el.getAttribute("data-edit"); });
+        if (it) openModal(true, it);
+      });
+    });
+  }
+
+  function renderBizInfoTab(area) {
+    document.getElementById("countBadge").textContent = "";
+    var b = state.bizInfo || {};
+    if (!bizEditing) {
+      area.innerHTML =
+        '<div class="biz-card">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<h3 style="margin-top:0;">基本情報</h3>' +
+        '<button class="btn btn--ghost btn--sm" id="bizEditBtn">' + ICON_PENCIL + ' 編集</button></div>' +
+        '<table class="data-table" style="border:none;">' +
+        bizRow("会社名・屋号", b.companyName) + bizRow("業者種別", b.businessType) +
+        bizRow("建設業許可番号", b.licenseNo) + bizRow("郵便番号", b.zip) +
+        bizRow("住所", b.address) + bizRow("電話番号", b.phone) + bizRow("FAX", b.fax) +
+        bizRow("適格請求書発行事業者登録番号", b.taxId) + bizRow("決算日", b.closingMonth) +
+        '</table>' +
+        '<h3>勤務時間</h3>' +
+        '<table class="data-table" style="border:none;">' +
+        bizRow("開始時刻", b.workStart) + bizRow("終了時刻", b.workEnd) + bizRow("休憩時間(分)", b.breakMinutes) +
+        '</table></div>';
+      document.getElementById("bizEditBtn").addEventListener("click", function () { bizEditing = true; renderResults(); });
+      return;
+    }
+
+    area.innerHTML =
+      '<div class="biz-card">' +
+      '<h3 style="margin-top:0;">基本情報</h3>' +
+      '<div class="biz-grid">' +
+      bizInput("companyName", "会社名・屋号", b.companyName) + bizInput("businessType", "業者種別", b.businessType) +
+      bizInput("licenseNo", "建設業許可番号", b.licenseNo, true) +
+      bizInput("zip", "郵便番号", b.zip) + bizInput("address", "住所", b.address, true) +
+      bizInput("phone", "電話番号", b.phone) + bizInput("fax", "FAX", b.fax) +
+      bizInput("taxId", "適格請求書発行事業者登録番号", b.taxId, true) + bizInput("closingMonth", "決算日", b.closingMonth) +
+      '</div>' +
+      '<h3>勤務時間</h3>' +
+      '<div class="biz-grid">' +
+      bizInput("workStart", "開始時刻", b.workStart) + bizInput("workEnd", "終了時刻", b.workEnd) +
+      bizInput("breakMinutes", "休憩時間(分)", b.breakMinutes) +
+      '</div>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">' +
+      '<button class="btn btn--ghost btn--sm" id="bizCancelBtn">キャンセル</button>' +
+      '<button class="btn btn--primary btn--sm" id="bizSaveBtn">保存</button></div></div>';
+
+    document.getElementById("bizCancelBtn").addEventListener("click", function () { bizEditing = false; renderResults(); });
+    document.getElementById("bizSaveBtn").addEventListener("click", function () {
+      var next = {};
+      ["companyName","businessType","licenseNo","zip","address","phone","fax","taxId","closingMonth","workStart","workEnd","breakMinutes"].forEach(function (k) {
+        next[k] = document.getElementById("bf_" + k).value.trim();
+      });
+      persistBizInfo(next).then(function () {
+        showToast("事業者情報を保存しました");
+        bizEditing = false;
+        renderResults();
+      }).catch(function () { showToast("保存に失敗しました"); });
+    });
+  }
+  function bizRow(label, value) {
+    return '<tr><td style="color:var(--text-tertiary);font-size:12.5px;width:220px;">' + esc(label) + '</td><td>' + esc(value || "-") + '</td></tr>';
+  }
+  function bizInput(key, label, value, full) {
+    return '<div class="field' + (full ? " field--full" : "") + '"><label>' + esc(label) + '</label><input type="text" id="bf_' + key + '" value="' + esc(value||"") + '" /></div>';
+  }
+
+  function renderMembersTab(area) {
+    document.getElementById("countBadge").textContent = state.members.length + "件";
+    if (state.members.length === 0) {
+      area.innerHTML = '<div class="empty-state">' + ICON_LIST40 +
+        '<p class="empty-state__title">メンバーがいません</p><p class="empty-state__desc">「メンバーを招待」から追加しましょう。</p></div>';
+      return;
+    }
+    var rows = "";
+    state.members.forEach(function (m) {
+      var r = roleOf(m.role);
+      rows += '<tr><td><button class="cell-name" data-medit="' + m.id + '">' + esc(m.name) + '</button></td>' +
+        '<td>' + esc(m.email) + '</td>' +
+        '<td><span class="role-badge" style="background:' + r.color + '">' + esc(r.label) + '</span></td>' +
+        '<td class="cell-actions"><button class="icon-btn" data-medit="' + m.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td></tr>';
+    });
+    area.innerHTML =
+      '<div class="table-wrap"><table class="data-table"><thead><tr><th>ユーザー名</th><th>メールアドレス</th><th>権限</th><th></th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div>';
+    area.querySelectorAll("[data-medit]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var m = state.members.find(function (x) { return x.id === el.getAttribute("data-medit"); });
+        if (m) openMemberModal(true, m);
+      });
+    });
+  }
+
+  function openMemberModal(isEdit, data) {
+    editModal = { kind: "member", isEdit: isEdit, data: data ? Object.assign({}, data) : { name: "", email: "", role: "member" } };
+    renderMemberModal();
+  }
+  function closeMemberModal() { editModal = null; document.getElementById("modalRoot").innerHTML = ""; }
+  function renderMemberModal() {
+    var root = document.getElementById("modalRoot");
+    if (!editModal) { root.innerHTML = ""; return; }
+    var d = editModal.data, isEdit = editModal.isEdit;
+    var roleOptions = ROLES.map(function (r) { return '<option value="' + r.id + '"' + (d.role===r.id?" selected":"") + '>' + esc(r.label) + '</option>'; }).join("");
+    root.innerHTML =
+      '<div class="modal-overlay" id="modalOverlay"><div class="modal" role="dialog" aria-modal="true">' +
+      '<div class="modal__header"><h2>' + (isEdit ? "メンバーを編集" : "メンバーを招待") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
+      '<div class="modal__body">' +
+      '<div class="field"><label>ユーザー名 <span class="req">*</span></label><input type="text" id="f_mname" value="' + esc(d.name) + '" /><p class="field__error" id="err_mname" style="display:none"></p></div>' +
+      '<div class="field"><label>メールアドレス <span class="req">*</span></label><input type="text" id="f_memail" value="' + esc(d.email) + '" /><p class="field__error" id="err_memail" style="display:none"></p></div>' +
+      '<div class="field"><label>権限</label><select id="f_mrole">' + roleOptions + '</select></div>' +
+      '</div><div class="modal__footer">' +
+      (isEdit ? '<button class="btn btn--danger-ghost" id="modalDeleteBtn">' + ICON_TRASH + ' 削除</button>' : '<span></span>') +
+      '<div class="modal__footer-right"><button class="btn btn--ghost" id="modalCancelBtn">キャンセル</button><button class="btn btn--primary" id="modalSaveBtn">' + (isEdit ? "保存" : "招待") + '</button></div>' +
+      '</div></div></div>';
+    document.getElementById("modalCloseBtn").addEventListener("click", closeMemberModal);
+    document.getElementById("modalCancelBtn").addEventListener("click", closeMemberModal);
+    document.getElementById("modalOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "modalOverlay") closeMemberModal(); });
+    document.getElementById("f_mname").focus();
+    if (isEdit) document.getElementById("modalDeleteBtn").addEventListener("click", function () { confirmDeleteId = { kind: "member", id: d.id }; closeMemberModal(); renderConfirm(); });
+    document.getElementById("modalSaveBtn").addEventListener("click", function () {
+      var name = document.getElementById("f_mname").value.trim();
+      var email = document.getElementById("f_memail").value.trim();
+      var ok = true;
+      if (!name) { document.getElementById("err_mname").textContent = "ユーザー名を入力してください"; document.getElementById("err_mname").style.display = "block"; ok = false; }
+      if (!email) { document.getElementById("err_memail").textContent = "メールアドレスを入力してください"; document.getElementById("err_memail").style.display = "block"; ok = false; }
+      if (!ok) return;
+      var form = { id: d.id, name: name, email: email, role: document.getElementById("f_mrole").value };
+      if (isEdit) {
+        persistMembers(state.members.map(function (m) { return m.id === form.id ? Object.assign({}, m, form) : m; }));
+        showToast("メンバーを更新しました");
+      } else {
+        form.id = "m-" + Date.now();
+        persistMembers([form].concat(state.members));
+        showToast("メンバーを招待しました");
+      }
+      closeMemberModal();
+      renderResults();
+    });
+  }
+
+  function persistTypeList(catId, next) {
+    state.typeSettings[catId] = next;
+    storageSet(typeCategoryOf(catId).key, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+  }
+
+  function renderTypeSettingsTab(area) {
+    var cat = typeCategoryOf(state.activeTypeCategory);
+    var list = state.typeSettings[cat.id] || [];
+    document.getElementById("countBadge").textContent = list.length + "件";
+
+    if (list.length === 0) {
+      area.innerHTML = '<div class="empty-state">' + ICON_LIST40 +
+        '<p class="empty-state__title">まだ項目がありません</p><p class="empty-state__desc">「項目を追加」から登録しましょう。</p></div>';
+      return;
+    }
+
+    var rows = "";
+    list.forEach(function (t) {
+      rows += '<tr>' +
+        '<td><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:' + esc(t.color) + ';vertical-align:middle;margin-right:8px;"></span>' +
+        '<button class="cell-name" data-tedit="' + t.id + '">' + esc(t.label) + '</button></td>' +
+        (cat.hasHonorific ? '<td>' + esc(t.honorific || "-") + '</td>' : '') +
+        (cat.hasDone ? '<td>' + (t.done ? "✓ 完了とみなす" : "-") + '</td>' : '') +
+        '<td class="cell-actions"><button class="icon-btn" data-tedit="' + t.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td></tr>';
+    });
+    area.innerHTML =
+      '<div class="table-wrap"><table class="data-table"><thead><tr><th>名称</th>' +
+      (cat.hasHonorific ? '<th>帳票敬称</th>' : '') + (cat.hasDone ? '<th>完了とみなす</th>' : '') +
+      '<th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+
+    area.querySelectorAll("[data-tedit]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var t = list.find(function (x) { return x.id === el.getAttribute("data-tedit"); });
+        if (t) openTypeModal(true, t);
+      });
+    });
+  }
+
+  function openTypeModal(isEdit, data) {
+    var cat = typeCategoryOf(state.activeTypeCategory);
+    editModal = { kind: "typeItem", isEdit: isEdit, category: cat.id, data: data ? Object.assign({}, data) : { label: "", color: "#6C47FF", done: false, honorific: "様" } };
+    renderTypeModal();
+  }
+  function closeTypeModal() { editModal = null; document.getElementById("modalRoot").innerHTML = ""; }
+  function renderTypeModal() {
+    var root = document.getElementById("modalRoot");
+    if (!editModal) { root.innerHTML = ""; return; }
+    var cat = typeCategoryOf(editModal.category), d = editModal.data, isEdit = editModal.isEdit;
+    root.innerHTML =
+      '<div class="modal-overlay" id="modalOverlay"><div class="modal" role="dialog" aria-modal="true">' +
+      '<div class="modal__header"><h2>' + (isEdit ? cat.label + "を編集" : cat.label + "を追加") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
+      '<div class="modal__body">' +
+      '<div class="field"><label>名称 <span class="req">*</span></label><input type="text" id="f_tlabel" value="' + esc(d.label) + '" /><p class="field__error" id="err_tlabel" style="display:none"></p></div>' +
+      '<div class="field" style="max-width:120px"><label>色</label><input type="color" id="f_tcolor" value="' + esc(d.color) + '" style="height:40px;padding:4px;" /></div>' +
+      (cat.hasHonorific ? '<div class="field"><label>帳票敬称</label><input type="text" id="f_thonorific" value="' + esc(d.honorific||"") + '" /></div>' : '') +
+      (cat.hasDone ? '<label class="toggle-check" style="margin-top:4px;"><input type="checkbox" id="f_tdone"' + (d.done?" checked":"") + ' /> このステータスは完了とみなす</label>' : '') +
+      '</div><div class="modal__footer">' +
+      (isEdit ? '<button class="btn btn--danger-ghost" id="modalDeleteBtn">' + ICON_TRASH + ' 削除</button>' : '<span></span>') +
+      '<div class="modal__footer-right"><button class="btn btn--ghost" id="modalCancelBtn">キャンセル</button><button class="btn btn--primary" id="modalSaveBtn">' + (isEdit ? "保存" : "追加") + '</button></div>' +
+      '</div></div></div>';
+    document.getElementById("modalCloseBtn").addEventListener("click", closeTypeModal);
+    document.getElementById("modalCancelBtn").addEventListener("click", closeTypeModal);
+    document.getElementById("modalOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "modalOverlay") closeTypeModal(); });
+    document.getElementById("f_tlabel").focus();
+    if (isEdit) document.getElementById("modalDeleteBtn").addEventListener("click", function () { confirmDeleteId = { kind: "typeItem", id: d.id }; closeTypeModal(); renderConfirm(); });
+    document.getElementById("modalSaveBtn").addEventListener("click", function () {
+      var label = document.getElementById("f_tlabel").value.trim();
+      if (!label) { document.getElementById("err_tlabel").textContent = "名称を入力してください"; document.getElementById("err_tlabel").style.display = "block"; return; }
+      var form = { id: d.id, label: label, color: document.getElementById("f_tcolor").value };
+      if (cat.hasHonorific) form.honorific = document.getElementById("f_thonorific").value.trim();
+      if (cat.hasDone) form.done = document.getElementById("f_tdone").checked;
+      var list = state.typeSettings[cat.id] || [];
+      if (isEdit) {
+        persistTypeList(cat.id, list.map(function (t) { return t.id === form.id ? Object.assign({}, t, form) : t; }));
+        showToast(cat.label + "を更新しました");
+      } else {
+        form.id = cat.id + "-" + Date.now();
+        persistTypeList(cat.id, list.concat([form]));
+        showToast(cat.label + "を追加しました");
+      }
+      closeTypeModal();
+      renderResults();
+    });
+  }
+
+  function openModal(isEdit, data) {
+    editModal = { isEdit: isEdit, data: data ? Object.assign({}, data) : { name: "", spec: "", qty: 1, unit: state.units[0] || "式", sellPrice: "", costPrice: "", coef: "" } };
+    renderModal();
+  }
+  function closeModal() { editModal = null; document.getElementById("modalRoot").innerHTML = ""; }
+
+  function renderModal() {
+    var root = document.getElementById("modalRoot");
+    if (!editModal) { root.innerHTML = ""; return; }
+    var d = editModal.data, isEdit = editModal.isEdit;
+
+    root.innerHTML =
+      '<div class="modal-overlay" id="modalOverlay"><div class="modal" role="dialog" aria-modal="true">' +
+      '<div class="modal__header"><h2>' + (isEdit ? "単価を編集" : "単価を追加") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
+      '<div class="modal__body">' +
+      '<div class="field"><label>名称 <span class="req">*</span></label><input type="text" id="f_name" placeholder="例: 玄関ポスト" value="' + esc(d.name) + '" /><p class="field__error" id="err_name" style="display:none"></p></div>' +
+      '<div class="field"><label>仕様・摘要</label><input type="text" id="f_spec" placeholder="例: 天井、壁500番" value="' + esc(d.spec) + '" /></div>' +
+      '<div class="field-row">' +
+      '<div class="field" style="max-width:110px"><label>数量</label><input type="number" id="f_qty" value="' + esc(d.qty) + '" /></div>' +
+      '<div class="field"><label>単位</label><div class="unit-row">' +
+      '<select id="f_unit">' + unitOptions(d.unit) + '</select>' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="addUnitBtn">' + ICON_PLUS + '</button>' +
+      '</div></div>' +
+      '</div>' +
+      '<div class="field-row">' +
+      '<div class="field"><label>予定原価(税抜)</label><input type="number" id="f_costPrice" placeholder="例: 15000" value="' + esc(d.costPrice) + '" /></div>' +
+      '<div class="field" style="max-width:150px"><label>係数</label><select id="f_coef">' +
+      '<option value=""' + (!d.coef?" selected":"") + '>手動入力</option>' +
+      '<option value="1.20"' + (d.coef==="1.20"?" selected":"") + '>×1.20</option>' +
+      '<option value="1.25"' + (d.coef==="1.25"?" selected":"") + '>×1.25</option>' +
+      '<option value="1.30"' + (d.coef==="1.30"?" selected":"") + '>×1.30</option>' +
+      '<option value="1.35"' + (d.coef==="1.35"?" selected":"") + '>×1.35</option>' +
+      '<option value="1.40"' + (d.coef==="1.40"?" selected":"") + '>×1.40</option>' +
+      '<option value="1.45"' + (d.coef==="1.45"?" selected":"") + '>×1.45</option>' +
+      '<option value="1.50"' + (d.coef==="1.50"?" selected":"") + '>×1.50</option>' +
+      '<option value="custom"' + (d.coef==="custom"?" selected":"") + '>その他(入力)</option>' +
+      '</select></div>' +
+      '<div class="field" id="coefCustomWrap" style="max-width:90px;display:' + (d.coef==="custom"?"flex":"none") + '"><label>倍率</label><input type="number" step="0.01" id="f_coefCustom" placeholder="例: 1.32" value="' + esc(d.coefCustom||"") + '" /></div>' +
+      '</div>' +
+      '<div class="field"><label>販売価格(税抜) <span class="hint" style="font-size:11px;color:var(--text-tertiary);font-weight:400;">係数を選ぶと自動計算されます(手動修正も可)</span></label><input type="number" id="f_sellPrice" placeholder="例: 18000" value="' + esc(d.sellPrice) + '" /></div>' +
+      '</div><div class="modal__footer">' +
+      (isEdit ? '<button class="btn btn--danger-ghost" id="modalDeleteBtn">' + ICON_TRASH + ' 削除</button>' : '<span></span>') +
+      '<div class="modal__footer-right"><button class="btn btn--ghost" id="modalCancelBtn">キャンセル</button><button class="btn btn--primary" id="modalSaveBtn">' + (isEdit ? "保存" : "追加") + '</button></div>' +
+      '</div></div></div>';
+
+    function recalcSellPrice() {
+      var coefSel = document.getElementById("f_coef").value;
+      var cost = Number(document.getElementById("f_costPrice").value);
+      var coefValue = null;
+      if (coefSel === "custom") {
+        var cv = Number(document.getElementById("f_coefCustom").value);
+        if (!isNaN(cv) && cv > 0) coefValue = cv;
+      } else if (coefSel) {
+        coefValue = Number(coefSel);
+      }
+      if (coefValue && !isNaN(cost) && cost > 0) {
+        document.getElementById("f_sellPrice").value = Math.round(cost * coefValue);
+      }
+    }
+    document.getElementById("f_coef").addEventListener("change", function () {
+      document.getElementById("coefCustomWrap").style.display = this.value === "custom" ? "flex" : "none";
+      recalcSellPrice();
+    });
+    document.getElementById("f_coefCustom").addEventListener("input", recalcSellPrice);
+    document.getElementById("f_costPrice").addEventListener("input", recalcSellPrice);
+
+    document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+    document.getElementById("modalCancelBtn").addEventListener("click", closeModal);
+    document.getElementById("modalOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "modalOverlay") closeModal(); });
+    document.getElementById("f_name").focus();
+    if (isEdit) document.getElementById("modalDeleteBtn").addEventListener("click", function () { confirmDeleteId = { kind: "item", id: d.id }; closeModal(); renderConfirm(); });
+
+    document.getElementById("addUnitBtn").addEventListener("click", function () {
+      var newUnit = window.prompt("追加する単位名を入力してください(例: セット)");
+      if (!newUnit) return;
+      newUnit = newUnit.trim();
+      if (!newUnit) return;
+      if (state.units.indexOf(newUnit) === -1) {
+        persistUnits(state.units.concat([newUnit]));
+      }
+      var sel = document.getElementById("f_unit");
+      sel.innerHTML = unitOptions(newUnit);
+    });
+
+    document.getElementById("modalSaveBtn").addEventListener("click", function () {
+      var name = document.getElementById("f_name").value.trim();
+      if (!name) { document.getElementById("err_name").textContent = "名称を入力してください"; document.getElementById("err_name").style.display = "block"; document.getElementById("f_name").classList.add("is-error"); return; }
+      var form = {
+        id: d.id, name: name,
+        spec: document.getElementById("f_spec").value.trim(),
+        qty: document.getElementById("f_qty").value,
+        unit: document.getElementById("f_unit").value,
+        sellPrice: document.getElementById("f_sellPrice").value,
+        costPrice: document.getElementById("f_costPrice").value,
+        coef: document.getElementById("f_coef").value,
+        coefCustom: document.getElementById("f_coefCustom").value
+      };
+      if (isEdit) {
+        persistItems(state.items.map(function (it) { return it.id === form.id ? Object.assign({}, it, form) : it; }));
+        showToast("単価を更新しました");
+      } else {
+        form.id = "u-" + Date.now();
+        persistItems([form].concat(state.items));
+        showToast("単価を追加しました");
+      }
+      closeModal();
+      renderResults();
+    });
+  }
+
+  function renderConfirm() {
+    var root = document.getElementById("modalRoot");
+    if (!confirmDeleteId) { root.innerHTML = ""; return; }
+    var labelMap = { item: "単価項目", member: "メンバー", typeItem: "項目" };
+    root.innerHTML =
+      '<div class="modal-overlay" id="confirmOverlay"><div class="confirm-box">' + ICON_ALERT +
+      '<h3>この' + labelMap[confirmDeleteId.kind] + 'を削除しますか?</h3><p>削除すると元に戻せません。</p>' +
+      '<div class="confirm-box__actions"><button class="btn btn--ghost btn--sm" id="confirmCancelBtn">キャンセル</button>' +
+      '<button class="btn btn--danger-ghost btn--sm" id="confirmDeleteBtn">削除する</button></div></div></div>';
+    document.getElementById("confirmOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "confirmOverlay") { confirmDeleteId = null; renderConfirm(); } });
+    document.getElementById("confirmCancelBtn").addEventListener("click", function () { confirmDeleteId = null; renderConfirm(); });
+    document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
+      if (confirmDeleteId.kind === "item") {
+        persistItems(state.items.filter(function (it) { return it.id !== confirmDeleteId.id; }));
+        showToast("単価項目を削除しました");
+      } else if (confirmDeleteId.kind === "member") {
+        persistMembers(state.members.filter(function (m) { return m.id !== confirmDeleteId.id; }));
+        showToast("メンバーを削除しました");
+      } else {
+        var catId = state.activeTypeCategory;
+        var list = state.typeSettings[catId] || [];
+        persistTypeList(catId, list.filter(function (t) { return t.id !== confirmDeleteId.id; }));
+        showToast("項目を削除しました");
+      }
+      confirmDeleteId = null;
+      renderConfirm();
+      renderResults();
+    });
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      if (editModal) closeModal();
+      if (confirmDeleteId) { confirmDeleteId = null; renderConfirm(); }
+    }
+  });
+
+  document.getElementById("searchInput").addEventListener("input", function (e) { state.search = e.target.value; renderResults(); });
+  document.getElementById("btnCreate").addEventListener("click", function () {
+    if (state.tab === "members") openMemberModal(false, null);
+    else if (state.tab === "typeSettings") openTypeModal(false, null);
+    else openModal(false, null);
+  });
+
+  function setSidebar(open) {
+    document.getElementById("sidebar").classList.toggle("is-open", open);
+    document.getElementById("shellWrap").classList.toggle("sidebar-open", open);
+    document.getElementById("sidebarOverlay").classList.toggle("is-open", open && window.innerWidth <= 960);
+  }
+  document.getElementById("hamburgerBtn").addEventListener("click", function () {
+    setSidebar(!document.getElementById("sidebar").classList.contains("is-open"));
+  });
+  document.getElementById("sidebarOverlay").addEventListener("click", function () { setSidebar(false); });
+  setSidebar(window.innerWidth > 960);
+
+  function init() {
+    renderResults();
+    var typeKeys = TYPE_SETTINGS_CATEGORIES.map(function (c) { return storageGet(c.key); });
+    Promise.all([storageGet(PRICE_ITEMS_KEY), storageGet(UNITS_KEY), storageGet(BIZ_INFO_KEY), storageGet(MEMBERS_KEY)].concat(typeKeys)).then(function (res) {
+      var iData = null, uData = null, bData = null, mData = null;
+      try { iData = res[0] && res[0].value ? JSON.parse(res[0].value) : null; } catch (e) {}
+      try { uData = res[1] && res[1].value ? JSON.parse(res[1].value) : null; } catch (e) {}
+      try { bData = res[2] && res[2].value ? JSON.parse(res[2].value) : null; } catch (e) {}
+      try { mData = res[3] && res[3].value ? JSON.parse(res[3].value) : null; } catch (e) {}
+      state.items = Array.isArray(iData) ? iData : seedPriceItems();
+      state.units = Array.isArray(uData) ? uData : seedUnits();
+      state.bizInfo = bData && typeof bData === "object" ? bData : seedBizInfo();
+      state.members = Array.isArray(mData) ? mData : seedMembers();
+      if (!Array.isArray(iData)) storageSet(PRICE_ITEMS_KEY, JSON.stringify(state.items));
+      if (!Array.isArray(uData)) storageSet(UNITS_KEY, JSON.stringify(state.units));
+      if (!bData) storageSet(BIZ_INFO_KEY, JSON.stringify(state.bizInfo));
+      if (!Array.isArray(mData)) storageSet(MEMBERS_KEY, JSON.stringify(state.members));
+
+      TYPE_SETTINGS_CATEGORIES.forEach(function (c, i) {
+        var raw = res[4 + i];
+        var data = null;
+        try { data = raw && raw.value ? JSON.parse(raw.value) : null; } catch (e) {}
+        var list = Array.isArray(data) ? data : seedForCategory(c.id);
+        state.typeSettings[c.id] = list;
+        if (!Array.isArray(data)) storageSet(c.key, JSON.stringify(list));
+      });
+
+      state.loading = false;
+      renderResults();
+    }).catch(function () {
+      state.items = seedPriceItems();
+      state.units = seedUnits();
+      state.bizInfo = seedBizInfo();
+      state.members = seedMembers();
+      TYPE_SETTINGS_CATEGORIES.forEach(function (c) { state.typeSettings[c.id] = seedForCategory(c.id); });
+      state.loading = false;
+      renderResults();
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

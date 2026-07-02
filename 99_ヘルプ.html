@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ヘルプ | 太豊建設アプリ</title>
+<style>
+  :root {
+    --bg: #F6F5FB; --surface: #FFFFFF; --primary: #6C47FF; --primary-dark: #5636D9;
+    --primary-soft: #EFEAFF; --text: #1E1B2E; --text-secondary: #6B6580; --text-tertiary: #9C97AE;
+    --border: #E7E4F0; --danger: #F0525C; --success: #10B981; --radius: 12px;
+    --shadow-sm: 0 1px 2px rgba(30,27,46,0.06); --shadow-md: 0 8px 24px rgba(30,27,46,0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Hiragino Sans','Yu Gothic','Noto Sans JP',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; }
+
+  .shell { max-width: 900px; margin: 0 auto; padding: 20px 20px 60px; }
+
+  .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .page-header__title { font-weight: 900; font-size: 22px; }
+
+  .hamburger-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; flex-shrink: 0; }
+  .hamburger-btn:hover { background: #F1EFFB; }
+  .shell-wrap { transition: margin-left .2s ease; }
+  @media (min-width: 961px) { .shell-wrap.sidebar-open { margin-left: 232px; } }
+
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 232px; background: var(--surface);
+    border-right: 1px solid var(--border); padding: 18px 12px; display: flex; flex-direction: column;
+    gap: 2px; overflow-y: auto; z-index: 150; transform: translateX(-100%); transition: transform .2s ease;
+  }
+  .sidebar.is-open { transform: translateX(0); box-shadow: var(--shadow-md); }
+  .sidebar__brand { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 15px; color: var(--primary); padding: 6px 10px 16px; text-decoration:none; }
+  .sidebar__section { font-size: 11px; font-weight: 700; color: var(--text-tertiary); padding: 14px 12px 4px; }
+  .sidebar__link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13.5px; font-weight: 700; color: var(--text-secondary); text-decoration: none; }
+  .sidebar__link:hover { background: #F1EFFB; color: var(--text); }
+  .sidebar__link.is-active { background: var(--primary-soft); color: var(--primary); }
+  .sidebar__link.is-disabled { color: var(--text-tertiary); cursor: default; pointer-events: none; }
+  .sidebar__link .soon { margin-left: auto; font-size: 9.5px; font-weight: 700; background: var(--bg); border: 1px solid var(--border); color: var(--text-tertiary); padding: 2px 6px; border-radius: 999px; white-space: nowrap; }
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); z-index: 140; display: none; }
+  .sidebar-overlay.is-open { display: block; }
+
+  .toc { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+  .toc a { font-size: 12.5px; font-weight: 700; color: var(--primary); background: var(--primary-soft); padding: 7px 14px; border-radius: 999px; text-decoration: none; }
+  .toc a:hover { background: #E2DBFF; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; margin-bottom: 20px; box-shadow: var(--shadow-sm); }
+  .card h2 { font-size: 17px; margin: 0 0 6px; display: flex; align-items: center; gap: 8px; }
+  .card p.lead { color: var(--text-secondary); font-size: 13.5px; margin: 0 0 18px; }
+
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step {
+    display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 12px;
+    background: var(--bg); border: 1px solid var(--border);
+  }
+  .flow-step__badge {
+    width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 14px; color: white; flex-shrink: 0;
+  }
+  .flow-step__body { flex: 1; }
+  .flow-step__title { font-weight: 700; font-size: 14px; }
+  .flow-step__desc { font-size: 12.5px; color: var(--text-secondary); margin-top: 2px; }
+  .flow-step__amount { font-family: 'Courier New', monospace; font-weight: 800; font-size: 16px; white-space: nowrap; }
+  .flow-arrow { display: flex; justify-content: center; padding: 4px 0; color: var(--text-tertiary); }
+
+  .profit-box {
+    margin-top: 16px; padding: 16px; border-radius: 12px; background: var(--primary-soft);
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  }
+  .profit-box__label { font-weight: 700; font-size: 13.5px; color: var(--primary-dark); }
+  .profit-box__value { font-family: 'Courier New', monospace; font-weight: 900; font-size: 22px; color: var(--primary-dark); }
+
+  .note {
+    font-size: 12.5px; color: var(--text-secondary); background: #FFF8EC; border: 1px solid #F5E3BE;
+    border-radius: 10px; padding: 10px 14px; margin-top: 14px;
+  }
+
+  table.field-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+  table.field-table th { text-align: left; padding: 8px 10px; color: var(--text-tertiary); font-size: 11.5px; border-bottom: 1px solid var(--border); }
+  table.field-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); }
+  table.field-table tr:last-child td { border-bottom: none; }
+
+  .module-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-top: 6px; }
+  .module-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); font-size: 13px; font-weight: 700; text-decoration: none; color: var(--text); }
+  .module-item:hover { background: var(--primary-soft); border-color: var(--primary); }
+  .module-item__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  @media (max-width: 640px) {
+    .shell { padding: 14px 12px 80px; }
+    .flow-step { flex-wrap: wrap; }
+    .flow-step__amount { width: 100%; text-align: right; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <a class="sidebar__brand" href="00_ダッシュボード.html">太豊建設アプリ</a>
+  <a class="sidebar__link" href="00_ダッシュボード.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    ホーム
+  </a>
+  <a class="sidebar__link" href="01_案件管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    案件
+  </a>
+  <a class="sidebar__link" href="02_顧客建物管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    顧客・建物
+  </a>
+  <a class="sidebar__link" href="03_ファイル管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    ファイル
+  </a>
+  <a class="sidebar__link" href="04_日報社内申請.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    日報・社内申請
+  </a>
+  <a class="sidebar__link" href="05_金銭管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9 9a3 3 0 0 1 3-1c1.5 0 3 .8 3 2.2S13.5 12 12 12s-3 .8-3 2.2S10.5 16 12 16a3 3 0 0 0 3-1"/></svg>
+    金銭管理
+  </a>
+  <span class="sidebar__link is-disabled">設定<span class="soon">近日</span></span>
+  <span class="sidebar__link is-disabled">工程表<span class="soon">近日</span></span>
+  <div class="sidebar__section">サポート</div>
+  <a class="sidebar__link is-active" href="99_ヘルプ.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
+    ヘルプ
+  </a>
+</nav>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="shell-wrap" id="shellWrap">
+<div class="shell">
+  <div class="page-header">
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニュー">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <div class="page-header__title">ヘルプ</div>
+  </div>
+
+  <div class="toc">
+    <a href="#money-flow">お金の流れ(契約〜請求)</a>
+    <a href="#terms">用語の意味</a>
+    <a href="#modules">画面ごとの使い方</a>
+  </div>
+
+  <div class="card" id="money-flow">
+    <h2>💰 お金の流れ(契約金額 → 発注 → 支払い → 請求)</h2>
+    <p class="lead">1つの案件の中でお金がどう動くか、塗装工事を例に見てみましょう。</p>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-step__badge" style="background:#6C47FF;">①</div>
+        <div class="flow-step__body">
+          <div class="flow-step__title">案件の契約金額</div>
+          <div class="flow-step__desc">お客さんと契約した金額。①案件管理に入力する。</div>
+        </div>
+        <div class="flow-step__amount">100万円<span style="font-size:11px;color:var(--text-tertiary);font-weight:400;">(税別)</span></div>
+      </div>
+      <div class="flow-arrow">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m0 0-5-5m5 5 5-5"/></svg>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step__badge" style="background:#F59E0B;">②</div>
+        <div class="flow-step__body">
+          <div class="flow-step__title">発注金額</div>
+          <div class="flow-step__desc">塗装屋さんに工事を依頼する金額。⑤金銭管理「発注」に入力する。</div>
+        </div>
+        <div class="flow-step__amount">75万円<span style="font-size:11px;color:var(--text-tertiary);font-weight:400;">(税別)</span></div>
+      </div>
+      <div class="flow-arrow">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m0 0-5-5m5 5 5-5"/></svg>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step__badge" style="background:#22D3EE;">③</div>
+        <div class="flow-step__body">
+          <div class="flow-step__title">支払い金額</div>
+          <div class="flow-step__desc">塗装屋さんに実際に振り込む金額。基本は②と同じ。⑤金銭管理「支払い」に入力する。</div>
+        </div>
+        <div class="flow-step__amount">75万円<span style="font-size:11px;color:var(--text-tertiary);font-weight:400;">(税別)</span></div>
+      </div>
+      <div class="flow-arrow">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m0 0-5-5m5 5 5-5"/></svg>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step__badge" style="background:#10B981;">④</div>
+        <div class="flow-step__body">
+          <div class="flow-step__title">請求金額(売上)</div>
+          <div class="flow-step__desc">お客さんに請求する金額。基本は①と同じ。⑤金銭管理「請求」に入力する。</div>
+        </div>
+        <div class="flow-step__amount">100万円<span style="font-size:11px;color:var(--text-tertiary);font-weight:400;">(税別)</span></div>
+      </div>
+    </div>
+
+    <div class="profit-box">
+      <div class="profit-box__label">この案件の粗利(儲け) = ④請求100万円 − ②発注75万円<span style="font-weight:400;">(いずれも税別)</span></div>
+      <div class="profit-box__value">25万円<span style="font-size:13px;color:var(--primary-dark);font-weight:700;">(税別)</span></div>
+    </div>
+
+    <div class="note">
+      ⚠️ 現在のアプリでは①〜④はそれぞれ別々に入力する仕組みです(自動で連動はしません)。⑤金銭管理の「請求」タブでは、同じ案件に紐づく発注金額の合計と請求金額から、粗利を自動計算して表示します。
+    </div>
+  </div>
+
+  <div class="card" id="terms">
+    <h2>📖 用語の意味</h2>
+    <table class="field-table">
+      <tr><th style="width:120px;">用語</th><th>意味</th></tr>
+      <tr><td><b>契約金額</b></td><td>お客さんと契約した工事代金。①案件管理に入力。</td></tr>
+      <tr><td><b>発注金額</b></td><td>協力業者(職人・工務店など)に払う原価。⑤発注タブに入力。</td></tr>
+      <tr><td><b>支払い</b></td><td>発注金額を実際に振り込む記録。分割払いの場合は複数登録してもよい。</td></tr>
+      <tr><td><b>請求(売上)</b></td><td>お客さんに送る請求金額。基本的に契約金額と同じ。</td></tr>
+      <tr><td><b>粗利</b></td><td>請求金額 − 発注金額の合計。会社に残る利益のおおまかな目安。</td></tr>
+      <tr><td><b>回収率</b></td><td>請求金額のうち、実際に入金された割合(%)。</td></tr>
+    </table>
+  </div>
+
+  <div class="card" id="modules">
+    <h2>🧭 画面ごとの使い方</h2>
+    <p class="lead">各画面の役割です。クリックすると開きます。</p>
+    <div class="module-list">
+      <a class="module-item" href="01_案件管理.html"><span class="module-item__dot" style="background:#6C47FF;"></span>案件管理</a>
+      <a class="module-item" href="02_顧客建物管理.html"><span class="module-item__dot" style="background:#60A5FA;"></span>顧客・建物管理</a>
+      <a class="module-item" href="03_ファイル管理.html"><span class="module-item__dot" style="background:#34D399;"></span>ファイル管理</a>
+      <a class="module-item" href="04_日報社内申請.html"><span class="module-item__dot" style="background:#F59E0B;"></span>日報・社内申請</a>
+      <a class="module-item" href="05_金銭管理.html"><span class="module-item__dot" style="background:#F472B6;"></span>金銭管理</a>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  function setSidebar(open) {
+    document.getElementById("sidebar").classList.toggle("is-open", open);
+    document.getElementById("shellWrap").classList.toggle("sidebar-open", open);
+    document.getElementById("sidebarOverlay").classList.toggle("is-open", open && window.innerWidth <= 960);
+  }
+  document.getElementById("hamburgerBtn").addEventListener("click", function () {
+    setSidebar(!document.getElementById("sidebar").classList.contains("is-open"));
+  });
+  document.getElementById("sidebarOverlay").addEventListener("click", function () { setSidebar(false); });
+  setSidebar(window.innerWidth > 960);
+})();
+</script>
+</body>
+</html>

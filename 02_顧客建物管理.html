@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>顧客・建物管理 | 太豊建設アプリ</title>
+<style>
+  :root {
+    --bg: #F6F5FB; --surface: #FFFFFF; --primary: #6C47FF; --primary-dark: #5636D9;
+    --primary-soft: #EFEAFF; --text: #1E1B2E; --text-secondary: #6B6580; --text-tertiary: #9C97AE;
+    --border: #E7E4F0; --danger: #F0525C; --success: #10B981; --radius: 12px;
+    --shadow-sm: 0 1px 2px rgba(30,27,46,0.06); --shadow-md: 0 8px 24px rgba(30,27,46,0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Hiragino Sans','Yu Gothic','Noto Sans JP',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; }
+
+  .shell { max-width: 1240px; margin: 0 auto; padding: 20px 20px 60px; }
+
+  .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .page-header__title { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 22px; letter-spacing: 0.01em; }
+  .page-header__title .badge-count { font-family: 'Courier New', monospace; font-size: 12px; font-weight: 600; color: var(--primary); background: var(--primary-soft); padding: 3px 9px; border-radius: 100px; }
+  .page-header__actions { display: flex; gap: 10px; align-items: center; }
+
+  .search-box { position: relative; flex: 1; min-width: 200px; max-width: 340px; }
+  .search-box svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); pointer-events: none; }
+  .search-box input { width: 100%; padding: 10px 12px 10px 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); font-size: 14px; font-family: inherit; color: var(--text); outline: none; transition: border-color .15s, box-shadow .15s; }
+  .search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 10px 16px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; transition: transform .1s, background .15s, box-shadow .15s; white-space: nowrap; }
+  .btn:active { transform: scale(0.97); }
+  .btn--primary { background: var(--primary); color: white; box-shadow: var(--shadow-sm); }
+  .btn--primary:hover { background: var(--primary-dark); }
+  .btn--ghost { background: transparent; color: var(--text-secondary); border-color: var(--border); }
+  .btn--ghost:hover { background: #F1EFFB; }
+  .btn--danger-ghost { background: transparent; color: var(--danger); border-color: #FBD5D8; }
+  .btn--danger-ghost:hover { background: #FEF1F2; }
+  .btn--sm { padding: 7px 12px; font-size: 12.5px; }
+
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; }
+  .icon-btn:hover { background: #F1EFFB; color: var(--text); }
+
+  .module-tabs { display: flex; gap: 6px; margin-bottom: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 5px; width: fit-content; }
+  .module-tab { display:flex; align-items:center; gap:6px; font-family: inherit; font-weight: 700; font-size: 14px; padding: 9px 18px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; transition: all .15s; }
+  .module-tab.is-active { background: var(--primary); color: white; }
+
+  .type-tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; scrollbar-width: none; }
+  .type-tabs::-webkit-scrollbar { display: none; }
+  .type-tab { font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 8px 14px; border-radius: 999px; border: 1px solid transparent; background: transparent; color: var(--text-secondary); cursor: pointer; white-space: nowrap; transition: all .15s; }
+  .type-tab:hover { background: #EDEAFA; }
+  .type-tab.is-active { background: var(--text); color: white; }
+
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; overflow-x: auto; }
+  table.data-table { width: 100%; border-collapse: collapse; }
+  .data-table thead th { text-align: left; font-size: 12px; font-weight: 700; color: var(--text-tertiary); padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .data-table tbody tr { border-bottom: 1px solid var(--border); transition: background .12s; }
+  .data-table tbody tr:last-child { border-bottom: none; }
+  .data-table tbody tr:hover { background: #FBFAFF; }
+  .data-table td { padding: 13px 16px; font-size: 13.5px; vertical-align: middle; white-space: nowrap; }
+  .cell-name { font-weight: 700; background:none; border:none; cursor:pointer; text-align:left; color:inherit; font-family:inherit; font-size:inherit; padding:0; }
+  .cell-actions { text-align: right; }
+
+  .type-tag { font-size: 11.5px; font-weight: 700; color: var(--tag-color); background: color-mix(in srgb, var(--tag-color) 12%, white); padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .link-chip { display:inline-flex; align-items:center; gap:4px; font-size:12.5px; font-weight:700; color: var(--primary); background: var(--primary-soft); padding: 4px 10px; border-radius: 999px; border:none; cursor:pointer; }
+  .link-chip:hover { background: #E2DBFF; }
+  .muted { color: var(--text-tertiary); }
+
+  .card-list { display: none; flex-direction: column; gap: 10px; }
+  .data-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; border-left: 4px solid var(--bar-color); }
+  .data-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .data-card__name { font-weight: 700; font-size: 15px; }
+  .data-card__meta { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 12.5px; color: var(--text-secondary); }
+  .data-card__meta span { display: flex; align-items: center; gap: 4px; }
+
+  @media (max-width: 860px) {
+    .table-wrap { display: none; }
+    .card-list { display: flex; }
+    .shell { padding: 14px 12px 80px; }
+    .page-header__title { font-size: 19px; }
+    .search-box { max-width: none; order: 3; flex-basis: 100%; }
+  }
+
+  .empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 60px 20px; color: var(--text-tertiary); gap: 8px; }
+  .empty-state__title { font-weight: 700; color: var(--text); font-size: 15px; margin-top: 6px; }
+  .empty-state__desc { font-size: 13px; margin-bottom: 10px; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 100; }
+  .modal { background: var(--surface); border-radius: 16px; width: 100%; max-width: 480px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--shadow-md); }
+  .modal__header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); }
+  .modal__header h2 { font-size: 17px; font-weight: 700; margin: 0; }
+  .modal__body { padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+  .modal__footer { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1px solid var(--border); }
+  .modal__footer-right { display: flex; gap: 8px; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12.5px; font-weight: 700; color: var(--text-secondary); }
+  .field .req { color: var(--danger); }
+  .field .hint { font-size: 11.5px; color: var(--text-tertiary); font-weight: 400; }
+  .field input, .field select { font-family: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; outline: none; color: var(--text); background: var(--surface); width: 100%; }
+  .field input:focus, .field select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+  .field input.is-error { border-color: var(--danger); }
+  .field__error { color: var(--danger); font-size: 11.5px; margin: 0; }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; min-width: 0; }
+  @media (max-width: 480px) { .field-row { flex-direction: column; } }
+
+  .confirm-box { background: var(--surface); border-radius: 14px; padding: 20px; max-width: 360px; width: 100%; box-shadow: var(--shadow-md); }
+  .confirm-box__icon { color: var(--danger); margin-bottom: 8px; }
+  .confirm-box h3 { margin: 0 0 6px; font-size: 15px; }
+  .confirm-box p { margin: 0 0 16px; font-size: 13px; color: var(--text-secondary); }
+  .confirm-box__actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--text); color: white; padding: 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-md); z-index: 200; display: flex; align-items: center; gap: 8px; }
+
+  .loading-wrap { display:flex; align-items:center; justify-content:center; padding: 80px 0; color: var(--text-tertiary); font-size: 13px; }
+  .spinner { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--primary-soft); border-top-color: var(--primary); animation: spin .7s linear infinite; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------------- サイドバー / ハンバーガー ---------------- */
+  .hamburger-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; flex-shrink: 0; }
+  .hamburger-btn:hover { background: #F1EFFB; }
+  .shell-wrap { transition: margin-left .2s ease; }
+  @media (min-width: 961px) { .shell-wrap.sidebar-open { margin-left: 232px; } }
+
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 232px; background: var(--surface);
+    border-right: 1px solid var(--border); padding: 18px 12px; display: flex; flex-direction: column;
+    gap: 2px; overflow-y: auto; z-index: 150; transform: translateX(-100%); transition: transform .2s ease;
+  }
+  .sidebar.is-open { transform: translateX(0); box-shadow: var(--shadow-md); }
+  .sidebar__brand { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 15px; color: var(--primary); padding: 6px 10px 16px; text-decoration:none; }
+  .sidebar__section { font-size: 11px; font-weight: 700; color: var(--text-tertiary); padding: 14px 12px 4px; }
+  .sidebar__link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13.5px; font-weight: 700; color: var(--text-secondary); text-decoration: none; }
+  .sidebar__link:hover { background: #F1EFFB; color: var(--text); }
+  .sidebar__link.is-active { background: var(--primary-soft); color: var(--primary); }
+  .sidebar__link.is-disabled { color: var(--text-tertiary); cursor: default; pointer-events: none; }
+  .sidebar__link .soon { margin-left: auto; font-size: 9.5px; font-weight: 700; background: var(--bg); border: 1px solid var(--border); color: var(--text-tertiary); padding: 2px 6px; border-radius: 999px; white-space: nowrap; }
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); z-index: 140; display: none; }
+  .sidebar-overlay.is-open { display: block; }
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <a class="sidebar__brand" href="00_ダッシュボード.html">太豊建設アプリ</a>
+  <a class="sidebar__link" href="00_ダッシュボード.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    ホーム
+  </a>
+  <a class="sidebar__link" href="01_案件管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    案件
+  </a>
+  <a class="sidebar__link is-active" href="02_顧客建物管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    顧客・建物
+  </a>
+  <a class="sidebar__link" href="03_ファイル管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    ファイル
+  </a>
+  <a class="sidebar__link" href="04_日報社内申請.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    日報・社内申請
+  </a>
+  <a class="sidebar__link" href="05_金銭管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9 9a3 3 0 0 1 3-1c1.5 0 3 .8 3 2.2S13.5 12 12 12s-3 .8-3 2.2S10.5 16 12 16a3 3 0 0 0 3-1"/></svg>
+    金銭管理
+  </a>
+  <a class="sidebar__link" href="06_設定.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    設定
+  </a>
+  <a class="sidebar__link" href="07_工程表カレンダー.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    工程表・カレンダー
+  </a>
+  <div class="sidebar__section">サポート</div>
+  <a class="sidebar__link" href="99_ヘルプ.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
+    ヘルプ
+  </a>
+</nav>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="shell-wrap" id="shellWrap">
+<div class="shell">
+  <div class="page-header">
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニュー">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <div class="page-header__title" id="pageTitle">顧客・建物管理<span class="badge-count" id="countBadge">0件</span></div>
+    <div class="page-header__actions">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="searchInput" placeholder="顧客名・住所・担当者で検索" />
+      </div>
+      <button class="btn btn--primary" id="btnCreate">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        <span id="btnCreateLabel">顧客を作成</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="module-tabs">
+    <button class="module-tab is-active" id="tabCustomers">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      顧客
+    </button>
+    <button class="module-tab" id="tabBuildings">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v18M4 22h16M4 22H2M20 22h2M14 22V11a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v11M9 6h1M9 10h1M9 14h1M14 6h1M9 18h1"/></svg>
+      建物
+    </button>
+  </div>
+
+  <div class="type-tabs" id="typeTabs"></div>
+  <div id="resultsArea"></div>
+</div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- 保存機能 ---------------- */
+  function storageGet(key) {
+    return new Promise(function (resolve) {
+      if (window.storage && typeof window.storage.get === "function") {
+        window.storage.get(key, false).then(resolve).catch(function () { resolve(null); });
+      } else {
+        try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
+        catch (e) { resolve(null); }
+      }
+    });
+  }
+  function storageSet(key, value) {
+    return new Promise(function (resolve) {
+      if (window.storage && typeof window.storage.set === "function") {
+        window.storage.set(key, value, false).then(resolve).catch(function () {
+          try { window.localStorage.setItem(key, value); } catch (e) {}
+          resolve({ value: value });
+        });
+      } else {
+        try { window.localStorage.setItem(key, value); } catch (e) {}
+        resolve({ value: value });
+      }
+    });
+  }
+
+  /* ---------------- 定数 ---------------- */
+  var CUSTOMERS_KEY = "taiho_customers_v2";
+  var BUILDINGS_KEY = "taiho_buildings_v2";
+  var SETTINGS_CUSTOMER_TYPE_KEY = "taiho_settings_customer_types_v1";
+  var SETTINGS_BUILDING_TYPE_KEY = "taiho_settings_building_types_v1";
+
+  var CUSTOMER_TYPES = [
+    { id: "individual", label: "個人", color: "#60A5FA", honorific: "様" },
+    { id: "sole_prop",  label: "個人事業主", color: "#F59E0B", honorific: "様" },
+    { id: "corporate",  label: "法人", color: "#6C47FF", honorific: "御中" }
+  ];
+  var BUILDING_TYPES = [
+    { id: "house",     label: "戸建て",       color: "#34D399" },
+    { id: "apartment", label: "集合住宅",     color: "#38BDF8" },
+    { id: "factory",   label: "工場",         color: "#F472B6" },
+    { id: "office",    label: "事務所、テナント", color: "#FB923C" }
+  ];
+  var MANAGER_SUGGESTIONS = ["遠藤了介", "kouyama", "soumu", "jimu", "k.aotsuka"];
+
+  function custTypeOf(id) { for (var i=0;i<CUSTOMER_TYPES.length;i++) if (CUSTOMER_TYPES[i].id===id) return CUSTOMER_TYPES[i]; return CUSTOMER_TYPES[0]; }
+  function bldTypeOf(id) { for (var i=0;i<BUILDING_TYPES.length;i++) if (BUILDING_TYPES[i].id===id) return BUILDING_TYPES[i]; return BUILDING_TYPES[0]; }
+
+  function esc(str) {
+    return String(str == null ? "" : str).replace(/[&<>"']/g, function (s) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s];
+    });
+  }
+
+  function seedCustomers() {
+    return [
+      { id: "c-1", typeId: "corporate", name: "(株)ナガワ 登別営業所", manager: "遠藤了介", honorific: "御中", zip: "059-0024", address: "北海道登別市緑町1-2-1", phone: "0143-88-1555" },
+      { id: "c-2", typeId: "corporate", name: "(株)ホンダロジスティクス", manager: "遠藤了介", honorific: "御中", zip: "053-0055", address: "北海道苫小牧市新明町1-2-12", phone: "-" },
+      { id: "c-3", typeId: "individual", name: "北澤真弓", manager: "遠藤了介", honorific: "様", zip: "059-1271", address: "北海道苫小牧市澄川町4-10-9", phone: "-" },
+      { id: "c-4", typeId: "individual", name: "瀬川慎二", manager: "遠藤了介", honorific: "様", zip: "059-1262", address: "北海道苫小牧市美原町1-3-4", phone: "-" },
+      { id: "c-5", typeId: "corporate", name: "日本タルク(株)", manager: "遠藤了介", honorific: "御中", zip: "053-0055", address: "北海道苫小牧市新明町4-21-2", phone: "0144-55-7231" },
+      { id: "c-6", typeId: "individual", name: "今美佳", manager: "遠藤了介", honorific: "様", zip: "053-0821", address: "北海道苫小牧市しらかば町", phone: "090-6697-1819" },
+      { id: "c-7", typeId: "individual", name: "吉田信行", manager: "遠藤了介", honorific: "様", zip: "061-1373", address: "北海道恵庭市恵み野西5-9-5", phone: "080-5118-0425" },
+      { id: "c-8", typeId: "individual", name: "佐藤", manager: "遠藤了介", honorific: "様", zip: "059-1261", address: "北海道苫小牧市ときわ町3-11-12", phone: "090-8373-9049" },
+      { id: "c-9", typeId: "individual", name: "佐々木奈緒美", manager: "遠藤了介", honorific: "様", zip: "053-0807", address: "北海道苫小牧市青葉町2-13-15", phone: "090-9512-6986" },
+      { id: "c-10", typeId: "individual", name: "目黒 秀昭", manager: "遠藤了介", honorific: "様", zip: "053-0823", address: "北海道苫小牧市柏木町", phone: "090-8487-8262" },
+      { id: "c-11", typeId: "individual", name: "新目 輝樹", manager: "遠藤了介", honorific: "様", zip: "059-1271", address: "北海道苫小牧市澄川町", phone: "-" },
+      { id: "c-12", typeId: "individual", name: "【サンプル】太田太郎", manager: "", honorific: "様", zip: "", address: "東京都品川区西五反田1-2-3", phone: "03-1234-5678" },
+      { id: "c-13", typeId: "corporate", name: "【サンプル】ABC不動産株式会社", manager: "", honorific: "御中", zip: "", address: "東京都大田区蒲田2丁目4-5-6", phone: "03-5745-2356" }
+    ];
+  }
+  function seedBuildings() {
+    return [
+      { id: "b-1", typeId: "house", name: "新目様邸", customerId: "c-11", zip: "059-1271", address: "北海道苫小牧市澄川町" },
+      { id: "b-2", typeId: "apartment", name: "【サンプル】蒲田マンション405", customerId: "c-13", zip: "123-4567", address: "東京都大田区蒲田3丁目1-16-15" },
+      { id: "b-3", typeId: "house", name: "【サンプル】太田太郎邸 品川大井", customerId: "c-12", zip: "123-4567", address: "東京都品川区東大井6 7-3" }
+    ];
+  }
+
+  /* ---------------- アイコン ---------------- */
+  var ICON_X = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+  var ICON_PHONE = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.34 1.79.65 2.65a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.43-1.43a2 2 0 0 1 2.11-.45c.86.31 1.75.53 2.65.65A2 2 0 0 1 22 16.92z"/></svg>';
+  var ICON_PIN = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>';
+  var ICON_USERS = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+  var ICON_USERS40 = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+  var ICON_BUILDING40 = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v18M4 22h16M4 22H2M20 22h2M14 22V11a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v11M9 6h1M9 10h1M9 14h1M14 6h1M9 18h1"/></svg>';
+  var ICON_TRASH = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/><path d="M10 11v6M14 11v6"/></svg>';
+  var ICON_PENCIL = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+  var ICON_CHECK = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>';
+  var ICON_ALERT = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="confirm-box__icon"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>';
+
+  /* ---------------- 状態 ---------------- */
+  var state = { tab: "customers", customers: [], buildings: [], loading: true, search: "", activeCustType: "all", activeBldType: "all" };
+  var custModal = null;   // { isEdit, data }
+  var bldModal = null;
+  var confirmDelete = null; // { kind, id }
+
+  var toastTimer = null;
+  function showToast(msg) {
+    var root = document.getElementById("toastRoot");
+    root.innerHTML = '<div class="toast">' + ICON_CHECK + ' ' + esc(msg) + '</div>';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { root.innerHTML = ""; }, 2200);
+  }
+
+  function persistCustomers(next) {
+    state.customers = next;
+    storageSet(CUSTOMERS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+  }
+  function persistBuildings(next) {
+    state.buildings = next;
+    storageSet(BUILDINGS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+  }
+
+  function customerName(id) {
+    var c = state.customers.find(function (x) { return x.id === id; });
+    return c ? c.name : "-";
+  }
+
+  /* ---------------- タブ切替 ---------------- */
+  function setTab(tab) {
+    state.tab = tab;
+    state.search = "";
+    document.getElementById("searchInput").value = "";
+    document.getElementById("tabCustomers").classList.toggle("is-active", tab === "customers");
+    document.getElementById("tabBuildings").classList.toggle("is-active", tab === "buildings");
+    document.getElementById("pageTitle").firstChild.textContent = tab === "customers" ? "顧客・建物管理" : "顧客・建物管理";
+    document.getElementById("searchInput").placeholder = tab === "customers" ? "顧客名・住所・担当者で検索" : "建物名・住所で検索";
+    document.getElementById("btnCreateLabel").textContent = tab === "customers" ? "顧客を作成" : "建物を作成";
+    renderTypeTabs();
+    renderResults();
+  }
+  document.getElementById("tabCustomers").addEventListener("click", function () { setTab("customers"); });
+  document.getElementById("tabBuildings").addEventListener("click", function () { setTab("buildings"); });
+
+  /* ---------------- タイプタブ ---------------- */
+  function renderTypeTabs() {
+    var el = document.getElementById("typeTabs");
+    var list = state.tab === "customers" ? CUSTOMER_TYPES : BUILDING_TYPES;
+    var active = state.tab === "customers" ? state.activeCustType : state.activeBldType;
+    var html = '<button class="type-tab' + (active==="all"?" is-active":"") + '" data-t="all">全て</button>';
+    list.forEach(function (t) {
+      html += '<button class="type-tab' + (active===t.id?" is-active":"") + '" data-t="' + t.id + '">' + esc(t.label) + '</button>';
+    });
+    el.innerHTML = html;
+    el.querySelectorAll(".type-tab").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var v = btn.getAttribute("data-t");
+        if (state.tab === "customers") state.activeCustType = v; else state.activeBldType = v;
+        renderTypeTabs();
+        renderResults();
+      });
+    });
+  }
+
+  /* ---------------- フィルタ ---------------- */
+  function filteredCustomers() {
+    var q = state.search.trim().toLowerCase();
+    return state.customers
+      .filter(function (c) { return state.activeCustType === "all" ? true : c.typeId === state.activeCustType; })
+      .filter(function (c) {
+        if (!q) return true;
+        return (c.name||"").toLowerCase().indexOf(q) >= 0 || (c.address||"").toLowerCase().indexOf(q) >= 0 || (c.manager||"").toLowerCase().indexOf(q) >= 0;
+      });
+  }
+  function filteredBuildings() {
+    var q = state.search.trim().toLowerCase();
+    return state.buildings
+      .filter(function (b) { return state.activeBldType === "all" ? true : b.typeId === state.activeBldType; })
+      .filter(function (b) {
+        if (!q) return true;
+        return (b.name||"").toLowerCase().indexOf(q) >= 0 || (b.address||"").toLowerCase().indexOf(q) >= 0;
+      });
+  }
+
+  /* ---------------- 結果表示 ---------------- */
+  function renderResults() {
+    var area = document.getElementById("resultsArea");
+    if (state.loading) {
+      area.innerHTML = '<div class="loading-wrap"><span class="spinner"></span> 読み込み中...</div>';
+      document.getElementById("countBadge").textContent = "0件";
+      return;
+    }
+    if (state.tab === "customers") renderCustomerResults(area); else renderBuildingResults(area);
+  }
+
+  function renderCustomerResults(area) {
+    var list = filteredCustomers();
+    document.getElementById("countBadge").textContent = list.length + "件";
+    if (list.length === 0) {
+      area.innerHTML =
+        '<div class="empty-state">' + ICON_USERS40 +
+        '<p class="empty-state__title">まだ顧客がいません</p><p class="empty-state__desc">「顧客を作成」から登録しましょう。</p>' +
+        '<button class="btn btn--primary" id="emptyCreateBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> 顧客を作成</button></div>';
+      var b = document.getElementById("emptyCreateBtn");
+      if (b) b.addEventListener("click", function () { openCustomerModal(false, null); });
+      return;
+    }
+    var rows = "", cards = "";
+    list.forEach(function (c) {
+      var t = custTypeOf(c.typeId);
+      rows += '<tr><td><button class="cell-name" data-cedit="' + c.id + '">' + esc(c.name) + '</button></td>' +
+        '<td><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span></td>' +
+        '<td>' + esc(c.manager || "-") + '</td><td>' + esc(c.honorific || "-") + '</td>' +
+        '<td>' + esc(c.zip || "-") + '</td><td>' + esc(c.address || "-") + '</td><td>' + esc(c.phone || "-") + '</td>' +
+        '<td class="cell-actions"><button class="icon-btn" data-cedit="' + c.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td></tr>';
+      cards += '<div class="data-card" style="--bar-color:' + t.color + '">' +
+        '<div class="data-card__top"><div class="data-card__name">' + esc(c.name) + '</div>' +
+        '<button class="icon-btn" data-cedit="' + c.id + '" aria-label="編集">' + ICON_PENCIL + '</button></div>' +
+        '<div class="data-card__meta"><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span>' +
+        (c.manager ? '<span>' + esc(c.manager) + '</span>' : '') + '</div>' +
+        '<div class="data-card__meta">' + (c.phone && c.phone !== "-" ? '<span>' + ICON_PHONE + esc(c.phone) + '</span>' : '') +
+        (c.address ? '<span>' + ICON_PIN + esc(c.address) + '</span>' : '') + '</div></div>';
+    });
+    area.innerHTML =
+      '<div class="table-wrap"><table class="data-table"><thead><tr><th>顧客名</th><th>顧客タイプ</th><th>担当者</th><th>敬称</th><th>郵便番号</th><th>顧客住所</th><th>電話番号</th><th></th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div><div class="card-list">' + cards + '</div>';
+    area.querySelectorAll("[data-cedit]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var c = state.customers.find(function (x) { return x.id === el.getAttribute("data-cedit"); });
+        if (c) openCustomerModal(true, c);
+      });
+    });
+  }
+
+  function renderBuildingResults(area) {
+    var list = filteredBuildings();
+    document.getElementById("countBadge").textContent = list.length + "件";
+    if (list.length === 0) {
+      area.innerHTML =
+        '<div class="empty-state">' + ICON_BUILDING40 +
+        '<p class="empty-state__title">まだ建物がありません</p><p class="empty-state__desc">「建物を作成」から登録しましょう。</p>' +
+        '<button class="btn btn--primary" id="emptyCreateBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> 建物を作成</button></div>';
+      var b = document.getElementById("emptyCreateBtn");
+      if (b) b.addEventListener("click", function () { openBuildingModal(false, null); });
+      return;
+    }
+    var rows = "", cards = "";
+    list.forEach(function (bd) {
+      var t = bldTypeOf(bd.typeId);
+      var custHtml = bd.customerId
+        ? '<button class="link-chip" data-jump="' + bd.customerId + '">' + ICON_USERS + esc(customerName(bd.customerId)) + '</button>'
+        : '<span class="muted">-</span>';
+      rows += '<tr><td><button class="cell-name" data-bedit="' + bd.id + '">' + esc(bd.name) + '</button></td>' +
+        '<td><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span></td>' +
+        '<td>' + custHtml + '</td><td>' + esc(bd.zip || "-") + '</td><td>' + esc(bd.address || "-") + '</td>' +
+        '<td class="cell-actions"><button class="icon-btn" data-bedit="' + bd.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td></tr>';
+      cards += '<div class="data-card" style="--bar-color:' + t.color + '">' +
+        '<div class="data-card__top"><div class="data-card__name">' + esc(bd.name) + '</div>' +
+        '<button class="icon-btn" data-bedit="' + bd.id + '" aria-label="編集">' + ICON_PENCIL + '</button></div>' +
+        '<div class="data-card__meta"><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span>' + custHtml + '</div>' +
+        (bd.address ? '<div class="data-card__meta"><span>' + ICON_PIN + esc(bd.address) + '</span></div>' : '') + '</div>';
+    });
+    area.innerHTML =
+      '<div class="table-wrap"><table class="data-table"><thead><tr><th>建物名</th><th>建物タイプ</th><th>顧客</th><th>郵便番号</th><th>建物住所</th><th></th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div><div class="card-list">' + cards + '</div>';
+    area.querySelectorAll("[data-bedit]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var bd = state.buildings.find(function (x) { return x.id === el.getAttribute("data-bedit"); });
+        if (bd) openBuildingModal(true, bd);
+      });
+    });
+    area.querySelectorAll("[data-jump]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var id = el.getAttribute("data-jump");
+        var c = state.customers.find(function (x) { return x.id === id; });
+        if (c) { setTab("customers"); openCustomerModal(true, c); }
+      });
+    });
+  }
+
+  /* ---------------- 顧客モーダル ---------------- */
+  function openCustomerModal(isEdit, data) {
+    custModal = { isEdit: isEdit, data: data ? Object.assign({}, data) : { typeId: "individual", name: "", manager: "", honorific: "様", zip: "", address: "", phone: "" } };
+    renderCustomerModal();
+  }
+  function closeCustomerModal() { custModal = null; document.getElementById("modalRoot").innerHTML = ""; }
+
+  function renderCustomerModal() {
+    var root = document.getElementById("modalRoot");
+    if (!custModal) { root.innerHTML = ""; return; }
+    var d = custModal.data, isEdit = custModal.isEdit;
+    var typeOptions = CUSTOMER_TYPES.map(function (t) { return '<option value="' + t.id + '"' + (d.typeId===t.id?" selected":"") + '>' + esc(t.label) + '</option>'; }).join("");
+    var managerOptions = MANAGER_SUGGESTIONS.map(function (m) { return '<option value="' + esc(m) + '"></option>'; }).join("");
+
+    root.innerHTML =
+      '<div class="modal-overlay" id="modalOverlay"><div class="modal" role="dialog" aria-modal="true">' +
+      '<div class="modal__header"><h2>' + (isEdit ? "顧客を編集" : "顧客を作成") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
+      '<div class="modal__body">' +
+      '<div class="field"><label>顧客タイプ</label><select id="f_typeId">' + typeOptions + '</select></div>' +
+      '<div class="field"><label>顧客名 <span class="req">*</span></label><input type="text" id="f_name" placeholder="例: 山田太郎" value="' + esc(d.name) + '" /><p class="field__error" id="err_name" style="display:none"></p></div>' +
+      '<div class="field-row"><div class="field"><label>担当者</label><input type="text" id="f_manager" list="managerSuggestions" placeholder="社内担当者" value="' + esc(d.manager) + '" /></div>' +
+      '<div class="field" style="max-width:110px"><label>帳票敬称</label><input type="text" id="f_honorific" value="' + esc(d.honorific) + '" /></div></div>' +
+      '<datalist id="managerSuggestions">' + managerOptions + '</datalist>' +
+      '<div class="field-row"><div class="field" style="max-width:160px"><label>郵便番号</label><input type="text" id="f_zip" placeholder="000-0000" value="' + esc(d.zip) + '" /></div>' +
+      '<div class="field"><label>顧客住所</label><input type="text" id="f_address" placeholder="都道府県から入力" value="' + esc(d.address) + '" /></div></div>' +
+      '<div class="field"><label>電話番号</label><input type="text" id="f_phone" placeholder="000-0000-0000" value="' + esc(d.phone) + '" /></div>' +
+      '</div><div class="modal__footer">' +
+      (isEdit ? '<button class="btn btn--danger-ghost" id="modalDeleteBtn">' + ICON_TRASH + ' 削除</button>' : '<span></span>') +
+      '<div class="modal__footer-right"><button class="btn btn--ghost" id="modalCancelBtn">キャンセル</button><button class="btn btn--primary" id="modalSaveBtn">' + (isEdit ? "保存" : "作成") + '</button></div>' +
+      '</div></div></div>';
+
+    document.getElementById("f_typeId").addEventListener("change", function (e) {
+      var t = custTypeOf(e.target.value);
+      document.getElementById("f_honorific").value = t.honorific;
+    });
+    document.getElementById("modalCloseBtn").addEventListener("click", closeCustomerModal);
+    document.getElementById("modalCancelBtn").addEventListener("click", closeCustomerModal);
+    document.getElementById("modalOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "modalOverlay") closeCustomerModal(); });
+    document.getElementById("f_typeId").focus();
+    if (isEdit) document.getElementById("modalDeleteBtn").addEventListener("click", function () { confirmDelete = { kind: "customer", id: d.id }; closeCustomerModal(); renderConfirm(); });
+
+    document.getElementById("modalSaveBtn").addEventListener("click", function () {
+      var name = document.getElementById("f_name").value.trim();
+      if (!name) { document.getElementById("err_name").textContent = "顧客名を入力してください"; document.getElementById("err_name").style.display = "block"; document.getElementById("f_name").classList.add("is-error"); return; }
+      var form = {
+        id: d.id, typeId: document.getElementById("f_typeId").value, name: name,
+        manager: document.getElementById("f_manager").value.trim(),
+        honorific: document.getElementById("f_honorific").value.trim(),
+        zip: document.getElementById("f_zip").value.trim(),
+        address: document.getElementById("f_address").value.trim(),
+        phone: document.getElementById("f_phone").value.trim()
+      };
+      if (isEdit) {
+        persistCustomers(state.customers.map(function (c) { return c.id === form.id ? Object.assign({}, c, form) : c; }));
+        showToast("顧客を更新しました");
+      } else {
+        form.id = "c-" + Date.now();
+        persistCustomers([form].concat(state.customers));
+        showToast("顧客を作成しました");
+      }
+      closeCustomerModal();
+      renderResults();
+    });
+  }
+
+  /* ---------------- 建物モーダル ---------------- */
+  function openBuildingModal(isEdit, data) {
+    bldModal = { isEdit: isEdit, data: data ? Object.assign({}, data) : { typeId: "house", name: "", customerId: "", zip: "", address: "" } };
+    renderBuildingModal();
+  }
+  function closeBuildingModal() { bldModal = null; document.getElementById("modalRoot").innerHTML = ""; }
+
+  function renderBuildingModal() {
+    var root = document.getElementById("modalRoot");
+    if (!bldModal) { root.innerHTML = ""; return; }
+    var d = bldModal.data, isEdit = bldModal.isEdit;
+    var typeOptions = BUILDING_TYPES.map(function (t) { return '<option value="' + t.id + '"' + (d.typeId===t.id?" selected":"") + '>' + esc(t.label) + '</option>'; }).join("");
+    var custOptions = '<option value="">選択してください</option>' + state.customers.map(function (c) { return '<option value="' + c.id + '"' + (d.customerId===c.id?" selected":"") + '>' + esc(c.name) + '</option>'; }).join("");
+
+    root.innerHTML =
+      '<div class="modal-overlay" id="modalOverlay"><div class="modal" role="dialog" aria-modal="true">' +
+      '<div class="modal__header"><h2>' + (isEdit ? "建物を編集" : "建物を作成") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
+      '<div class="modal__body">' +
+      '<div class="field"><label>建物タイプ</label><select id="f_typeId">' + typeOptions + '</select></div>' +
+      '<div class="field"><label>建物名 <span class="req">*</span></label><input type="text" id="f_name" placeholder="例: 山田様邸" value="' + esc(d.name) + '" /><p class="field__error" id="err_name" style="display:none"></p></div>' +
+      '<div class="field"><label>顧客 <span class="hint">(未登録なら先に顧客タブで作成)</span></label><select id="f_customerId">' + custOptions + '</select></div>' +
+      '<div class="field-row"><div class="field" style="max-width:160px"><label>郵便番号</label><input type="text" id="f_zip" placeholder="000-0000" value="' + esc(d.zip) + '" /></div>' +
+      '<div class="field"><label>建物住所</label><input type="text" id="f_address" placeholder="都道府県から入力" value="' + esc(d.address) + '" /></div></div>' +
+      '</div><div class="modal__footer">' +
+      (isEdit ? '<button class="btn btn--danger-ghost" id="modalDeleteBtn">' + ICON_TRASH + ' 削除</button>' : '<span></span>') +
+      '<div class="modal__footer-right"><button class="btn btn--ghost" id="modalCancelBtn">キャンセル</button><button class="btn btn--primary" id="modalSaveBtn">' + (isEdit ? "保存" : "作成") + '</button></div>' +
+      '</div></div></div>';
+
+    document.getElementById("modalCloseBtn").addEventListener("click", closeBuildingModal);
+    document.getElementById("modalCancelBtn").addEventListener("click", closeBuildingModal);
+    document.getElementById("modalOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "modalOverlay") closeBuildingModal(); });
+    document.getElementById("f_typeId").focus();
+    if (isEdit) document.getElementById("modalDeleteBtn").addEventListener("click", function () { confirmDelete = { kind: "building", id: d.id }; closeBuildingModal(); renderConfirm(); });
+
+    document.getElementById("modalSaveBtn").addEventListener("click", function () {
+      var name = document.getElementById("f_name").value.trim();
+      if (!name) { document.getElementById("err_name").textContent = "建物名を入力してください"; document.getElementById("err_name").style.display = "block"; document.getElementById("f_name").classList.add("is-error"); return; }
+      var form = {
+        id: d.id, typeId: document.getElementById("f_typeId").value, name: name,
+        customerId: document.getElementById("f_customerId").value,
+        zip: document.getElementById("f_zip").value.trim(),
+        address: document.getElementById("f_address").value.trim()
+      };
+      if (isEdit) {
+        persistBuildings(state.buildings.map(function (b) { return b.id === form.id ? Object.assign({}, b, form) : b; }));
+        showToast("建物を更新しました");
+      } else {
+        form.id = "b-" + Date.now();
+        persistBuildings([form].concat(state.buildings));
+        showToast("建物を作成しました");
+      }
+      closeBuildingModal();
+      renderResults();
+    });
+  }
+
+  /* ---------------- 削除確認 ---------------- */
+  function renderConfirm() {
+    var root = document.getElementById("modalRoot");
+    if (!confirmDelete) { root.innerHTML = ""; return; }
+    var isCust = confirmDelete.kind === "customer";
+    root.innerHTML =
+      '<div class="modal-overlay" id="confirmOverlay"><div class="confirm-box">' + ICON_ALERT +
+      '<h3>' + (isCust ? "この顧客を削除しますか?" : "この建物を削除しますか?") + '</h3><p>削除すると元に戻せません。</p>' +
+      '<div class="confirm-box__actions"><button class="btn btn--ghost btn--sm" id="confirmCancelBtn">キャンセル</button>' +
+      '<button class="btn btn--danger-ghost btn--sm" id="confirmDeleteBtn">削除する</button></div></div></div>';
+    document.getElementById("confirmOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "confirmOverlay") { confirmDelete = null; renderConfirm(); } });
+    document.getElementById("confirmCancelBtn").addEventListener("click", function () { confirmDelete = null; renderConfirm(); });
+    document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
+      if (isCust) {
+        var used = state.buildings.some(function (b) { return b.customerId === confirmDelete.id; });
+        if (used) { showToast("この顧客は建物に紐付いているため削除できません"); confirmDelete = null; renderConfirm(); return; }
+        persistCustomers(state.customers.filter(function (c) { return c.id !== confirmDelete.id; }));
+        showToast("顧客を削除しました");
+      } else {
+        persistBuildings(state.buildings.filter(function (b) { return b.id !== confirmDelete.id; }));
+        showToast("建物を削除しました");
+      }
+      confirmDelete = null;
+      renderConfirm();
+      renderResults();
+    });
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      if (custModal) closeCustomerModal();
+      if (bldModal) closeBuildingModal();
+      if (confirmDelete) { confirmDelete = null; renderConfirm(); }
+    }
+  });
+
+  /* ---------------- 静的コントロール ---------------- */
+  document.getElementById("searchInput").addEventListener("input", function (e) { state.search = e.target.value; renderResults(); });
+  document.getElementById("btnCreate").addEventListener("click", function () {
+    if (state.tab === "customers") openCustomerModal(false, null); else openBuildingModal(false, null);
+  });
+
+  function setSidebar(open) {
+    document.getElementById("sidebar").classList.toggle("is-open", open);
+    document.getElementById("shellWrap").classList.toggle("sidebar-open", open);
+    document.getElementById("sidebarOverlay").classList.toggle("is-open", open && window.innerWidth <= 960);
+  }
+  document.getElementById("hamburgerBtn").addEventListener("click", function () {
+    setSidebar(!document.getElementById("sidebar").classList.contains("is-open"));
+  });
+  document.getElementById("sidebarOverlay").addEventListener("click", function () { setSidebar(false); });
+  setSidebar(window.innerWidth > 960);
+
+  /* ---------------- 初期化 ---------------- */
+  function init() {
+    renderTypeTabs();
+    renderResults();
+    Promise.all([
+      storageGet(CUSTOMERS_KEY), storageGet(BUILDINGS_KEY),
+      storageGet(SETTINGS_CUSTOMER_TYPE_KEY), storageGet(SETTINGS_BUILDING_TYPE_KEY)
+    ]).then(function (res) {
+      var cRes = res[0], bRes = res[1], ctRes = res[2], btRes = res[3];
+      var cData = null, bData = null, ctData = null, btData = null;
+      try { cData = cRes && cRes.value ? JSON.parse(cRes.value) : null; } catch (e) {}
+      try { bData = bRes && bRes.value ? JSON.parse(bRes.value) : null; } catch (e) {}
+      try { ctData = ctRes && ctRes.value ? JSON.parse(ctRes.value) : null; } catch (e) {}
+      try { btData = btRes && btRes.value ? JSON.parse(btRes.value) : null; } catch (e) {}
+      state.customers = Array.isArray(cData) ? cData : seedCustomers();
+      state.buildings = Array.isArray(bData) ? bData : seedBuildings();
+      if (!Array.isArray(cData)) storageSet(CUSTOMERS_KEY, JSON.stringify(state.customers));
+      if (!Array.isArray(bData)) storageSet(BUILDINGS_KEY, JSON.stringify(state.buildings));
+
+      // ⑥設定で編集された顧客タイプ・建物タイプがあれば、こちらにも反映する
+      if (Array.isArray(ctData) && ctData.length) {
+        CUSTOMER_TYPES.length = 0;
+        ctData.forEach(function (t) { CUSTOMER_TYPES.push(t); });
+      }
+      if (Array.isArray(btData) && btData.length) {
+        BUILDING_TYPES.length = 0;
+        btData.forEach(function (t) { BUILDING_TYPES.push(t); });
+      }
+
+      state.loading = false;
+      renderTypeTabs();
+      renderResults();
+    }).catch(function () {
+      state.customers = seedCustomers();
+      state.buildings = seedBuildings();
+      state.loading = false;
+      renderResults();
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

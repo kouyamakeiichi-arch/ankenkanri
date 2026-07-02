@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>工程表・カレンダー | 太豊建設アプリ</title>
+<style>
+  :root {
+    --bg: #F6F5FB; --surface: #FFFFFF; --primary: #6C47FF; --primary-dark: #5636D9;
+    --primary-soft: #EFEAFF; --text: #1E1B2E; --text-secondary: #6B6580; --text-tertiary: #9C97AE;
+    --border: #E7E4F0; --danger: #F0525C; --success: #10B981; --radius: 12px;
+    --shadow-sm: 0 1px 2px rgba(30,27,46,0.06); --shadow-md: 0 8px 24px rgba(30,27,46,0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Hiragino Sans','Yu Gothic','Noto Sans JP',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; }
+  .shell { max-width: 1240px; margin: 0 auto; padding: 20px 20px 60px; }
+
+  .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .page-header__title { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 22px; }
+  .page-header__title .badge-count { font-family: 'Courier New', monospace; font-size: 12px; font-weight: 600; color: var(--primary); background: var(--primary-soft); padding: 3px 9px; border-radius: 100px; }
+  .page-header__actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+  .project-select { padding: 10px 34px 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); font-family: inherit; font-size: 14px; color: var(--text); min-width: 200px; max-width: 280px; }
+  .project-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); outline: none; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 10px 16px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; white-space: nowrap; }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn--primary { background: var(--primary); color: white; box-shadow: var(--shadow-sm); }
+  .btn--primary:hover:not(:disabled) { background: var(--primary-dark); }
+  .btn--ghost { background: transparent; color: var(--text-secondary); border-color: var(--border); }
+  .btn--ghost:hover { background: #F1EFFB; }
+  .btn--danger-ghost { background: transparent; color: var(--danger); border-color: #FBD5D8; }
+  .btn--danger-ghost:hover { background: #FEF1F2; }
+  .btn--sm { padding: 7px 12px; font-size: 12.5px; }
+  .btn--lg { padding: 14px 26px; font-size: 15px; }
+
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; }
+  .icon-btn:hover { background: #F1EFFB; color: var(--text); }
+
+  .module-tabs { display: flex; gap: 6px; margin-bottom: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 5px; width: fit-content; }
+  .module-tab { display:flex; align-items:center; gap:6px; font-family: inherit; font-weight: 700; font-size: 14px; padding: 9px 18px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; }
+  .module-tab.is-active { background: var(--primary); color: white; }
+
+  .status-pill { position: relative; display: inline-flex; align-items: center; gap: 6px; background: var(--pill-color); border-radius: 999px; padding: 5px 26px 5px 10px; }
+  .status-pill__dot { width: 6px; height: 6px; border-radius: 50%; background: white; opacity: .9; flex-shrink:0; }
+  .status-pill select { appearance: none; background: transparent; border: none; color: white; font-family: inherit; font-weight: 700; font-size: 12px; cursor: pointer; outline: none; }
+  .status-pill select option { color: var(--text); }
+  .status-pill__chev { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: white; pointer-events:none; }
+
+  .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+  .file-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; position: relative; }
+  .file-card__thumb { width: 100%; height: 90px; border-radius: 10px; background: var(--bg); display: flex; align-items: center; justify-content: center; color: var(--danger); margin-bottom: 10px; }
+  .file-card__name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-card__sub { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; margin-bottom: 10px; }
+  .file-card__actions { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .file-card__del { width: 28px; height: 28px; border-radius: 8px; border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; display:flex; align-items:center; justify-content:center; }
+  .file-card__del:hover { background: #FEF1F2; color: var(--danger); }
+
+  .empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 60px 20px; color: var(--text-tertiary); gap: 8px; }
+  .empty-state__title { font-weight: 700; color: var(--text); font-size: 15px; margin-top: 6px; }
+  .empty-state__desc { font-size: 13px; margin-bottom: 10px; }
+
+  .calendar-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    padding: 48px 30px; text-align: center; max-width: 480px; margin: 40px auto; box-shadow: var(--shadow-sm);
+  }
+  .calendar-card__icon {
+    width: 68px; height: 68px; border-radius: 18px; background: var(--primary-soft); color: var(--primary);
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 18px;
+  }
+  .calendar-card h2 { font-size: 18px; margin: 0 0 8px; }
+  .calendar-card p { font-size: 13.5px; color: var(--text-secondary); margin: 0 0 24px; line-height: 1.7; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 100; }
+  .confirm-box { background: var(--surface); border-radius: 14px; padding: 20px; max-width: 360px; width: 100%; box-shadow: var(--shadow-md); }
+  .confirm-box__icon { color: var(--danger); margin-bottom: 8px; }
+  .confirm-box h3 { margin: 0 0 6px; font-size: 15px; }
+  .confirm-box p { margin: 0 0 16px; font-size: 13px; color: var(--text-secondary); }
+  .confirm-box__actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--text); color: white; padding: 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-md); z-index: 200; display: flex; align-items: center; gap: 8px; }
+  .loading-wrap { display:flex; align-items:center; justify-content:center; padding: 80px 0; color: var(--text-tertiary); font-size: 13px; }
+  .spinner { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--primary-soft); border-top-color: var(--primary); animation: spin .7s linear infinite; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .hamburger-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; flex-shrink: 0; }
+  .hamburger-btn:hover { background: #F1EFFB; }
+  .shell-wrap { transition: margin-left .2s ease; }
+  @media (min-width: 961px) { .shell-wrap.sidebar-open { margin-left: 232px; } }
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 232px; background: var(--surface);
+    border-right: 1px solid var(--border); padding: 18px 12px; display: flex; flex-direction: column;
+    gap: 2px; overflow-y: auto; z-index: 150; transform: translateX(-100%); transition: transform .2s ease;
+  }
+  .sidebar.is-open { transform: translateX(0); box-shadow: var(--shadow-md); }
+  .sidebar__brand { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 15px; color: var(--primary); padding: 6px 10px 16px; text-decoration:none; }
+  .sidebar__section { font-size: 11px; font-weight: 700; color: var(--text-tertiary); padding: 14px 12px 4px; }
+  .sidebar__link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13.5px; font-weight: 700; color: var(--text-secondary); text-decoration: none; }
+  .sidebar__link:hover { background: #F1EFFB; color: var(--text); }
+  .sidebar__link.is-active { background: var(--primary-soft); color: var(--primary); }
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); z-index: 140; display: none; }
+  .sidebar-overlay.is-open { display: block; }
+
+  @media (max-width: 640px) {
+    .shell { padding: 14px 12px 80px; }
+    .project-select { max-width: none; flex: 1; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <a class="sidebar__brand" href="00_ダッシュボード.html">太豊建設アプリ</a>
+  <a class="sidebar__link" href="00_ダッシュボード.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    ホーム
+  </a>
+  <a class="sidebar__link" href="01_案件管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    案件
+  </a>
+  <a class="sidebar__link" href="02_顧客建物管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    顧客・建物
+  </a>
+  <a class="sidebar__link" href="03_ファイル管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    ファイル
+  </a>
+  <a class="sidebar__link" href="04_日報社内申請.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    日報・社内申請
+  </a>
+  <a class="sidebar__link" href="05_金銭管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9 9a3 3 0 0 1 3-1c1.5 0 3 .8 3 2.2S13.5 12 12 12s-3 .8-3 2.2S10.5 16 12 16a3 3 0 0 0 3-1"/></svg>
+    金銭管理
+  </a>
+  <a class="sidebar__link" href="06_設定.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    設定
+  </a>
+  <a class="sidebar__link is-active" href="07_工程表カレンダー.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    工程表・カレンダー
+  </a>
+  <div class="sidebar__section">サポート</div>
+  <a class="sidebar__link" href="99_ヘルプ.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
+    ヘルプ
+  </a>
+</nav>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="shell-wrap" id="shellWrap">
+<div class="shell">
+  <div class="page-header">
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニュー">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <div class="page-header__title">工程表・カレンダー<span class="badge-count" id="countBadge">0件</span></div>
+    <div class="page-header__actions" id="scheduleActions">
+      <select class="project-select" id="projectSelect"></select>
+      <button class="btn btn--primary" id="btnUpload" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12 4 4m-4-4-4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        工程表をアップロード
+      </button>
+      <input type="file" id="fileInput" accept="application/pdf" style="display:none" />
+    </div>
+  </div>
+
+  <div class="module-tabs">
+    <button class="module-tab is-active" id="tabSchedule">工程表</button>
+    <button class="module-tab" id="tabCalendar">カレンダー</button>
+  </div>
+
+  <div id="resultsArea"></div>
+</div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  function storageGet(key) {
+    return new Promise(function (resolve) {
+      if (window.storage && typeof window.storage.get === "function") {
+        window.storage.get(key, false).then(resolve).catch(function () { resolve(null); });
+      } else {
+        try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
+        catch (e) { resolve(null); }
+      }
+    });
+  }
+  function storageSet(key, value) {
+    return new Promise(function (resolve, reject) {
+      if (window.storage && typeof window.storage.set === "function") {
+        window.storage.set(key, value, false).then(resolve).catch(function () {
+          try { window.localStorage.setItem(key, value); resolve({ value: value }); }
+          catch (e2) { reject(e2); }
+        });
+      } else {
+        try { window.localStorage.setItem(key, value); resolve({ value: value }); }
+        catch (e) { reject(e); }
+      }
+    });
+  }
+
+  var PROJECTS_KEY = "taiho_projects_v2";
+  var SCHEDULES_KEY = "taiho_schedules_v1";
+  var MAX_FILE_SIZE = 3 * 1024 * 1024;
+  var GOOGLE_CALENDAR_URL = "https://calendar.google.com/calendar/u/0/r";
+
+  var SCHEDULE_STATUS = [
+    { id: "draft",     label: "作成中", color: "#F59E0B" },
+    { id: "completed", label: "完了",   color: "#10B981" }
+  ];
+  function scheduleStatusOf(id) { for (var i=0;i<SCHEDULE_STATUS.length;i++) if (SCHEDULE_STATUS[i].id===id) return SCHEDULE_STATUS[i]; return SCHEDULE_STATUS[0]; }
+
+  function esc(str) {
+    return String(str == null ? "" : str).replace(/[&<>"']/g, function (s) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s];
+    });
+  }
+  function fmtSize(bytes) {
+    if (!bytes) return "0KB";
+    if (bytes < 1024*1024) return Math.round(bytes/1024) + "KB";
+    return (bytes/1024/1024).toFixed(1) + "MB";
+  }
+  function fmtDateTime(v) {
+    var d = new Date(v);
+    if (isNaN(d.getTime())) return "-";
+    return d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate();
+  }
+
+  var ICON_CHECK = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>';
+  var ICON_ALERT = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="confirm-box__icon"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>';
+  var ICON_PDF = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M6 3h8l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/></svg>';
+  var ICON_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/><path d="M10 11v6M14 11v6"/></svg>';
+  var ICON_CAL64 = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>';
+  var ICON_EXTERNAL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg>';
+  var ICON_UPLOAD40 = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12 4 4m-4-4-4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>';
+
+  var state = { tab: "schedule", projects: [], schedules: [], loading: true, activeProjectId: "" };
+  var confirmDeleteId = null;
+
+  var toastTimer = null;
+  function showToast(msg) {
+    var root = document.getElementById("toastRoot");
+    root.innerHTML = '<div class="toast">' + ICON_CHECK + ' ' + esc(msg) + '</div>';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { root.innerHTML = ""; }, 2400);
+  }
+  function persistSchedules(next) {
+    state.schedules = next;
+    return storageSet(SCHEDULES_KEY, JSON.stringify(next));
+  }
+
+  /* ---------------- タブ切替 ---------------- */
+  function setTab(tab) {
+    state.tab = tab;
+    document.getElementById("tabSchedule").classList.toggle("is-active", tab === "schedule");
+    document.getElementById("tabCalendar").classList.toggle("is-active", tab === "calendar");
+    document.getElementById("scheduleActions").style.display = tab === "schedule" ? "flex" : "none";
+    renderResults();
+  }
+  document.getElementById("tabSchedule").addEventListener("click", function () { setTab("schedule"); });
+  document.getElementById("tabCalendar").addEventListener("click", function () { setTab("calendar"); });
+
+  /* ---------------- 案件セレクター ---------------- */
+  function renderProjectSelect() {
+    var sel = document.getElementById("projectSelect");
+    if (state.projects.length === 0) {
+      sel.innerHTML = '<option value="">案件がありません</option>';
+      sel.disabled = true;
+      document.getElementById("btnUpload").disabled = true;
+      return;
+    }
+    sel.disabled = false;
+    var sorted = state.projects.slice().sort(function (a,b) { return (b.no||0)-(a.no||0); });
+    sel.innerHTML = sorted.map(function (p) {
+      return '<option value="' + p.id + '"' + (p.id===state.activeProjectId?" selected":"") + '>No.' + esc(p.no) + ' ' + esc(p.name) + '</option>';
+    }).join("");
+    if (!state.activeProjectId) state.activeProjectId = sorted[0].id;
+    sel.value = state.activeProjectId;
+    document.getElementById("btnUpload").disabled = false;
+  }
+  document.getElementById("projectSelect").addEventListener("change", function (e) {
+    state.activeProjectId = e.target.value;
+    renderResults();
+  });
+
+  function schedulesForProject() {
+    return state.schedules.filter(function (s) { return s.projectId === state.activeProjectId; }).sort(function (a,b) { return b.uploadedAt - a.uploadedAt; });
+  }
+
+  /* ---------------- 結果表示 ---------------- */
+  function renderResults() {
+    var area = document.getElementById("resultsArea");
+    if (state.loading) {
+      area.innerHTML = '<div class="loading-wrap"><span class="spinner"></span> 読み込み中...</div>';
+      document.getElementById("countBadge").textContent = "0件";
+      return;
+    }
+    if (state.tab === "calendar") { renderCalendarTab(area); document.getElementById("countBadge").textContent = ""; return; }
+    renderScheduleTab(area);
+  }
+
+  function renderScheduleTab(area) {
+    if (!state.activeProjectId) {
+      area.innerHTML = '<div class="empty-state">' + ICON_UPLOAD40 +
+        '<p class="empty-state__title">先に案件を選択してください</p>' +
+        '<p class="empty-state__desc">案件がまだ無い場合は、①案件管理から先に作成してください。</p></div>';
+      document.getElementById("countBadge").textContent = "0件";
+      return;
+    }
+    var list = schedulesForProject();
+    document.getElementById("countBadge").textContent = list.length + "件";
+
+    if (list.length === 0) {
+      area.innerHTML = '<div class="empty-state">' + ICON_UPLOAD40 +
+        '<p class="empty-state__title">工程表がまだアップロードされていません</p>' +
+        '<p class="empty-state__desc">別のツールで作成した工程表(PDF)をアップロードして管理しましょう。</p>' +
+        '<button class="btn btn--primary" id="emptyUploadBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12 4 4m-4-4-4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg> 工程表をアップロード</button></div>';
+      var b = document.getElementById("emptyUploadBtn");
+      if (b) b.addEventListener("click", function () { document.getElementById("fileInput").click(); });
+      return;
+    }
+
+    var html = '<div class="file-grid">';
+    list.forEach(function (s) {
+      html += '<div class="file-card">' +
+        '<div class="file-card__thumb">' + ICON_PDF + '</div>' +
+        '<div class="file-card__name">' + esc(s.name) + '</div>' +
+        '<div class="file-card__sub">' + fmtSize(s.sizeBytes) + ' ・ ' + fmtDateTime(s.uploadedAt) + '</div>' +
+        '<div class="file-card__actions">' + statusPillHtml(s.id, s.status) +
+        '<a class="icon-btn" href="' + s.dataUrl + '" target="_blank" rel="noopener" title="開く"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg></a>' +
+        '<button class="file-card__del" data-del="' + s.id + '" title="削除">' + ICON_TRASH + '</button>' +
+        '</div></div>';
+    });
+    html += '</div>';
+    area.innerHTML = html;
+
+    area.querySelectorAll("[data-del]").forEach(function (el) {
+      el.addEventListener("click", function () { confirmDeleteId = el.getAttribute("data-del"); renderConfirm(); });
+    });
+    area.querySelectorAll("[data-status-change]").forEach(function (el) {
+      el.addEventListener("change", function () {
+        var id = el.getAttribute("data-status-change");
+        persistSchedules(state.schedules.map(function (s) { return s.id === id ? Object.assign({}, s, { status: el.value }) : s; }))
+          .then(function () { showToast("ステータスを更新しました"); renderResults(); });
+      });
+    });
+  }
+
+  function statusPillHtml(id, statusId) {
+    var s = scheduleStatusOf(statusId);
+    var opts = SCHEDULE_STATUS.map(function (st) {
+      return '<option value="' + st.id + '"' + (st.id===statusId?" selected":"") + '>' + esc(st.label) + '</option>';
+    }).join("");
+    return '<div class="status-pill" style="--pill-color:' + s.color + '"><span class="status-pill__dot"></span>' +
+      '<select data-status-change="' + id + '" aria-label="ステータスを変更">' + opts + '</select></div>';
+  }
+
+  function renderCalendarTab(area) {
+    area.innerHTML =
+      '<div class="calendar-card">' +
+      '<div class="calendar-card__icon">' + ICON_CAL64 + '</div>' +
+      '<h2>Googleカレンダーで予定を確認</h2>' +
+      '<p>案件の日程や現場の予定は、使い慣れたGoogleカレンダーで管理しましょう。ボタンを押すと新しいタブでGoogleカレンダーが開きます。</p>' +
+      '<a class="btn btn--primary btn--lg" href="' + GOOGLE_CALENDAR_URL + '" target="_blank" rel="noopener">' + ICON_EXTERNAL + ' Googleカレンダーを開く</a>' +
+      '</div>';
+  }
+
+  /* ---------------- アップロード ---------------- */
+  document.getElementById("btnUpload").addEventListener("click", function () { document.getElementById("fileInput").click(); });
+  document.getElementById("fileInput").addEventListener("change", function (e) {
+    var file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!state.activeProjectId) { showToast("先に案件を選択してください"); return; }
+    if (file.type !== "application/pdf") { showToast("PDFファイルのみアップロードできます"); return; }
+    if (file.size > MAX_FILE_SIZE) { showToast("ファイルサイズが大きすぎます(上限3MB)"); return; }
+
+    var reader = new FileReader();
+    reader.onload = function () {
+      var record = {
+        id: "sc-" + Date.now(), projectId: state.activeProjectId, name: file.name,
+        mime: file.type, sizeBytes: file.size, dataUrl: reader.result,
+        uploadedAt: Date.now(), status: "completed"
+      };
+      persistSchedules([record].concat(state.schedules)).then(function () {
+        showToast("工程表をアップロードしました");
+        renderResults();
+      }).catch(function () {
+        showToast("保存容量の上限を超えた可能性があります");
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+
+  /* ---------------- 削除確認 ---------------- */
+  function renderConfirm() {
+    var root = document.getElementById("modalRoot");
+    if (!confirmDeleteId) { root.innerHTML = ""; return; }
+    root.innerHTML =
+      '<div class="modal-overlay" id="confirmOverlay"><div class="confirm-box">' + ICON_ALERT +
+      '<h3>この工程表を削除しますか?</h3><p>削除すると元に戻せません。</p>' +
+      '<div class="confirm-box__actions"><button class="btn btn--ghost btn--sm" id="confirmCancelBtn">キャンセル</button>' +
+      '<button class="btn btn--danger-ghost btn--sm" id="confirmDeleteBtn">削除する</button></div></div></div>';
+    document.getElementById("confirmOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "confirmOverlay") { confirmDeleteId = null; renderConfirm(); } });
+    document.getElementById("confirmCancelBtn").addEventListener("click", function () { confirmDeleteId = null; renderConfirm(); });
+    document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
+      var id = confirmDeleteId;
+      persistSchedules(state.schedules.filter(function (s) { return s.id !== id; })).then(function () {
+        showToast("工程表を削除しました");
+        confirmDeleteId = null;
+        renderConfirm();
+        renderResults();
+      });
+    });
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && confirmDeleteId) { confirmDeleteId = null; renderConfirm(); }
+  });
+
+  /* ---------------- サイドバー ---------------- */
+  function setSidebar(open) {
+    document.getElementById("sidebar").classList.toggle("is-open", open);
+    document.getElementById("shellWrap").classList.toggle("sidebar-open", open);
+    document.getElementById("sidebarOverlay").classList.toggle("is-open", open && window.innerWidth <= 960);
+  }
+  document.getElementById("hamburgerBtn").addEventListener("click", function () {
+    setSidebar(!document.getElementById("sidebar").classList.contains("is-open"));
+  });
+  document.getElementById("sidebarOverlay").addEventListener("click", function () { setSidebar(false); });
+  setSidebar(window.innerWidth > 960);
+
+  /* ---------------- 初期化 ---------------- */
+  function init() {
+    renderResults();
+    Promise.all([storageGet(PROJECTS_KEY), storageGet(SCHEDULES_KEY)]).then(function (res) {
+      var pData = null, sData = null;
+      try { pData = res[0] && res[0].value ? JSON.parse(res[0].value) : null; } catch (e) {}
+      try { sData = res[1] && res[1].value ? JSON.parse(res[1].value) : null; } catch (e) {}
+      state.projects = Array.isArray(pData) ? pData : [];
+      state.schedules = Array.isArray(sData) ? sData : [];
+      state.loading = false;
+      renderProjectSelect();
+      renderResults();
+    }).catch(function () {
+      state.projects = [];
+      state.schedules = [];
+      state.loading = false;
+      renderProjectSelect();
+      renderResults();
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

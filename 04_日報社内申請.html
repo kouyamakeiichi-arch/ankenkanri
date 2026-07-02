@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>日報・社内申請 | 太豊建設アプリ</title>
+<style>
+  :root {
+    --bg: #F6F5FB; --surface: #FFFFFF; --primary: #6C47FF; --primary-dark: #5636D9;
+    --primary-soft: #EFEAFF; --text: #1E1B2E; --text-secondary: #6B6580; --text-tertiary: #9C97AE;
+    --border: #E7E4F0; --danger: #F0525C; --success: #10B981; --radius: 12px;
+    --shadow-sm: 0 1px 2px rgba(30,27,46,0.06); --shadow-md: 0 8px 24px rgba(30,27,46,0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Hiragino Sans','Yu Gothic','Noto Sans JP',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; }
+
+  .shell { max-width: 1240px; margin: 0 auto; padding: 20px 20px 60px; }
+
+  .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .page-header__title { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 22px; letter-spacing: 0.01em; }
+  .page-header__title .badge-count { font-family: 'Courier New', monospace; font-size: 12px; font-weight: 600; color: var(--primary); background: var(--primary-soft); padding: 3px 9px; border-radius: 100px; }
+  .page-header__actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+  .search-box { position: relative; flex: 1; min-width: 180px; max-width: 280px; }
+  .search-box svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); pointer-events: none; }
+  .search-box input { width: 100%; padding: 10px 12px 10px 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); font-size: 14px; font-family: inherit; color: var(--text); outline: none; }
+  .search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 10px 16px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; transition: transform .1s, background .15s, box-shadow .15s; white-space: nowrap; }
+  .btn:active { transform: scale(0.97); }
+  .btn--primary { background: var(--primary); color: white; box-shadow: var(--shadow-sm); }
+  .btn--primary:hover { background: var(--primary-dark); }
+  .btn--ghost { background: transparent; color: var(--text-secondary); border-color: var(--border); }
+  .btn--ghost:hover { background: #F1EFFB; }
+  .btn--danger-ghost { background: transparent; color: var(--danger); border-color: #FBD5D8; }
+  .btn--danger-ghost:hover { background: #FEF1F2; }
+  .btn--sm { padding: 7px 12px; font-size: 12.5px; }
+
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; }
+  .icon-btn:hover { background: #F1EFFB; color: var(--text); }
+
+  .module-tabs { display: flex; gap: 6px; margin-bottom: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 5px; width: fit-content; }
+  .module-tab { display:flex; align-items:center; gap:6px; font-family: inherit; font-weight: 700; font-size: 14px; padding: 9px 18px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; transition: all .15s; }
+  .module-tab.is-active { background: var(--primary); color: white; }
+
+  .month-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .month-nav__label { font-weight: 900; font-size: 15px; min-width: 108px; text-align: center; }
+  .month-nav button.icon-btn { border: 1px solid var(--border); }
+
+  .summary-bar { display: flex; gap: 20px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 16px; }
+  .summary-item { font-size: 12.5px; color: var(--text-secondary); }
+  .summary-item b { font-family: 'Courier New', monospace; color: var(--text); font-size: 14px; margin-left: 4px; }
+
+  .type-tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; scrollbar-width: none; }
+  .type-tabs::-webkit-scrollbar { display: none; }
+  .type-tab { font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 8px 14px; border-radius: 999px; border: 1px solid transparent; background: transparent; color: var(--text-secondary); cursor: pointer; white-space: nowrap; transition: all .15s; }
+  .type-tab:hover { background: #EDEAFA; }
+  .type-tab.is-active { background: var(--text); color: white; }
+
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; overflow-x: auto; }
+  table.data-table { width: 100%; border-collapse: collapse; }
+  .data-table thead th { text-align: left; font-size: 12px; font-weight: 700; color: var(--text-tertiary); padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .data-table tbody tr { border-bottom: 1px solid var(--border); transition: background .12s; }
+  .data-table tbody tr:last-child { border-bottom: none; }
+  .data-table tbody tr:hover { background: #FBFAFF; }
+  .data-table td { padding: 13px 16px; font-size: 13.5px; vertical-align: middle; white-space: nowrap; }
+  .cell-name { font-weight: 700; background:none; border:none; cursor:pointer; text-align:left; color:inherit; font-family:inherit; font-size:inherit; padding:0; }
+  .cell-actions { text-align: right; }
+  .muted { color: var(--text-tertiary); }
+  .amount-text { font-family: 'Courier New', monospace; font-weight: 700; }
+
+  .status-pill { position: relative; display: inline-flex; align-items: center; gap: 6px; background: var(--pill-color); border-radius: 999px; padding: 5px 26px 5px 10px; }
+  .status-pill__dot { width: 6px; height: 6px; border-radius: 50%; background: white; opacity: .9; flex-shrink:0; }
+  .status-pill select { appearance: none; background: transparent; border: none; color: white; font-family: inherit; font-weight: 700; font-size: 12px; cursor: pointer; outline: none; }
+  .status-pill select option { color: var(--text); }
+  .status-pill__chev { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: white; pointer-events:none; }
+
+  .card-list { display: none; flex-direction: column; gap: 10px; }
+  .data-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; border-left: 4px solid var(--bar-color); }
+  .data-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .data-card__name { font-weight: 700; font-size: 15px; }
+  .data-card__meta { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 12.5px; color: var(--text-secondary); }
+  .data-card__meta span { display: flex; align-items: center; gap: 4px; }
+  .data-card__footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+
+  @media (max-width: 860px) {
+    .table-wrap { display: none; }
+    .card-list { display: flex; }
+    .shell { padding: 14px 12px 80px; }
+    .page-header__title { font-size: 19px; }
+    .search-box { max-width: none; order: 3; flex-basis: 100%; }
+  }
+
+  .empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 60px 20px; color: var(--text-tertiary); gap: 8px; }
+  .empty-state__title { font-weight: 700; color: var(--text); font-size: 15px; margin-top: 6px; }
+  .empty-state__desc { font-size: 13px; margin-bottom: 10px; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 100; }
+  .modal { background: var(--surface); border-radius: 16px; width: 100%; max-width: 480px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--shadow-md); }
+  .modal__header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); }
+  .modal__header h2 { font-size: 17px; font-weight: 700; margin: 0; }
+  .modal__body { padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+  .modal__footer { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1px solid var(--border); }
+  .modal__footer-right { display: flex; gap: 8px; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12.5px; font-weight: 700; color: var(--text-secondary); }
+  .field .req { color: var(--danger); }
+  .field .hint { font-size: 11.5px; color: var(--text-tertiary); font-weight: 400; }
+  .field input, .field select, .field textarea { font-family: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; outline: none; color: var(--text); background: var(--surface); width: 100%; }
+  .field textarea { resize: vertical; min-height: 70px; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+  .field input.is-error { border-color: var(--danger); }
+  .field__error { color: var(--danger); font-size: 11.5px; margin: 0; }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; min-width: 0; }
+  .field-note { font-size: 11.5px; color: var(--text-tertiary); }
+  @media (max-width: 480px) { .field-row { flex-direction: column; } }
+
+  .confirm-box { background: var(--surface); border-radius: 14px; padding: 20px; max-width: 360px; width: 100%; box-shadow: var(--shadow-md); }
+  .confirm-box__icon { color: var(--danger); margin-bottom: 8px; }
+  .confirm-box h3 { margin: 0 0 6px; font-size: 15px; }
+  .confirm-box p { margin: 0 0 16px; font-size: 13px; color: var(--text-secondary); }
+  .confirm-box__actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--text); color: white; padding: 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-md); z-index: 200; display: flex; align-items: center; gap: 8px; }
+
+  .loading-wrap { display:flex; align-items:center; justify-content:center; padding: 80px 0; color: var(--text-tertiary); font-size: 13px; }
+  .spinner { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--primary-soft); border-top-color: var(--primary); animation: spin .7s linear infinite; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------------- サイドバー / ハンバーガー ---------------- */
+  .hamburger-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; flex-shrink: 0; }
+  .hamburger-btn:hover { background: #F1EFFB; }
+  .shell-wrap { transition: margin-left .2s ease; }
+  @media (min-width: 961px) { .shell-wrap.sidebar-open { margin-left: 232px; } }
+
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 232px; background: var(--surface);
+    border-right: 1px solid var(--border); padding: 18px 12px; display: flex; flex-direction: column;
+    gap: 2px; overflow-y: auto; z-index: 150; transform: translateX(-100%); transition: transform .2s ease;
+  }
+  .sidebar.is-open { transform: translateX(0); box-shadow: var(--shadow-md); }
+  .sidebar__brand { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 15px; color: var(--primary); padding: 6px 10px 16px; text-decoration:none; }
+  .sidebar__section { font-size: 11px; font-weight: 700; color: var(--text-tertiary); padding: 14px 12px 4px; }
+  .sidebar__link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13.5px; font-weight: 700; color: var(--text-secondary); text-decoration: none; }
+  .sidebar__link:hover { background: #F1EFFB; color: var(--text); }
+  .sidebar__link.is-active { background: var(--primary-soft); color: var(--primary); }
+  .sidebar__link.is-disabled { color: var(--text-tertiary); cursor: default; pointer-events: none; }
+  .sidebar__link .soon { margin-left: auto; font-size: 9.5px; font-weight: 700; background: var(--bg); border: 1px solid var(--border); color: var(--text-tertiary); padding: 2px 6px; border-radius: 999px; white-space: nowrap; }
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); z-index: 140; display: none; }
+  .sidebar-overlay.is-open { display: block; }
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <a class="sidebar__brand" href="00_ダッシュボード.html">太豊建設アプリ</a>
+  <a class="sidebar__link" href="00_ダッシュボード.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    ホーム
+  </a>
+  <a class="sidebar__link" href="01_案件管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    案件
+  </a>
+  <a class="sidebar__link" href="02_顧客建物管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    顧客・建物
+  </a>
+  <a class="sidebar__link" href="03_ファイル管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    ファイル
+  </a>
+  <a class="sidebar__link is-active" href="04_日報社内申請.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    日報・社内申請
+  </a>
+  <a class="sidebar__link" href="05_金銭管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9 9a3 3 0 0 1 3-1c1.5 0 3 .8 3 2.2S13.5 12 12 12s-3 .8-3 2.2S10.5 16 12 16a3 3 0 0 0 3-1"/></svg>
+    金銭管理
+  </a>
+  <a class="sidebar__link" href="06_設定.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    設定
+  </a>
+  <a class="sidebar__link" href="07_工程表カレンダー.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    工程表・カレンダー
+  </a>
+  <div class="sidebar__section">サポート</div>
+  <a class="sidebar__link" href="99_ヘルプ.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
+    ヘルプ
+  </a>
+</nav>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="shell-wrap" id="shellWrap">
+<div class="shell">
+  <div class="page-header">
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニュー">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <div class="page-header__title">日報・社内申請<span class="badge-count" id="countBadge">0件</span></div>
+    <div class="page-header__actions">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="searchInput" placeholder="検索" />
+      </div>
+      <button class="btn btn--primary" id="btnCreate">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        <span id="btnCreateLabel">日報を追加</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="module-tabs">
+    <button class="module-tab is-active" id="tabWorklogs">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      日報
+    </button>
+    <button class="module-tab" id="tabRequests">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+      社内申請
+    </button>
+  </div>
+
+  <div id="worklogControls">
+    <div class="month-nav">
+      <button class="icon-btn" id="prevMonthBtn" aria-label="前月">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="month-nav__label" id="monthLabel">2026年7月</div>
+      <button class="icon-btn" id="nextMonthBtn" aria-label="翌月">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button class="btn btn--ghost btn--sm" id="thisMonthBtn">今月</button>
+    </div>
+    <div class="summary-bar" id="summaryBar"></div>
+  </div>
+
+  <div class="type-tabs" id="requestStatusTabs" style="display:none"></div>
+
+  <div id="resultsArea"></div>
+</div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  function storageGet(key) {
+    return new Promise(function (resolve) {
+      if (window.storage && typeof window.storage.get === "function") {
+        window.storage.get(key, false).then(resolve).catch(function () { resolve(null); });
+      } else {
+        try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
+        catch (e) { resolve(null); }
+      }
+    });
+  }
+  function storageSet(key, value) {
+    return new Promise(function (resolve) {
+      if (window.storage && typeof window.storage.set === "function") {
+        window.storage.set(key, value, false).then(resolve).catch(function () {
+          try { window.localStorage.setItem(key, value); } catch (e) {}
+          resolve({ value: value });
+        });
+      } else {
+        try { window.localStorage.setItem(key, value); } catch (e) {}
+        resolve({ value: value });
+      }
+    });
+  }
+
+  var PROJECTS_KEY = "taiho_projects_v2";
+  var WORKLOGS_KEY = "taiho_worklogs_v1";
+  var REQUESTS_KEY = "taiho_requests_v1";
+  var WORKER_SUGGESTIONS = ["遠藤了介", "kouyama", "soumu", "jimu", "k.aotsuka"];
+
+  var REQUEST_STATUS = [
+    { id: "pending",  label: "申請中", color: "#F59E0B" },
+    { id: "approved", label: "承認",   color: "#10B981" },
+    { id: "rejected", label: "却下",   color: "#F87171" }
+  ];
+  function reqStatusOf(id) { for (var i=0;i<REQUEST_STATUS.length;i++) if (REQUEST_STATUS[i].id===id) return REQUEST_STATUS[i]; return REQUEST_STATUS[0]; }
+
+  function esc(str) {
+    return String(str == null ? "" : str).replace(/[&<>"']/g, function (s) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s];
+    });
+  }
+  function fmtYen(v) {
+    if (v === "" || v === null || v === undefined || isNaN(Number(v)) || Number(v) === 0) return "¥0";
+    return "¥" + Math.round(Number(v)).toLocaleString("ja-JP");
+  }
+  function fmtDateTime(v) {
+    if (!v) return "-";
+    var d = new Date(v);
+    if (isNaN(d.getTime())) return "-";
+    return d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate() + " " + ("0"+d.getHours()).slice(-2) + ":" + ("0"+d.getMinutes()).slice(-2);
+  }
+  function fmtDateJP(v) {
+    if (!v) return "-";
+    var d = new Date(v + "T00:00:00");
+    if (isNaN(d.getTime())) return "-";
+    var w = ["日","月","火","水","木","金","土"][d.getDay()];
+    return d.getFullYear() + "年" + (d.getMonth()+1) + "月" + d.getDate() + "日(" + w + ")";
+  }
+
+  function timeToMin(t) { if (!t) return null; var p = t.split(":"); return parseInt(p[0],10)*60 + parseInt(p[1],10); }
+  function calcWorkHours(start, end, breakMin) {
+    var s = timeToMin(start), e = timeToMin(end);
+    if (s === null || e === null) return 0;
+    var diff = (e - s) - (Number(breakMin) || 0);
+    if (diff < 0) diff = 0;
+    return diff / 60;
+  }
+  function fmtHours(h) { return h.toFixed(2) + "時間"; }
+
+  function seedWorklogs() { return []; }
+  function seedRequests() { return []; }
+
+  var ICON_X = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+  var ICON_TRASH = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/><path d="M10 11v6M14 11v6"/></svg>';
+  var ICON_PENCIL = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+  var ICON_CHECK = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>';
+  var ICON_ALERT = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="confirm-box__icon"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>';
+  var ICON_CLOCK40 = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
+  var ICON_CHEV = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="status-pill__chev"><path d="m6 9 6 6 6-6"/></svg>';
+
+  var now = new Date();
+  var state = {
+    tab: "worklogs", projects: [], worklogs: [], requests: [], loading: true, search: "",
+    monthYear: now.getFullYear(), monthMonth: now.getMonth(), activeReqStatus: "all"
+  };
+  var editModal = null;
+  var confirmDelete = null;
+
+  var toastTimer = null;
+  function showToast(msg) {
+    var root = document.getElementById("toastRoot");
+    root.innerHTML = '<div class="toast">' + ICON_CHECK + ' ' + esc(msg) + '</div>';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { root.innerHTML = ""; }, 2200);
+  }
+  function persistWorklogs(next) { state.worklogs = next; storageSet(WORKLOGS_KEY, JSON.stringify(next)).catch(function(){ showToast("保存に失敗しました"); }); }
+  function persistRequests(next) { state.requests = next; storageSet(REQUESTS_KEY, JSON.stringify(next)).catch(function(){ showToast("保存に失敗しました"); }); }
+
+  function projectName(id) { var p = state.projects.find(function (x) { return x.id === id; }); return p ? p.name : ""; }
+  function projectOptions(selectedId) {
+    var sorted = state.projects.slice().sort(function (a,b) { return (b.no||0)-(a.no||0); });
+    return '<option value="">案件なし</option>' + sorted.map(function (p) {
+      return '<option value="' + p.id + '"' + (selectedId===p.id?" selected":"") + '>No.' + esc(p.no) + ' ' + esc(p.name) + '</option>';
+    }).join("");
+  }
+
+  function setTab(tab) {
+    state.tab = tab;
+    state.search = "";
+    document.getElementById("searchInput").value = "";
+    document.getElementById("tabWorklogs").classList.toggle("is-active", tab === "worklogs");
+    document.getElementById("tabRequests").classList.toggle("is-active", tab === "requests");
+    document.getElementById("worklogControls").style.display = tab === "worklogs" ? "" : "none";
+    document.getElementById("requestStatusTabs").style.display = tab === "requests" ? "" : "none";
+    document.getElementById("btnCreateLabel").textContent = tab === "worklogs" ? "日報を追加" : "申請を追加";
+    document.getElementById("searchInput").placeholder = tab === "worklogs" ? "作業者・案件・作業内容で検索" : "申請件名・申請者で検索";
+    if (tab === "requests") renderRequestStatusTabs();
+    renderResults();
+  }
+  document.getElementById("tabWorklogs").addEventListener("click", function () { setTab("worklogs"); });
+  document.getElementById("tabRequests").addEventListener("click", function () { setTab("requests"); });
+
+  function renderMonthLabel() {
+    document.getElementById("monthLabel").textContent = state.monthYear + "年" + (state.monthMonth+1) + "月";
+  }
+  document.getElementById("prevMonthBtn").addEventListener("click", function () {
+    state.monthMonth--; if (state.monthMonth < 0) { state.monthMonth = 11; state.monthYear--; }
+    renderMonthLabel(); renderResults();
+  });
+  document.getElementById("nextMonthBtn").addEventListener("click", function () {
+    state.monthMonth++; if (state.monthMonth > 11) { state.monthMonth = 0; state.monthYear++; }
+    renderMonthLabel(); renderResults();
+  });
+  document.getElementById("thisMonthBtn").addEventListener("click", function () {
+    var n = new Date(); state.monthYear = n.getFullYear(); state.monthMonth = n.getMonth();
+    renderMonthLabel(); renderResults();
+  });
+
+  function renderRequestStatusTabs() {
+    var el = document.getElementById("requestStatusTabs");
+    var html = '<button class="type-tab' + (state.activeReqStatus==="all"?" is-active":"") + '" data-rs="all">全て</button>';
+    REQUEST_STATUS.forEach(function (s) {
+      html += '<button class="type-tab' + (state.activeReqStatus===s.id?" is-active":"") + '" data-rs="' + s.id + '">' + esc(s.label) + '</button>';
+    });
+    el.innerHTML = html;
+    el.querySelectorAll(".type-tab").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.activeReqStatus = btn.getAttribute("data-rs");
+        renderRequestStatusTabs();
+        renderResults();
+      });
+    });
+  }
+
+  function filteredWorklogs() {
+    var q = state.search.trim().toLowerCase();
+    return state.worklogs.filter(function (w) {
+      if (!w.workDate) return false;
+      var d = new Date(w.workDate + "T00:00:00");
+      return d.getFullYear() === state.monthYear && d.getMonth() === state.monthMonth;
+    }).filter(function (w) {
+      if (!q) return true;
+      return (w.workerName||"").toLowerCase().indexOf(q) >= 0 ||
+             projectName(w.projectId).toLowerCase().indexOf(q) >= 0 ||
+             (w.workContent||"").toLowerCase().indexOf(q) >= 0;
+    }).sort(function (a,b) { return (a.workDate < b.workDate) ? 1 : -1; });
+  }
+  function filteredRequests() {
+    var q = state.search.trim().toLowerCase();
+    return state.requests
+      .filter(function (r) { return state.activeReqStatus === "all" ? true : r.status === state.activeReqStatus; })
+      .filter(function (r) {
+        if (!q) return true;
+        return (r.title||"").toLowerCase().indexOf(q) >= 0 || (r.applicant||"").toLowerCase().indexOf(q) >= 0;
+      })
+      .sort(function (a,b) { return b.requestedAt - a.requestedAt; });
+  }
+
+  function renderResults() {
+    var area = document.getElementById("resultsArea");
+    if (state.loading) {
+      area.innerHTML = '<div class="loading-wrap"><span class="spinner"></span> 読み込み中...</div>';
+      document.getElementById("countBadge").textContent = "0件";
+      document.getElementById("summaryBar").innerHTML = "";
+      return;
+    }
+    if (state.tab === "worklogs") renderWorklogResults(area); else renderRequestResults(area);
+  }
+
+  function renderWorklogResults(area) {
+    var list = filteredWorklogs();
+    document.getElementById("countBadge").textContent = list.length + "件";
+
+    var totalHours = 0, totalAmount = 0;
+    list.forEach(function (w) {
+      var h = calcWorkHours(w.startTime, w.endTime, w.breakMinutes);
+      totalHours += h;
+      totalAmount += h * (Number(w.unitPrice) || 0);
+    });
+    document.getElementById("summaryBar").innerHTML =
+      '<div class="summary-item">件数<b>' + list.length + '件</b></div>' +
+      '<div class="summary-item">総作業時間<b>' + totalHours.toFixed(2) + '時間</b></div>' +
+      '<div class="summary-item">総金額<b>' + fmtYen(totalAmount) + '</b></div>';
+
+    if (list.length === 0) {
+      area.innerHTML =
+        '<div class="empty-state">' + ICON_CLOCK40 +
+        '<p class="empty-state__title">この月の日報はまだありません</p><p class="empty-state__desc">「日報を追加」から記録しましょう。</p>' +
+        '<button class="btn btn--primary" id="emptyCreateBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> 日報を追加</button></div>';
+      var b = document.getElementById("emptyCreateBtn");
+      if (b) b.addEventListener("click", function () { openWorklogModal(false, null); });
+      return;
+    }
+
+    var rows = "", cards = "";
+    list.forEach(function (w) {
+      var hours = calcWorkHours(w.startTime, w.endTime, w.breakMinutes);
+      var amount = hours * (Number(w.unitPrice) || 0);
+      var pName = projectName(w.projectId) || "-";
+      rows += '<tr><td><button class="cell-name" data-wedit="' + w.id + '">' + esc(w.workerName) + '</button></td>' +
+        '<td>' + esc(pName) + '</td><td>' + fmtDateJP(w.workDate) + '</td>' +
+        '<td>' + esc(w.startTime||"-") + '</td><td>' + esc(w.endTime||"-") + '</td>' +
+        '<td>' + (w.breakMinutes||0) + '分</td><td>' + fmtHours(hours) + '</td>' +
+        '<td class="amount-text">' + fmtYen(w.unitPrice) + '</td><td class="amount-text">' + fmtYen(amount) + '</td>' +
+        '<td>' + esc(w.workContent || "-") + '</td>' +
+        '<td class="cell-actions"><button class="icon-btn" data-wedit="' + w.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td></tr>';
+      cards += '<div class="data-card" style="--bar-color:#6C47FF">' +
+        '<div class="data-card__top"><div class="data-card__name">' + esc(w.workerName) + '</div>' +
+        '<button class="icon-btn" data-wedit="' + w.id + '" aria-label="編集">' + ICON_PENCIL + '</button></div>' +
+        '<div class="data-card__meta"><span>' + fmtDateJP(w.workDate) + '</span>' + (pName!=="-" ? '<span>' + esc(pName) + '</span>' : '') + '</div>' +
+        '<div class="data-card__meta"><span>' + esc(w.startTime||"-") + '〜' + esc(w.endTime||"-") + '</span><span>' + fmtHours(hours) + '</span></div>' +
+        '<div class="data-card__footer"><span class="amount-text">' + fmtYen(amount) + '</span></div></div>';
+    });
+
+    area.innerHTML =
+      '<div class="table-wrap"><table class="data-table"><thead><tr>' +
+      '<th>作業者</th><th>案件</th><th>作業日</th><th>開始</th><th>終了</th><th>休憩</th><th>作業時間</th><th>単価</th><th>合計金額</th><th>作業内容</th><th></th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div><div class="card-list">' + cards + '</div>';
+
+    area.querySelectorAll("[data-wedit]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var w = state.worklogs.find(function (x) { return x.id === el.getAttribute("data-wedit"); });
+        if (w) openWorklogModal(true, w);
+      });
+    });
+  }
+
+  function renderRequestResults(area) {
+    var list = filteredRequests();
+    document.getElementById("countBadge").textContent = list.length + "件";
+    if (list.length === 0) {
+      area.innerHTML =
+        '<div class="empty-state">' + ICON_CLOCK40 +
+        '<p class="empty-state__title">申請はまだありません</p><p class="empty-state__desc">「申請を追加」から作成しましょう。</p>' +
+        '<button class="btn btn--primary" id="emptyCreateBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> 申請を追加</button></div>';
+      var b = document.getElementById("emptyCreateBtn");
+      if (b) b.addEventListener("click", function () { openRequestModal(false, null); });
+      return;
+    }
+    var rows = "", cards = "";
+    list.forEach(function (r) {
+      var pName = projectName(r.projectId) || "-";
+      rows += '<tr><td><button class="cell-name" data-redit="' + r.id + '">' + esc(r.title) + '</button></td>' +
+        '<td>' + esc(r.applicant || "-") + '</td><td>' + esc(r.approver || "-") + '</td>' +
+        '<td>' + esc(pName) + '</td><td>' + statusPillHtml(r.id, r.status) + '</td>' +
+        '<td>' + fmtDateTime(r.requestedAt) + '</td><td>' + fmtDateTime(r.approvedAt) + '</td>' +
+        '<td class="cell-actions"><button class="icon-btn" data-redit="' + r.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td></tr>';
+      cards += '<div class="data-card" style="--bar-color:' + reqStatusOf(r.status).color + '">' +
+        '<div class="data-card__top"><div class="data-card__name">' + esc(r.title) + '</div>' +
+        '<button class="icon-btn" data-redit="' + r.id + '" aria-label="編集">' + ICON_PENCIL + '</button></div>' +
+        '<div class="data-card__meta"><span>' + esc(r.applicant||"-") + ' → ' + esc(r.approver||"-") + '</span></div>' +
+        (pName!=="-" ? '<div class="data-card__meta"><span>' + esc(pName) + '</span></div>' : '') +
+        '<div class="data-card__footer">' + statusPillHtml(r.id, r.status) + '</div></div>';
+    });
+    area.innerHTML =
+      '<div class="table-wrap"><table class="data-table"><thead><tr>' +
+      '<th>申請件名</th><th>申請者</th><th>承認者</th><th>案件</th><th>ステータス</th><th>申請日時</th><th>承認日時</th><th></th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div><div class="card-list">' + cards + '</div>';
+
+    area.querySelectorAll("[data-redit]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var r = state.requests.find(function (x) { return x.id === el.getAttribute("data-redit"); });
+        if (r) openRequestModal(true, r);
+      });
+    });
+    area.querySelectorAll("[data-status-change]").forEach(function (el) {
+      el.addEventListener("change", function () {
+        var id = el.getAttribute("data-status-change");
+        var newStatus = el.value;
+        persistRequests(state.requests.map(function (r) {
+          if (r.id !== id) return r;
+          var approvedAt = (newStatus === "approved" || newStatus === "rejected") ? Date.now() : null;
+          return Object.assign({}, r, { status: newStatus, approvedAt: approvedAt });
+        }));
+        renderResults();
+      });
+    });
+  }
+
+  function statusPillHtml(id, statusId) {
+    var s = reqStatusOf(statusId);
+    var opts = REQUEST_STATUS.map(function (st) {
+      return '<option value="' + st.id + '"' + (st.id===statusId?" selected":"") + '>' + esc(st.label) + '</option>';
+    }).join("");
+    return '<div class="status-pill" style="--pill-color:' + s.color + '"><span class="status-pill__dot"></span>' +
+      '<select data-status-change="' + id + '" aria-label="申請ステータスを変更">' + opts + '</select>' + ICON_CHEV + '</div>';
+  }
+
+  function openWorklogModal(isEdit, data) {
+    editModal = { kind: "worklog", isEdit: isEdit, data: data ? Object.assign({}, data) : {
+      workerName: "", projectId: "", workDate: new Date().toISOString().slice(0,10),
+      startTime: "08:00", endTime: "17:00", breakMinutes: 60, unitPrice: "", workContent: "", note: ""
+    }};
+    renderEditModal();
+  }
+  function openRequestModal(isEdit, data) {
+    editModal = { kind: "request", isEdit: isEdit, data: data ? Object.assign({}, data) : {
+      applicant: "", approver: "", projectId: "", title: "", content: "", status: "pending",
+      requestedAt: Date.now(), approvedAt: null
+    }};
+    renderEditModal();
+  }
+  function closeEditModal() { editModal = null; document.getElementById("modalRoot").innerHTML = ""; }
+
+  function renderEditModal() {
+    var root = document.getElementById("modalRoot");
+    if (!editModal) { root.innerHTML = ""; return; }
+    var d = editModal.data, isEdit = editModal.isEdit;
+
+    if (editModal.kind === "worklog") {
+      var workerOptions = WORKER_SUGGESTIONS.map(function (m) { return '<option value="' + esc(m) + '"></option>'; }).join("");
+      root.innerHTML =
+        '<div class="modal-overlay" id="modalOverlay"><div class="modal" role="dialog" aria-modal="true">' +
+        '<div class="modal__header"><h2>' + (isEdit ? "日報を編集" : "日報を追加") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
+        '<div class="modal__body">' +
+        '<div class="field"><label>作業者 <span class="req">*</span></label><input type="text" id="f_workerName" list="workerSuggestions" placeholder="作業者名" value="' + esc(d.workerName) + '" /><p class="field__error" id="err_workerName" style="display:none"></p></div>' +
+        '<datalist id="workerSuggestions">' + workerOptions + '</datalist>' +
+        '<div class="field"><label>案件</label><select id="f_projectId">' + projectOptions(d.projectId) + '</select></div>' +
+        '<div class="field"><label>作業日</label><input type="date" id="f_workDate" value="' + esc(d.workDate) + '" /></div>' +
+        '<div class="field-row">' +
+        '<div class="field"><label>開始時刻</label><input type="time" id="f_startTime" value="' + esc(d.startTime) + '" /></div>' +
+        '<div class="field"><label>終了時刻</label><input type="time" id="f_endTime" value="' + esc(d.endTime) + '" /></div>' +
+        '<div class="field"><label>休憩(分)</label><input type="number" id="f_breakMinutes" value="' + esc(d.breakMinutes) + '" /></div>' +
+        '</div>' +
+        '<div class="field"><label>単価(時給換算)</label><input type="number" id="f_unitPrice" placeholder="例: 2500" value="' + esc(d.unitPrice) + '" /><p class="field-note" id="calcPreview"></p></div>' +
+        '<div class="field"><label>作業内容</label><input type="text" id="f_workContent" placeholder="例: 基礎配筋" value="' + esc(d.workContent) + '" /></div>' +
+        '<div class="field"><label>備考</label><textarea id="f_note">' + esc(d.note) + '</textarea></div>' +
+        '</div><div class="modal__footer">' +
+        (isEdit ? '<button class="btn btn--danger-ghost" id="modalDeleteBtn">' + ICON_TRASH + ' 削除</button>' : '<span></span>') +
+        '<div class="modal__footer-right"><button class="btn btn--ghost" id="modalCancelBtn">キャンセル</button><button class="btn btn--primary" id="modalSaveBtn">' + (isEdit ? "保存" : "追加") + '</button></div>' +
+        '</div></div></div>';
+
+      function updateCalcPreview() {
+        var h = calcWorkHours(document.getElementById("f_startTime").value, document.getElementById("f_endTime").value, document.getElementById("f_breakMinutes").value);
+        var up = Number(document.getElementById("f_unitPrice").value) || 0;
+        document.getElementById("calcPreview").textContent = "作業時間 " + h.toFixed(2) + "時間 ・ 合計 " + fmtYen(h*up);
+      }
+      ["f_startTime","f_endTime","f_breakMinutes","f_unitPrice"].forEach(function (id) {
+        document.getElementById(id).addEventListener("input", updateCalcPreview);
+      });
+      updateCalcPreview();
+
+      document.getElementById("modalCloseBtn").addEventListener("click", closeEditModal);
+      document.getElementById("modalCancelBtn").addEventListener("click", closeEditModal);
+      document.getElementById("modalOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "modalOverlay") closeEditModal(); });
+      document.getElementById("f_workerName").focus();
+      if (isEdit) document.getElementById("modalDeleteBtn").addEventListener("click", function () { confirmDelete = { kind: "worklog", id: d.id }; closeEditModal(); renderConfirm(); });
+
+      document.getElementById("modalSaveBtn").addEventListener("click", function () {
+        var workerName = document.getElementById("f_workerName").value.trim();
+        if (!workerName) { document.getElementById("err_workerName").textContent = "作業者を入力してください"; document.getElementById("err_workerName").style.display = "block"; document.getElementById("f_workerName").classList.add("is-error"); return; }
+        var form = {
+          id: d.id, workerName: workerName, projectId: document.getElementById("f_projectId").value,
+          workDate: document.getElementById("f_workDate").value,
+          startTime: document.getElementById("f_startTime").value,
+          endTime: document.getElementById("f_endTime").value,
+          breakMinutes: Number(document.getElementById("f_breakMinutes").value) || 0,
+          unitPrice: document.getElementById("f_unitPrice").value,
+          workContent: document.getElementById("f_workContent").value.trim(),
+          note: document.getElementById("f_note").value.trim()
+        };
+        if (isEdit) {
+          persistWorklogs(state.worklogs.map(function (w) { return w.id === form.id ? Object.assign({}, w, form) : w; }));
+          showToast("日報を更新しました");
+        } else {
+          form.id = "w-" + Date.now();
+          persistWorklogs([form].concat(state.worklogs));
+          showToast("日報を追加しました");
+        }
+        closeEditModal();
+        renderResults();
+      });
+
+    } else {
+      var approverOptions = WORKER_SUGGESTIONS.map(function (m) { return '<option value="' + esc(m) + '"></option>'; }).join("");
+      root.innerHTML =
+        '<div class="modal-overlay" id="modalOverlay"><div class="modal" role="dialog" aria-modal="true">' +
+        '<div class="modal__header"><h2>' + (isEdit ? "申請を編集" : "申請を追加") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
+        '<div class="modal__body">' +
+        '<div class="field"><label>申請件名 <span class="req">*</span></label><input type="text" id="f_title" placeholder="例: 見積承認依頼" value="' + esc(d.title) + '" /><p class="field__error" id="err_title" style="display:none"></p></div>' +
+        '<div class="field-row">' +
+        '<div class="field"><label>申請者</label><input type="text" id="f_applicant" list="approverSuggestions" placeholder="申請者名" value="' + esc(d.applicant) + '" /></div>' +
+        '<div class="field"><label>承認者</label><input type="text" id="f_approver" list="approverSuggestions" placeholder="承認者名" value="' + esc(d.approver) + '" /></div>' +
+        '</div>' +
+        '<datalist id="approverSuggestions">' + approverOptions + '</datalist>' +
+        '<div class="field"><label>案件</label><select id="f_projectId">' + projectOptions(d.projectId) + '</select></div>' +
+        '<div class="field"><label>申請内容</label><textarea id="f_content" placeholder="申請の詳細を入力">' + esc(d.content) + '</textarea></div>' +
+        '</div><div class="modal__footer">' +
+        (isEdit ? '<button class="btn btn--danger-ghost" id="modalDeleteBtn">' + ICON_TRASH + ' 削除</button>' : '<span></span>') +
+        '<div class="modal__footer-right"><button class="btn btn--ghost" id="modalCancelBtn">キャンセル</button><button class="btn btn--primary" id="modalSaveBtn">' + (isEdit ? "保存" : "申請する") + '</button></div>' +
+        '</div></div></div>';
+
+      document.getElementById("modalCloseBtn").addEventListener("click", closeEditModal);
+      document.getElementById("modalCancelBtn").addEventListener("click", closeEditModal);
+      document.getElementById("modalOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "modalOverlay") closeEditModal(); });
+      document.getElementById("f_title").focus();
+      if (isEdit) document.getElementById("modalDeleteBtn").addEventListener("click", function () { confirmDelete = { kind: "request", id: d.id }; closeEditModal(); renderConfirm(); });
+
+      document.getElementById("modalSaveBtn").addEventListener("click", function () {
+        var title = document.getElementById("f_title").value.trim();
+        if (!title) { document.getElementById("err_title").textContent = "申請件名を入力してください"; document.getElementById("err_title").style.display = "block"; document.getElementById("f_title").classList.add("is-error"); return; }
+        var form = {
+          id: d.id, title: title,
+          applicant: document.getElementById("f_applicant").value.trim(),
+          approver: document.getElementById("f_approver").value.trim(),
+          projectId: document.getElementById("f_projectId").value,
+          content: document.getElementById("f_content").value.trim(),
+          status: d.status || "pending", requestedAt: d.requestedAt || Date.now(), approvedAt: d.approvedAt || null
+        };
+        if (isEdit) {
+          persistRequests(state.requests.map(function (r) { return r.id === form.id ? Object.assign({}, r, form) : r; }));
+          showToast("申請を更新しました");
+        } else {
+          form.id = "r-" + Date.now();
+          persistRequests([form].concat(state.requests));
+          showToast("申請を追加しました");
+        }
+        closeEditModal();
+        renderResults();
+      });
+    }
+  }
+
+  function renderConfirm() {
+    var root = document.getElementById("modalRoot");
+    if (!confirmDelete) { root.innerHTML = ""; return; }
+    var isWorklog = confirmDelete.kind === "worklog";
+    root.innerHTML =
+      '<div class="modal-overlay" id="confirmOverlay"><div class="confirm-box">' + ICON_ALERT +
+      '<h3>' + (isWorklog ? "この日報を削除しますか?" : "この申請を削除しますか?") + '</h3><p>削除すると元に戻せません。</p>' +
+      '<div class="confirm-box__actions"><button class="btn btn--ghost btn--sm" id="confirmCancelBtn">キャンセル</button>' +
+      '<button class="btn btn--danger-ghost btn--sm" id="confirmDeleteBtn">削除する</button></div></div></div>';
+    document.getElementById("confirmOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "confirmOverlay") { confirmDelete = null; renderConfirm(); } });
+    document.getElementById("confirmCancelBtn").addEventListener("click", function () { confirmDelete = null; renderConfirm(); });
+    document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
+      if (isWorklog) {
+        persistWorklogs(state.worklogs.filter(function (w) { return w.id !== confirmDelete.id; }));
+        showToast("日報を削除しました");
+      } else {
+        persistRequests(state.requests.filter(function (r) { return r.id !== confirmDelete.id; }));
+        showToast("申請を削除しました");
+      }
+      confirmDelete = null;
+      renderConfirm();
+      renderResults();
+    });
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      if (editModal) closeEditModal();
+      if (confirmDelete) { confirmDelete = null; renderConfirm(); }
+    }
+  });
+
+  document.getElementById("searchInput").addEventListener("input", function (e) { state.search = e.target.value; renderResults(); });
+  document.getElementById("btnCreate").addEventListener("click", function () {
+    if (state.tab === "worklogs") openWorklogModal(false, null); else openRequestModal(false, null);
+  });
+
+  function setSidebar(open) {
+    document.getElementById("sidebar").classList.toggle("is-open", open);
+    document.getElementById("shellWrap").classList.toggle("sidebar-open", open);
+    document.getElementById("sidebarOverlay").classList.toggle("is-open", open && window.innerWidth <= 960);
+  }
+  document.getElementById("hamburgerBtn").addEventListener("click", function () {
+    setSidebar(!document.getElementById("sidebar").classList.contains("is-open"));
+  });
+  document.getElementById("sidebarOverlay").addEventListener("click", function () { setSidebar(false); });
+  setSidebar(window.innerWidth > 960);
+
+  function init() {
+    renderMonthLabel();
+    renderResults();
+    Promise.all([storageGet(PROJECTS_KEY), storageGet(WORKLOGS_KEY), storageGet(REQUESTS_KEY), storageGet("taiho_members_v1")]).then(function (res) {
+      var pData = null, wData = null, rData = null, mData = null;
+      try { pData = res[0] && res[0].value ? JSON.parse(res[0].value) : null; } catch (e) {}
+      try { wData = res[1] && res[1].value ? JSON.parse(res[1].value) : null; } catch (e) {}
+      try { rData = res[2] && res[2].value ? JSON.parse(res[2].value) : null; } catch (e) {}
+      try { mData = res[3] && res[3].value ? JSON.parse(res[3].value) : null; } catch (e) {}
+      state.projects = Array.isArray(pData) ? pData : [];
+      state.worklogs = Array.isArray(wData) ? wData : seedWorklogs();
+      state.requests = Array.isArray(rData) ? rData : seedRequests();
+      if (Array.isArray(mData) && mData.length) {
+        WORKER_SUGGESTIONS.length = 0;
+        mData.forEach(function (m) { WORKER_SUGGESTIONS.push(m.name); });
+      }
+      state.loading = false;
+      renderResults();
+    }).catch(function () {
+      state.projects = [];
+      state.worklogs = seedWorklogs();
+      state.requests = seedRequests();
+      state.loading = false;
+      renderResults();
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
