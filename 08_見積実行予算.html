@@ -86,6 +86,23 @@ input.C{text-align:center}
 input:focus{outline:1px solid var(--accent);border-radius:2px;background:var(--metric-bg)}
 .del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:1px 5px;border-radius:3px}
 .del-btn:hover{color:var(--red);background:#fee2e2}
+.ins-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:1px 5px;border-radius:3px}
+.ins-btn:hover{color:var(--accent);background:#dbeafe}
+.cell-x{position:relative}
+.cell-x.cell-selected{outline:2px solid var(--accent);outline-offset:-2px;background:rgba(59,130,246,.10)!important;z-index:1}
+.ctxmenu{position:fixed;z-index:99999;background:#fff;border:1px solid var(--border2);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.2);padding:5px;min-width:180px;font-size:12.5px;display:none}
+.ctxmenu.on{display:block}
+.ctxmenu button{display:block;width:100%;text-align:left;padding:8px 10px;border:none;background:none;cursor:pointer;border-radius:5px;font-family:inherit;font-size:12.5px;color:#1f2937}
+.ctxmenu button:hover{background:#eff3fb}
+.ctxmenu button.danger{color:#c0392b}
+.ctxmenu hr{border:none;border-top:1px solid var(--border2);margin:5px 2px}
+.dropmenu{position:absolute;top:100%;left:0;margin-top:4px;z-index:500;background:#fff;border:1px solid var(--border2);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.2);padding:5px;min-width:240px;font-size:12.5px;display:none}
+.dropmenu.on{display:block}
+.dropmenu button{display:block;width:100%;text-align:left;padding:8px 10px;border:none;background:none;cursor:pointer;border-radius:5px;font-family:inherit;font-size:12.5px;color:#1f2937;white-space:nowrap}
+.dropmenu button:hover{background:#eff3fb}
+.dropmenu hr{border:none;border-top:1px solid var(--border2);margin:5px 2px}
+.pick-row{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid #f1f1f1;font-size:13px;cursor:pointer}
+.pick-row:last-child{border-bottom:none}
 .add-btn{width:100%;padding:7px;font-size:12px;color:var(--text3);border:1px dashed var(--border2);border-top:none;background:transparent;cursor:pointer;font-family:inherit}
 .add-btn:hover{background:var(--bg2)}
 
@@ -192,7 +209,7 @@ input:focus{outline:1px solid var(--accent);border-radius:2px;background:var(--m
 </head>
 <body>
 <style>body{padding-top:46px;}</style>
-<a href="00_ダッシュボード.html" style="position:fixed;top:12px;left:12px;z-index:9999;display:inline-flex;align-items:center;gap:6px;background:#ffffff;color:#333;border:1px solid #ddd;border-radius:20px;padding:7px 14px 7px 10px;font-family:'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif;font-size:12.5px;font-weight:700;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.12);">
+<a href="00_ダッシュボード.html" class="no-print" style="position:fixed;top:12px;left:12px;z-index:9999;display:inline-flex;align-items:center;gap:6px;background:#ffffff;color:#333;border:1px solid #ddd;border-radius:20px;padding:7px 14px 7px 10px;font-family:'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif;font-size:12.5px;font-weight:700;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.12);">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
   ダッシュボードに戻る
 </a>
@@ -231,11 +248,20 @@ input:focus{outline:1px solid var(--accent);border-radius:2px;background:var(--m
     <button class="btn no-print" onclick="showSettings()">⚙ 会社設定</button>
     <button class="btn pri no-print" onclick="doPrint()">🖨 印刷</button>
     <button class="btn pri no-print" onclick="savePDF()" style="background:#e53e3e;border-color:#e53e3e">📄 PDFで保存</button>
-    <button class="btn no-print" onclick="exportData()" title="データをJSONファイルで書き出す">📤 書き出し</button>
-    <button class="btn no-print" onclick="document.getElementById('import-file').click()" title="全データ上書き読み込み">📥 読み込み（上書き）</button>
-    <button class="btn no-print" onclick="document.getElementById('import-add-file').click()" title="物件を追加読み込み（既存データは残る）" style="background:#0891b2;color:#fff;border-color:#0891b2">📥 読み込み（追加）</button>
+    <div style="position:relative;display:inline-block" class="no-print">
+      <button class="btn" onclick="toggleIoMenu(event)">📤📥 書き出し・読み込み ▾</button>
+      <div class="dropmenu" id="iomenu">
+        <button onclick="closeIoMenu();exportCurrentProject()">📤 選択中の物件を書き出し</button>
+        <button onclick="closeIoMenu();exportData()">📤 全物件を書き出し</button>
+        <hr>
+        <button onclick="closeIoMenu();document.getElementById('import-pick-file').click()">📥 物件を選んで読み込み</button>
+        <button onclick="closeIoMenu();document.getElementById('import-add-file').click()">📥 全物件を読み込み（追加）</button>
+        <button onclick="closeIoMenu();document.getElementById('import-file').click()">📥 全物件を読み込み（上書き）</button>
+      </div>
+    </div>
     <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
     <input type="file" id="import-add-file" accept=".json" style="display:none" onchange="importAddData(this)">
+    <input type="file" id="import-pick-file" accept=".json" style="display:none" onchange="importPickData(this)">
     <span class="copyright">© KOUYAMA 2026.6.20&nbsp;|&nbsp;Ver 1.0.0</span>
   </div>
 </div>
@@ -332,15 +358,45 @@ input:focus{outline:1px solid var(--accent);border-radius:2px;background:var(--m
     <div class="f-row"><label>支払条件</label><input class="f-inp" id="s-pay"></div>
     <div class="f-sec">— 宛先・工事情報 —</div>
     <div class="f-row"><label>宛先</label><input class="f-inp" id="s-client"></div>
+    <div class="f-row"><label>敬称</label><select class="f-inp" id="s-honorific"><option value="御中">御中</option><option value="様">様</option></select></div>
     <div class="f-row"><label>工事件名</label><input class="f-inp" id="s-proj"></div>
     <div class="f-row"><label>工事場所</label><input class="f-inp" id="s-loc"></div>
     <div class="f-row"><label>工事概要</label><input class="f-inp" id="s-ovr"></div>
     <div class="f-row"><label>工事期間</label><input class="f-inp" id="s-period"></div>
+    <div class="f-row" style="align-items:flex-start"><label style="margin-top:6px">備考</label><textarea class="f-inp" id="s-remarks" rows="3" placeholder="例：※杭の長さは、地盤調査後決定とする。" style="resize:vertical;font-family:inherit"></textarea></div>
     <div class="modal-btns">
       <button class="btn" onclick="closeSettings()">キャンセル</button>
       <button class="btn pri" onclick="saveSettings()">保存して閉じる</button>
     </div>
   </div>
+</div>
+
+<div class="modal-ov" id="pickmodal">
+  <div class="modal">
+    <h3 style="margin:0 0 12px;font-size:15px">読み込む物件を選択</h3>
+    <div id="pick-file-name" style="font-size:11px;color:var(--text3);margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="btn" onclick="pickSelAll(true)" style="font-size:11px;padding:4px 10px">全て選択</button>
+      <button class="btn" onclick="pickSelAll(false)" style="font-size:11px;padding:4px 10px">全て解除</button>
+    </div>
+    <div id="pick-list" style="max-height:280px;overflow-y:auto;border:1px solid var(--border2);border-radius:6px;padding:6px 8px"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closePickModal()">キャンセル</button>
+      <button class="btn pri" onclick="confirmPickImport()">選んだ物件を追加</button>
+    </div>
+  </div>
+</div>
+
+<div class="ctxmenu" id="ctxmenu">
+  <button onclick="ctxCopy()">📋 コピー <span style="float:right;color:#9ca3af">Ctrl+C</span></button>
+  <button onclick="ctxCut()">✂️ 切り取り</button>
+  <button onclick="ctxPaste()">📥 貼り付け <span style="float:right;color:#9ca3af">Ctrl+V</span></button>
+  <button onclick="ctxClear()">🧹 内容をクリア</button>
+  <hr>
+  <button onclick="ctxInsAbove()">⬆️ 上に行を挿入</button>
+  <button onclick="ctxInsBelow()">⬇️ 下に行を挿入</button>
+  <hr>
+  <button class="danger" onclick="ctxDelRow()">🗑️ この行を削除</button>
 </div>
 
 <script>
@@ -525,7 +581,7 @@ const DEF_CFG={
   tel:"(0144) 82-7648",fax:"(0144) 82-7649",inv:"T5-4300-0206-0556",
   no:"見積00001",date:"令和7年10月20日",valid:"2ヶ月",pay:"打ち合わせ",
   client:"有限会社 オオバ電設",proj:"オオバ電設事務所増築工事",
-  loc:"苫小牧市新開町4丁目4番3号",ovr:"事務所増築工事",period:"打ち合わせ"
+  loc:"苫小牧市新開町4丁目4番3号",ovr:"事務所増築工事",period:"打ち合わせ",honorific:"御中",remarks:""
 };
 
 // ===== 物件管理 =====
@@ -764,6 +820,11 @@ function ca(){
   return{exec:e,dec:d,margin:m,ad,tax,total:ad+tax,pr};
 }
 function fmt(n){return Math.round(n).toLocaleString('ja-JP');}
+function escNl(s){
+  if(!s)return'';
+  const d=document.createElement('div');d.textContent=s;
+  return d.innerHTML.replace(/\n/g,'<br>');
+}
 function formatNum(v){
   // カンマを除去して数値に変換し、カンマ付きで返す
   const n=parseFloat(String(v).replace(/,/g,''));
@@ -840,28 +901,28 @@ function renderDetail(){
     const c=ci(it);const hv=it.qty>0&&it.price>0;
     return `<tr>
       <td class="C">${it.no}</td>
-      <td class="L"><input type="text" value="${it.name}" onchange="updItem(${idx},'name',this.value)"></td>
-      <td class="L"><input type="text" value="${it.kei}" onchange="updItem(${idx},'kei',this.value)" style="font-size:11px;color:var(--text3)"></td>
-      <td><input type="text" class="C" value="${it.qty||''}"
+      <td class="L cell-x" data-r="${idx}" data-c="0" onmousedown="cellDown(${idx},0)" onmouseenter="cellEnter(${idx},0)" oncontextmenu="openCtxMenu(event,${idx},0)"><input type="text" value="${it.name}" onchange="updItem(${idx},'name',this.value)"></td>
+      <td class="L cell-x" data-r="${idx}" data-c="1" onmousedown="cellDown(${idx},1)" onmouseenter="cellEnter(${idx},1)" oncontextmenu="openCtxMenu(event,${idx},1)"><input type="text" value="${it.kei}" onchange="updItem(${idx},'kei',this.value)" style="font-size:11px;color:var(--text3)"></td>
+      <td class="cell-x" data-r="${idx}" data-c="2" onmousedown="cellDown(${idx},2)" onmouseenter="cellEnter(${idx},2)" oncontextmenu="openCtxMenu(event,${idx},2)"><input type="text" class="C" value="${it.qty||''}"
         onfocus="this.value=this.value.replace(/,/g,'')"
         onblur="this.value=formatNum(this.value);updItem(${idx},'qty',parseFloat(this.value.replace(/,/g,''))||0)"
         onchange="updItem(${idx},'qty',parseFloat(this.value.replace(/,/g,''))||0)"
         style="text-align:right"></td>
-      <td><input type="text" class="C" value="${it.unit}" onchange="updItem(${idx},'unit',this.value)"></td>
-      <td><input type="text" value="${it.price?fmt(it.price):''}"
+      <td class="cell-x" data-r="${idx}" data-c="3" onmousedown="cellDown(${idx},3)" onmouseenter="cellEnter(${idx},3)" oncontextmenu="openCtxMenu(event,${idx},3)"><input type="text" class="C" value="${it.unit}" onchange="updItem(${idx},'unit',this.value)"></td>
+      <td class="cell-x" data-r="${idx}" data-c="4" onmousedown="cellDown(${idx},4)" onmouseenter="cellEnter(${idx},4)" oncontextmenu="openCtxMenu(event,${idx},4)"><input type="text" value="${it.price?fmt(it.price):''}"
         onfocus="this.value=this.value.replace(/,/g,'')"
         onblur="this.value=formatNum(this.value);updItem(${idx},'price',parseFloat(this.value.replace(/,/g,''))||0)"
         onchange="updItem(${idx},'price',parseFloat(this.value.replace(/,/g,''))||0)"
         style="text-align:right"></td>
       <td style="font-weight:600">${hv?fmt(c.exec):''}</td>
-      <td><input type="text" value="${it.rate}"
+      <td class="cell-x" data-r="${idx}" data-c="5" onmousedown="cellDown(${idx},5)" onmouseenter="cellEnter(${idx},5)" oncontextmenu="openCtxMenu(event,${idx},5)"><input type="text" value="${it.rate}"
         onfocus="this.value=this.value.replace(/,/g,'')"
         onblur="updItem(${idx},'rate',parseFloat(this.value.replace(/,/g,''))||1)"
         style="text-align:right;width:50px"></td>
       <td class="gr">${it.price?fmt(Math.round(it.price*it.rate)):''}</td>
       <td style="font-weight:600;color:var(--accent)">${hv?fmt(c.dec):''}</td>
       <td style="color:var(--green)">${hv?fmt(c.margin):''}</td>
-      <td><button class="del-btn" onclick="delItem(${idx})">✕</button></td>
+      <td><button class="ins-btn" onclick="insItemAfter(${idx})" title="この下に行を挿入">➕</button><button class="del-btn" onclick="delItem(${idx})" title="この行を削除">✕</button></td>
     </tr>`;
   }).join('');
   document.getElementById('det-sec').innerHTML=`
@@ -871,7 +932,7 @@ function renderDetail(){
         <span class="badge ${pr>=20?'good':'bad'}">利益率 ${pr}%</span>
       </div>
       <div class="tw-wrap"><table>
-        <colgroup><col style="width:30px"><col style="width:18%"><col style="width:13%"><col style="width:6%"><col style="width:5%"><col style="width:8%"><col style="width:8%"><col style="width:5%"><col style="width:7%"><col style="width:8%"><col style="width:7%"><col style="width:28px"></colgroup>
+        <colgroup><col style="width:30px"><col style="width:18%"><col style="width:13%"><col style="width:6%"><col style="width:5%"><col style="width:8%"><col style="width:8%"><col style="width:5%"><col style="width:7%"><col style="width:8%"><col style="width:7%"><col style="width:50px"></colgroup>
         <thead><tr>
           <th>No</th><th class="L">工事名称</th><th class="L">形状寸法等</th>
           <th>数量</th><th>単位</th><th>単価（実行）</th>
@@ -925,7 +986,7 @@ function renderQuote(){
     <div style="border:2px solid var(--border2);text-align:center;padding:6px;font-size:20px;font-weight:700;letter-spacing:.2em;margin-bottom:10px">御　見　積　書</div>
     <div class="q-hr2"></div>
     <div style="font-size:13px;margin-bottom:5px">${s.date}</div>
-    <div style="font-size:15px;font-weight:700;text-decoration:underline;margin-bottom:5px">${s.client}　御中</div>
+    <div style="font-size:15px;font-weight:700;text-decoration:underline;margin-bottom:5px">${s.client}　${s.honorific||'御中'}</div>
     <div style="font-size:13px;margin-bottom:16px">工事件名：${s.proj}<br>下記のとおり御見積申し上げます。</div>
     <div style="text-align:center;border-bottom:2px solid var(--border2);padding-bottom:12px;margin-bottom:14px">
       <div><span style="font-size:18pt;font-weight:700">見積金額　</span><span style="font-size:22pt;font-weight:700;letter-spacing:.06em">¥ ${fmt(all.total)}&thinsp;－</span></div>
@@ -948,7 +1009,8 @@ function renderQuote(){
           <div class="stamp-box">印</div>
         </div>
       </div>
-    </div>`;
+    </div>
+    ${s.remarks?`<div style="margin-top:10px;font-size:11px;line-height:1.7;border-top:1px dashed var(--border2);padding-top:8px;white-space:pre-wrap"><b>備考：</b><br>${escNl(s.remarks)}</div>`:''}`;
 }
 
 // ===== INTERACTIONS =====
@@ -995,6 +1057,13 @@ function addItem(){
   renumberItems(cat.items);
   sched();renderAll();
 }
+function insItemAfter(idx){
+  const cat=curData()[curCat];if(cat.items.length>=MAX)return;
+  snapshot();
+  cat.items.splice(idx+1,0,{no:0,name:"",kei:"",qty:1,unit:"式",price:0,rate:1.25});
+  renumberItems(cat.items);
+  sched();renderAll();
+}
 function delItem(idx){
   snapshot();
   curData()[curCat].items.splice(idx,1);
@@ -1002,12 +1071,184 @@ function delItem(idx){
   sched();renderAll();
 }
 function selCat(i){curCat=i;renderAll();}
+
+/* =====================================================================
+   セル選択・コピー&ペースト(Excelライク)
+   論理列: 0=工事名称 1=形状寸法等 2=数量 3=単位 4=単価(実行) 5=掛率
+   ===================================================================== */
+const COL_FIELDS=['name','kei','qty','unit','price','rate'];
+const COL_NUM=[false,false,true,false,true,true];
+let cellSel=null;      // {r1,c1,r2,c2}
+let cellSelecting=false;
+let clipGrid=null;     // 内部クリップボード(配列の配列)
+
+function cellDown(r,c){
+  cellSel={r1:r,c1:c,r2:r,c2:c};
+  cellSelecting=true;
+  applyCellHighlight();
+}
+function cellEnter(r,c){
+  if(!cellSelecting||!cellSel)return;
+  cellSel.r2=r;cellSel.c2=c;
+  applyCellHighlight();
+}
+document.addEventListener('mouseup',()=>{cellSelecting=false;});
+
+function applyCellHighlight(){
+  document.querySelectorAll('td.cell-selected').forEach(td=>td.classList.remove('cell-selected'));
+  if(!cellSel)return;
+  const r1=Math.min(cellSel.r1,cellSel.r2),r2=Math.max(cellSel.r1,cellSel.r2);
+  const c1=Math.min(cellSel.c1,cellSel.c2),c2=Math.max(cellSel.c1,cellSel.c2);
+  for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++){
+    const td=document.querySelector('td.cell-x[data-r="'+r+'"][data-c="'+c+'"]');
+    if(td)td.classList.add('cell-selected');
+  }
+}
+
+function gridCopy(){
+  if(!cellSel)return;
+  const cat=curData()[curCat];if(!cat)return;
+  const r1=Math.min(cellSel.r1,cellSel.r2),r2=Math.max(cellSel.r1,cellSel.r2);
+  const c1=Math.min(cellSel.c1,cellSel.c2),c2=Math.max(cellSel.c1,cellSel.c2);
+  const grid=[];
+  for(let r=r1;r<=r2;r++){
+    const row=[];
+    const it=cat.items[r];
+    for(let c=c1;c<=c2;c++){
+      row.push(it?(it[COL_FIELDS[c]]??''):'');
+    }
+    grid.push(row);
+  }
+  clipGrid=grid;
+  try{
+    const tsv=grid.map(row=>row.join('\t')).join('\n');
+    navigator.clipboard&&navigator.clipboard.writeText(tsv).catch(()=>{});
+  }catch(e){}
+}
+
+async function gridPaste(){
+  if(!cellSel)return;
+  let grid=clipGrid;
+  if(!grid){
+    try{
+      const text=await navigator.clipboard.readText();
+      if(text)grid=text.replace(/\r/g,'').split('\n').filter((l,i,arr)=>!(i===arr.length-1&&l==='')).map(l=>l.split('\t'));
+    }catch(e){}
+  }
+  if(!grid||!grid.length)return;
+  const cat=curData()[curCat];if(!cat)return;
+  const r1=Math.min(cellSel.r1,cellSel.r2),c1=Math.min(cellSel.c1,cellSel.c2);
+  const destR2=Math.max(cellSel.r1,cellSel.r2),destC2=Math.max(cellSel.c1,cellSel.c2);
+  const gh=grid.length,gw=grid[0].length;
+  // コピー元が1行/1列の場合は、選択した範囲いっぱいに同じ値を繰り返して貼り付ける
+  const rowsNeeded=(gh===1&&destR2>r1)?(destR2-r1+1):gh;
+  const colsNeeded=(gw===1&&destC2>c1)?(destC2-c1+1):gw;
+  snapshot();
+  for(let i=0;i<rowsNeeded;i++){
+    const r=r1+i;
+    if(r>=MAX)break;
+    while(cat.items.length<=r&&cat.items.length<MAX){
+      cat.items.push({no:cat.items.length+1,name:"",kei:"",qty:1,unit:"式",price:0,rate:1.25});
+    }
+    if(r>=cat.items.length)break;
+    for(let j=0;j<colsNeeded;j++){
+      const c=c1+j;
+      if(c>5)break;
+      const field=COL_FIELDS[c];
+      const raw=grid[gh===1?0:i][gw===1?0:j];
+      let val=raw;
+      if(COL_NUM[c]){
+        val=parseFloat(String(raw).replace(/,/g,''))||0;
+        if(field==='rate'&&!val)val=1;
+      }else{
+        val=String(raw==null?'':raw);
+      }
+      cat.items[r][field]=val;
+    }
+  }
+  renumberItems(cat.items);
+  cellSel={r1:r1,c1:c1,r2:r1+rowsNeeded-1,c2:c1+colsNeeded-1};
+  sched();renderAll();
+  applyCellHighlight();
+}
+
+document.addEventListener('keydown',function(e){
+  if(!(e.ctrlKey||e.metaKey))return;
+  const key=e.key.toLowerCase();
+  if(key==='c'){
+    if(!cellSel)return;
+    const ae=document.activeElement;
+    if(ae&&ae.tagName==='INPUT'&&ae.selectionStart!==ae.selectionEnd)return; // 一部テキストだけ選択中は通常コピーに任せる
+    e.preventDefault();
+    gridCopy();
+  }else if(key==='v'){
+    if(!cellSel)return;
+    e.preventDefault();
+    gridPaste();
+  }
+});
+
+/* ---------------- 右クリックメニュー(Excelライク) ---------------- */
+let ctxRow=null;
+
+function openCtxMenu(e,r,c){
+  e.preventDefault();
+  // 右クリックしたセルが今の選択範囲の外なら、そのセル単体を選び直す
+  const inRange=cellSel&&r>=Math.min(cellSel.r1,cellSel.r2)&&r<=Math.max(cellSel.r1,cellSel.r2)&&c>=Math.min(cellSel.c1,cellSel.c2)&&c<=Math.max(cellSel.c1,cellSel.c2);
+  if(!inRange){
+    cellSel={r1:r,c1:c,r2:r,c2:c};
+    applyCellHighlight();
+  }
+  ctxRow=r;
+  const menu=document.getElementById('ctxmenu');
+  const mw=190,mh=280;
+  const x=Math.min(e.clientX,window.innerWidth-mw-8);
+  const y=Math.min(e.clientY,window.innerHeight-mh-8);
+  menu.style.left=x+'px';
+  menu.style.top=y+'px';
+  menu.classList.add('on');
+}
+function closeCtxMenu(){
+  const m=document.getElementById('ctxmenu');
+  if(m)m.classList.remove('on');
+}
+document.addEventListener('click',closeCtxMenu);
+document.addEventListener('contextmenu',function(e){
+  if(!e.target.closest('.cell-x'))closeCtxMenu();
+});
+document.addEventListener('scroll',closeCtxMenu,true);
+
+function ctxCopy(){closeCtxMenu();gridCopy();}
+function ctxCut(){closeCtxMenu();gridCopy();clearSelectedCells();}
+function ctxPaste(){closeCtxMenu();gridPaste();}
+function ctxClear(){closeCtxMenu();clearSelectedCells();}
+function ctxInsAbove(){closeCtxMenu();if(ctxRow==null)return;insItemAfter(ctxRow-1);}
+function ctxInsBelow(){closeCtxMenu();if(ctxRow==null)return;insItemAfter(ctxRow);}
+function ctxDelRow(){closeCtxMenu();if(ctxRow==null)return;delItem(ctxRow);}
+
+function clearSelectedCells(){
+  if(!cellSel)return;
+  const cat=curData()[curCat];if(!cat)return;
+  const r1=Math.min(cellSel.r1,cellSel.r2),r2=Math.max(cellSel.r1,cellSel.r2);
+  const c1=Math.min(cellSel.c1,cellSel.c2),c2=Math.max(cellSel.c1,cellSel.c2);
+  snapshot();
+  for(let r=r1;r<=r2;r++){
+    if(r>=cat.items.length)break;
+    for(let c=c1;c<=c2;c++){
+      const field=COL_FIELDS[c];
+      cat.items[r][field]=COL_NUM[c]?(field==='rate'?1:0):'';
+    }
+  }
+  renumberItems(cat.items);
+  sched();renderAll();
+  applyCellHighlight();
+}
 function setDiscount(v){if(curProj())curProj().discount=v;sched();renderAll();}
 
 // ===== SETTINGS =====
 function showSettings(){
   const s=curCfg();
-  ['co1','co2','rep','zip','addr1','addr2','tel','fax','inv','no','date','valid','pay','client','proj','loc','ovr','period'].forEach(k=>{
+  ['co1','co2','rep','zip','addr1','addr2','tel','fax','inv','no','date','valid','pay','client','honorific','proj','loc','ovr','period','remarks'].forEach(k=>{
     const el=document.getElementById('s-'+k);if(el)el.value=s[k]||'';
   });
   document.getElementById('smodal').className='modal-ov on';
@@ -1015,7 +1256,7 @@ function showSettings(){
 function closeSettings(){document.getElementById('smodal').className='modal-ov';}
 function saveSettings(){
   const p=curProj();if(!p)return;
-  ['co1','co2','rep','zip','addr1','addr2','tel','fax','inv','no','date','valid','pay','client','proj','loc','ovr','period'].forEach(k=>{
+  ['co1','co2','rep','zip','addr1','addr2','tel','fax','inv','no','date','valid','pay','client','honorific','proj','loc','ovr','period','remarks'].forEach(k=>{
     const el=document.getElementById('s-'+k);if(el)p.cfg[k]=el.value;
   });
   document.getElementById('co-sub').textContent=p.cfg.co1||'';
@@ -1047,6 +1288,17 @@ function savePDF(){
   },150);
 }
 
+// ===== 書き出し・読み込みドロップダウンメニュー =====
+function toggleIoMenu(e){
+  e.stopPropagation();
+  document.getElementById('iomenu').classList.toggle('on');
+}
+function closeIoMenu(){
+  const m=document.getElementById('iomenu');
+  if(m)m.classList.remove('on');
+}
+document.addEventListener('click',closeIoMenu);
+
 // ===== データ書き出し（JSON） =====
 function exportData(){
   try{
@@ -1069,6 +1321,37 @@ function exportData(){
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     alert('データを書き出しました！\nファイル名: mitsumori_data_'+ds+'.json');
+  }catch(e){
+    alert('書き出しに失敗しました: '+e.message);
+  }
+}
+
+// ===== 選択中の物件だけを書き出し =====
+function exportCurrentProject(){
+  const p=curProj();
+  if(!p){alert('物件が選択されていません。');return;}
+  try{
+    const copy=JSON.parse(JSON.stringify(p));
+    const exportObj={
+      version:"1.0",
+      exportDate:new Date().toLocaleString('ja-JP'),
+      projects:[copy],
+      currentProjectId:copy.id
+    };
+    const json=JSON.stringify(exportObj,null,2);
+    const blob=new Blob([json],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    const d=new Date();
+    const ds=d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0');
+    const safe=(p.name||'物件').replace(/[\\\/:*?"<>|]/g,'_');
+    a.download='mitsumori_'+safe+'_'+ds+'.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    alert('「'+p.name+'」を書き出しました！');
   }catch(e){
     alert('書き出しに失敗しました: '+e.message);
   }
@@ -1156,6 +1439,66 @@ function importAddData(input){
   reader.readAsText(file,'UTF-8');
 }
 
+// ===== 物件を選んで読み込み =====
+let pickParsed=null; // {fileName, list:[...]}
+
+function importPickData(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const obj=JSON.parse(e.target.result);
+      if(!obj.projects||!Array.isArray(obj.projects)||!obj.projects.length){
+        alert('このファイルは対応していない形式です。');
+        input.value='';return;
+      }
+      pickParsed={fileName:file.name,list:obj.projects};
+      openPickModal();
+    }catch(ex){
+      alert('読み込みに失敗しました。\n正しいファイルか確認してください。\n'+ex.message);
+    }
+    input.value='';
+  };
+  reader.readAsText(file,'UTF-8');
+}
+function openPickModal(){
+  if(!pickParsed)return;
+  document.getElementById('pick-file-name').textContent='ファイル: '+pickParsed.fileName+'　（'+pickParsed.list.length+'件の物件）';
+  document.getElementById('pick-list').innerHTML=pickParsed.list.map(function(p,i){
+    return '<label class="pick-row"><input type="checkbox" class="pick-chk" data-i="'+i+'" checked><span>'+(p.name||'（無題）')+'</span></label>';
+  }).join('');
+  document.getElementById('pickmodal').className='modal-ov on';
+}
+function closePickModal(){
+  document.getElementById('pickmodal').className='modal-ov';
+  pickParsed=null;
+}
+function pickSelAll(v){
+  document.querySelectorAll('.pick-chk').forEach(function(el){el.checked=v;});
+}
+function confirmPickImport(){
+  if(!pickParsed)return;
+  const checks=document.querySelectorAll('.pick-chk');
+  const chosen=[];
+  checks.forEach(function(el){
+    if(el.checked)chosen.push(pickParsed.list[parseInt(el.getAttribute('data-i'))]);
+  });
+  if(!chosen.length){alert('物件が選択されていません。');return;}
+  snapshot();
+  chosen.forEach(function(p){
+    const copy=JSON.parse(JSON.stringify(p));
+    copy.id=genId();
+    projects.push(copy);
+  });
+  saveNow();
+  updateProjBtn();
+  renderAll();
+  const n=chosen.length;
+  closePickModal();
+  alert(n+'件の物件を追加しました！');
+}
+
 function buildPrint(){
   const all=ca();const s=curCfg();const disc=curDiscount();
   let h='';
@@ -1167,7 +1510,7 @@ function buildPrint(){
       <div class="pc-title-box">御　見　積　書</div>
       <hr class="pc-sep">
       <div class="pc-date">${s.date}</div>
-      <div class="pc-client">${s.client}　御中</div>
+      <div class="pc-client">${s.client}　${s.honorific||'御中'}</div>
       <div class="pc-kojimei">工事件名：${s.proj}</div>
       <div class="pc-shita">下記のとおり御見積申し上げます。</div>
       <div class="pc-amount-wrap">
@@ -1195,6 +1538,7 @@ function buildPrint(){
           </div>
         </div>
       </div>
+      ${s.remarks?`<div style="margin-top:10px;font-size:10.5pt;line-height:1.7;border-top:1px dashed var(--border2);padding-top:8px;white-space:pre-wrap"><b>備考：</b><br>${escNl(s.remarks)}</div>`:''}
     </div>
   </div>`;
 
