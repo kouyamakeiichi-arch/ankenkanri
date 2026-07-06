@@ -256,6 +256,10 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 13h6M9 17h4"/></svg>
     見積・実行予算
   </a>
+  <a class="sidebar__link" href="09_見積予算.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    見積・予算(表計算式)
+  </a>
   <div class="sidebar__section">サポート</div>
   <a class="sidebar__link" href="99_ヘルプ.html">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
@@ -933,12 +937,17 @@
   function renderDetailQuote(panel, p) {
     panel.innerHTML =
       '<div class="detail-section-title">見積・実行予算</div>' +
-      '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 16px;">' +
-      '工事種別ごとの明細入力、実行金額・見積金額・粗利の自動計算、印刷用の御見積書作成ができる専用ツールです。' +
+      '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 10px;">' +
+      '工事種別ごとの明細入力、実行金額・見積金額・粗利の自動計算、印刷用の御見積書作成ができるツールです。' +
       '「' + esc(p.name) + '」の見積を作るときは、下のボタンから開いて、ツール内の「📁 物件を選択」でこの案件用の物件を選ぶ(または新規作成する)形で使ってください。' +
       '</p>' +
-      '<p><a class="link-jump" href="08_見積実行予算.html" target="_blank" rel="noopener">⑧見積・実行予算アプリを開く ' + ICON_CHEV_R + '</a></p>' +
-      '<p style="font-size:11.5px;color:var(--text-tertiary);margin-top:10px;">※このツールは今のところ独立して動作しており、データはブラウザ内に保存されます。①〜⑦のように案件へ自動で紐付ける形にしたくなったら、いつでも変更できます。</p>';
+      '<p style="margin-bottom:20px;"><a class="link-jump" href="08_見積実行予算.html" target="_blank" rel="noopener">⑧見積・実行予算アプリを開く ' + ICON_CHEV_R + '</a></p>' +
+      '<div class="detail-section-title">見積・予算(表計算式)</div>' +
+      '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 10px;">' +
+      'Excel感覚でセル選択・コピペ・列幅調整ができる、表計算タイプの見積ツールです。バージョン管理もできます。この書式に慣れている方はこちらをお使いください。' +
+      '</p>' +
+      '<p><a class="link-jump" href="09_見積予算.html" target="_blank" rel="noopener">⑨見積・予算(表計算式)アプリを開く ' + ICON_CHEV_R + '</a></p>' +
+      '<p style="font-size:11.5px;color:var(--text-tertiary);margin-top:16px;">※どちらも今のところ独立して動作しており、データはブラウザ内に保存されます。①〜⑦のように案件へ自動で紐付ける形にしたくなったら、いつでも変更できます。</p>';
   }
 
   /* ---- 顧客・建物タブ ---- */

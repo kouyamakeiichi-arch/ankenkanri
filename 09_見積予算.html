@@ -1,0 +1,1947 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>見積・予算</title>
+<style>
+  :root{
+    --purple:#5b2fe0;
+    --purple-light:#efe9fd;
+    --gray-bg:#f7f7f9;
+    --border:#e2e2e8;
+    --text:#2b2b33;
+    --sub:#8a8a95;
+    --green:#1b8a5a;
+    --red:#d0392c;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+    background:var(--gray-bg);
+    margin:0;
+    color:var(--text);
+    font-size:13px;
+  }
+  .app{max-width:1500px;margin:0 auto;padding:16px 20px 60px;}
+
+  /* Header */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    flex-wrap:wrap;gap:10px;margin-bottom:14px;
+  }
+  .topbar-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .project-name{
+    font-size:20px;font-weight:700;border:none;background:transparent;
+    padding:4px 6px;border-radius:6px;min-width:220px;
+  }
+  .project-name:focus{outline:2px solid var(--purple-light);background:#fff;}
+  .status-pill{
+    background:var(--purple-light);color:var(--purple);
+    padding:4px 12px;border-radius:16px;font-size:12px;font-weight:600;
+  }
+  .btn{
+    border:1px solid var(--border);background:#fff;color:var(--text);
+    padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+  }
+  .btn:hover{background:#f1f1f5;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn:disabled:hover{background:#fff;}
+  .btn-primary{background:var(--purple);border-color:var(--purple);color:#fff;}
+  .btn-primary:hover{background:#4c25c4;}
+  .btn-ghost{border-color:transparent;background:transparent;}
+  .btn-ghost:hover{background:#eee;}
+  .btn-sm{padding:4px 8px;font-size:12px;border-radius:6px;}
+  .btn-danger{color:var(--red);}
+  .btn-alert{border-color:#f0c419;background:#fff8e1;color:#8a6d00;}
+  .btn-alert:hover{background:#fef2c7;}
+
+  select.version-select{
+    border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;background:#fff;
+  }
+  .meta{font-size:11px;color:var(--sub);}
+
+  /* Summary bar */
+  .summary{
+    display:flex;gap:0;background:#fff;border:1px solid var(--border);
+    border-radius:10px;padding:14px 10px;margin-bottom:14px;overflow-x:auto;
+  }
+  .summary .cell{
+    flex:1;min-width:120px;padding:0 16px;border-right:1px solid var(--border);
+    text-align:left;
+  }
+  .summary .cell:last-child{border-right:none;}
+  .summary .label{font-size:11px;color:var(--sub);margin-bottom:4px;}
+  .summary .value{font-size:17px;font-weight:700;}
+  .summary .subvalue{font-size:11px;color:var(--sub);margin-top:2px;}
+  .summary .value.green{color:var(--green);}
+  .summary .value.purple{color:var(--purple);}
+
+  /* Table */
+  .table-wrap{
+    background:#fff;border:1px solid var(--border);border-radius:10px;
+    overflow:auto;
+    max-height:70vh;
+  }
+  table{border-collapse:collapse;table-layout:fixed;}
+  thead th{
+    position:sticky;top:0;background:#faf9fc;z-index:2;
+    font-size:11.5px;color:var(--sub);font-weight:600;
+    padding:10px 8px;border-bottom:1px solid var(--border);
+    border-right:1px solid var(--border);white-space:nowrap;text-align:right;
+    overflow:hidden;text-overflow:ellipsis;
+    box-shadow:0 1px 0 var(--border);
+  }
+  thead th.left{text-align:left;}
+  thead th .th-label{overflow:hidden;text-overflow:ellipsis;display:block;pointer-events:none;}
+  .col-resizer{
+    position:absolute;top:0;right:-4px;width:8px;height:100%;
+    cursor:col-resize;z-index:3;
+  }
+  .col-resizer:hover, .col-resizer.col-resizing{background:rgba(91,47,224,.35);}
+  tbody td{
+    padding:6px 8px;border-bottom:1px solid var(--border);
+    border-right:1px solid var(--border);white-space:nowrap;text-align:right;
+    vertical-align:middle;overflow:hidden;text-overflow:ellipsis;
+  }
+  tbody td.left{text-align:left;}
+  tbody tr.cat-header-row{background:#fff;border-top:2px solid var(--purple-light);}
+  tbody tr.cat-header-row td{font-weight:700;padding:9px 8px;}
+  tbody tr.cat-subtotal-row{background:var(--purple-light);}
+  tbody tr.cat-subtotal-row td{font-weight:700;padding:9px 8px;}
+  tbody tr.item-row:hover{background:#fbfaff;}
+  td.cell-selected{background:rgba(91,47,224,.14) !important; box-shadow:inset 0 0 0 1.5px var(--purple);}
+  .no-select, .no-select *{user-select:none !important;}
+
+  .cell-input{
+    border:1px solid transparent;background:transparent;width:100%;
+    text-align:inherit;font-size:13px;padding:4px 4px;border-radius:5px;color:var(--text);
+    font-family:inherit;
+  }
+  .cell-input:hover{border-color:var(--border);}
+  .cell-input:focus{outline:none;border-color:var(--purple);background:#fff;}
+  input.cell-input[type=number]{text-align:right;}
+  .name-input{font-weight:600;}
+  .cat-name-input{font-weight:700;font-size:14px;background:transparent;}
+
+  .tax-sub{font-size:10.5px;color:var(--sub);display:block;}
+  .rate-badge{
+    display:inline-block;padding:1px 8px;border-radius:10px;font-size:11.5px;font-weight:600;
+  }
+  .rate-good{background:#e7f6ee;color:var(--green);}
+  .rate-bad{background:#fdeceb;color:var(--red);}
+
+  .row-actions{display:flex;gap:2px;justify-content:flex-end;}
+  .icon-btn{
+    border:none;background:transparent;color:var(--sub);cursor:pointer;
+    font-size:14px;padding:3px 5px;border-radius:5px;
+  }
+  .icon-btn:hover{background:#eee;color:var(--text);}
+  .icon-btn.danger:hover{color:var(--red);}
+
+  .collapse-toggle{cursor:pointer;margin-right:6px;color:var(--purple);user-select:none;}
+
+  .add-item-row td{
+    text-align:left;padding:6px 8px;
+  }
+  .add-cat-bar{padding:10px;text-align:left;display:flex;gap:8px;align-items:center;}
+
+  .checkbox{width:16px;height:16px;cursor:pointer;}
+
+  /* Context menu */
+  .ctx-menu{
+    position:fixed;z-index:200;background:#fff;border:1px solid var(--border);
+    border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.18);min-width:190px;
+    padding:6px 0;display:none;font-size:13px;
+  }
+  .ctx-menu.show{display:block;}
+  .ctx-item{padding:8px 14px;cursor:pointer;white-space:nowrap;}
+  .ctx-item:hover{background:#f1f1f5;}
+  .ctx-item.disabled{color:#c7c7cf;cursor:not-allowed;}
+  .ctx-item.disabled:hover{background:transparent;}
+  .ctx-sep{height:1px;background:var(--border);margin:5px 0;}
+
+  /* Modal */
+  .overlay{
+    position:fixed;inset:0;background:rgba(20,15,40,.35);
+    display:none;align-items:center;justify-content:center;z-index:50;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:#fff;border-radius:12px;width:520px;max-width:92vw;
+    max-height:80vh;display:flex;flex-direction:column;overflow:hidden;
+    box-shadow:0 10px 40px rgba(0,0,0,.2);
+  }
+  .modal-head{
+    padding:16px 18px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .modal-head h3{margin:0;font-size:15px;}
+  .modal-body{padding:8px 10px;overflow-y:auto;}
+  .modal-foot{padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+  .proj-item{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 10px;border-radius:8px;
+  }
+  .proj-item:hover{background:#f7f6fb;}
+  .proj-item .name{font-weight:600;}
+  .proj-item .meta{margin-top:2px;}
+  .proj-actions{display:flex;gap:4px;}
+  .empty-state{padding:30px;text-align:center;color:var(--sub);font-size:12.5px;}
+
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-bottom:6px;}
+  .info-grid label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--sub);}
+  .info-input{border:1px solid var(--border);border-radius:6px;padding:7px 9px;font-size:13px;font-family:inherit;color:var(--text);}
+  .info-block{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--sub);margin:10px 0;}
+  .info-textarea{border:1px solid var(--border);border-radius:6px;padding:8px 9px;font-size:13px;font-family:inherit;color:var(--text);resize:vertical;}
+  .info-sep{font-size:12.5px;font-weight:700;color:var(--purple);margin:14px 0 8px;padding-top:10px;border-top:1px solid var(--border);}
+
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:#2b2b33;color:#fff;padding:10px 18px;border-radius:8px;
+    font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:100;
+  }
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<style>body{padding-top:46px;}</style>
+<a href="00_ダッシュボード.html" style="position:fixed;top:12px;left:12px;z-index:9999;display:inline-flex;align-items:center;gap:6px;background:#ffffff;color:#333;border:1px solid #ddd;border-radius:20px;padding:7px 14px 7px 10px;font-family:'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif;font-size:12.5px;font-weight:700;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.12);">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+  ダッシュボードに戻る
+</a>
+<div class="app">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <input class="project-name" id="projectName" value="新規見積" spellcheck="false">
+      <span class="status-pill" id="statusPill">見積作成中</span>
+      <select class="version-select" id="versionSelect" title="バージョン"></select>
+      <span class="meta" id="lastSaved">未保存</span>
+    </div>
+    <div class="topbar-left">
+      <button class="btn btn-sm" id="btnUndo" title="元に戻す (Ctrl+Z)">↶ 元に戻す</button>
+      <button class="btn btn-sm" id="btnRedo" title="やり直し (Ctrl+Y)">↷ やり直し</button>
+      <button class="btn btn-alert" id="btnShowHidden" style="display:none;">🙈 非表示を解除</button>
+      <button class="btn" id="btnLoadImayo">🏠 今様邸データを読込</button>
+      <button class="btn" id="btnNew">＋ 新規見積</button>
+      <button class="btn" id="btnList">📁 保存済み一覧</button>
+      <button class="btn" id="btnEstimateInfo">⚙ 見積書情報</button>
+      <button class="btn" id="btnEstimateOutput">📄 見積書出力</button>
+      <button class="btn" id="btnOverwrite">📝 上書き保存</button>
+      <button class="btn btn-primary" id="btnSave">💾 登録</button>
+    </div>
+  </div>
+
+  <div class="summary" id="summaryBar"></div>
+
+  <div class="meta" style="margin-bottom:6px;">列見出しや行を右クリックすると、追加・移動・複製・削除・非表示・内容をすべて削除などの操作ができます。セルはドラッグで複数選択でき、Ctrl+C（コピー）→複数選択してCtrl+V（貼り付け）で一括入力、Deleteで一括削除できます。</div>
+
+  <div class="table-wrap">
+    <table id="mainTable">
+      <colgroup id="colgroup"></colgroup>
+      <thead>
+        <tr id="headRow"></tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div class="add-cat-bar">
+    <button class="btn btn-sm" id="btnAddCategory">＋ 大項目を追加</button>
+  </div>
+</div>
+
+<!-- context menu -->
+<ul class="ctx-menu" id="ctxMenu"></ul>
+
+<!-- 見積書情報 modal -->
+<div class="overlay" id="infoOverlay">
+  <div class="modal" style="width:560px;max-width:95vw;max-height:90vh;">
+    <div class="modal-head">
+      <h3>見積書情報</h3>
+      <button class="icon-btn" id="closeInfo">✕</button>
+    </div>
+    <div class="modal-body" style="padding:14px 18px;">
+      <div class="info-grid">
+        <label>宛先<input class="info-input" id="infoClientName"></label>
+        <label>敬称
+          <select class="info-input" id="infoHonorific">
+            <option value="御中">御中</option>
+            <option value="様">様</option>
+          </select>
+        </label>
+        <label>見積番号<input class="info-input" id="infoEstimateNo"></label>
+        <label>工事場所<input class="info-input" id="infoSiteAddress"></label>
+        <label>工事概要<input class="info-input" id="infoOverview"></label>
+        <label>工事期間<input class="info-input" id="infoPeriod"></label>
+        <label>支払条件<input class="info-input" id="infoPaymentTerms"></label>
+        <label>有効期限<input class="info-input" id="infoValidPeriod"></label>
+      </div>
+      <label class="info-block">備考（見積の条件などを記載）
+        <textarea class="info-textarea" id="infoRemarks" rows="4" placeholder="例：&#10;※杭の長さは、地盤調査後決定とする。"></textarea>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);margin:10px 0;">
+        <input type="checkbox" class="checkbox" id="infoShowFooter"> 見積書出力の各ページにフッター（工事名・宛先・日付・見積番号）を表示する
+      </label>
+      <div class="info-sep">発行会社情報</div>
+      <div class="info-grid">
+        <label>会社名<input class="info-input" id="infoCoName"></label>
+        <label>代表者<input class="info-input" id="infoCoRep"></label>
+        <label>郵便番号<input class="info-input" id="infoCoZip"></label>
+        <label>住所<input class="info-input" id="infoCoAddress"></label>
+        <label>TEL<input class="info-input" id="infoCoTel"></label>
+        <label>FAX<input class="info-input" id="infoCoFax"></label>
+        <label>インボイス登録番号<input class="info-input" id="infoCoInvoice"></label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="closeInfo2">閉じる</button>
+      <button class="btn btn-primary" id="btnInfoSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 見積書出力 modal -->
+<div class="overlay" id="estimateOverlay">
+  <div class="modal" style="width:820px;max-width:95vw;max-height:90vh;">
+    <div class="modal-head">
+      <h3>見積書プレビュー</h3>
+      <button class="icon-btn" id="closeEstimate">✕</button>
+    </div>
+    <div class="modal-body" id="estimatePreview" style="padding:0;"></div>
+    <div class="modal-foot">
+      <button class="btn" id="btnEstimatePrint">🖨 印刷・PDFで保存</button>
+      <button class="btn btn-primary" id="btnEstimateDownload">⬇ HTMLをダウンロード</button>
+      <button class="btn" id="closeEstimate2">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 保存済み一覧 modal -->
+<div class="overlay" id="listOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>保存済みの見積・予算</h3>
+      <button class="icon-btn" id="closeList">✕</button>
+    </div>
+    <div class="modal-body" id="projList"></div>
+    <div class="modal-foot">
+      <button class="btn" id="closeList2">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "concrewEstimateProjects_v1";
+  var COLW_KEY = "concrewEstimateColWidths_v1";
+  var TAX_RATE = 0.10;
+
+  // ---------- column definitions ----------
+  var CORE_DEFS = {
+    name:        {label:"名称",          width:180, left:true, core:true, type:"text",     editable:true,  clearable:true,  deletable:false, hideable:false, movable:false},
+    spec:        {label:"仕様・摘要",     width:140, left:true, core:true, type:"text",     editable:true,  clearable:true,  deletable:false, hideable:true,  movable:true},
+    qty:         {label:"数量",          width:70,             core:true, type:"number",   editable:true,  clearable:true,  deletable:false, hideable:true,  movable:true},
+    unit:        {label:"単位",          width:80,             core:true, type:"text",     editable:true,  clearable:true,  deletable:false, hideable:true,  movable:true},
+    unitSell:    {label:"販売単価",       width:100,            core:true, type:"number",   editable:true,  clearable:true,  deletable:false, hideable:true,  movable:true},
+    sell:        {label:"販売価格(税抜)", width:120,            core:true, type:"computed", editable:false, clearable:false, deletable:false, hideable:true,  movable:true},
+    kakeRate:    {label:"掛け率",        width:70,             core:true, type:"number",   editable:true,  clearable:true,  deletable:false, hideable:true,  movable:true},
+    unitCost:    {label:"予定原価単価",   width:100,            core:true, type:"number",   editable:true,  clearable:true,  deletable:false, hideable:true,  movable:true},
+    cost:        {label:"予定原価(税抜)", width:120,            core:true, type:"computed", editable:false, clearable:false, deletable:false, hideable:true,  movable:true},
+    unitActual:  {label:"実際原価単価",   width:100,            core:true, type:"number",   editable:true,  clearable:true,  deletable:false, hideable:true,  movable:true},
+    actual:      {label:"実際原価(税抜)", width:120,            core:true, type:"computed", editable:false, clearable:false, deletable:false, hideable:true,  movable:true},
+    profit:      {label:"見積粗利",       width:100,            core:true, type:"computed", editable:false, clearable:false, deletable:false, hideable:true,  movable:true},
+    profitRate:  {label:"見積粗利率",     width:80,             core:true, type:"computed", editable:false, clearable:false, deletable:false, hideable:true,  movable:true},
+    aProfit:     {label:"粗利",          width:100,            core:true, type:"computed", editable:false, clearable:false, deletable:false, hideable:true,  movable:true},
+    aProfitRate: {label:"粗利率",         width:80,             core:true, type:"computed", editable:false, clearable:false, deletable:false, hideable:true,  movable:true},
+    listed:      {label:"記載",          width:60,             core:true, type:"checkbox", editable:true,  clearable:false, deletable:false, hideable:true,  movable:true},
+    actions:     {label:"操作",          width:90,             core:true, type:"actions",  editable:false, clearable:false, deletable:false, hideable:false, movable:false}
+  };
+  var DEFAULT_COLUMN_ORDER = ["name","spec","qty","unit","unitSell","sell","kakeRate","unitCost","cost","unitActual","actual","profit","profitRate","aProfit","aProfitRate","listed","actions"];
+
+  function getColumnDef(key){
+    if(CORE_DEFS[key]) return CORE_DEFS[key];
+    var c = (state.customColumns||[]).find(function(cc){return cc.key === key;});
+    if(c) return {label:c.label, width:c.width||120, left:true, core:false, type:"text", editable:true, clearable:true, deletable:true, hideable:true, movable:true};
+    return {label:key, width:100, core:false, type:"text", editable:true, clearable:true, deletable:true, hideable:true, movable:true};
+  }
+  function visibleColumns(){
+    return state.columnOrder.filter(function(k){ return state.hiddenColumns.indexOf(k) === -1; });
+  }
+
+  var colWidths = {};
+  function loadColWidths(){
+    try{
+      var raw = localStorage.getItem(COLW_KEY);
+      if(raw) colWidths = JSON.parse(raw) || {};
+    }catch(e){ colWidths = {}; }
+  }
+  function saveColWidths(){
+    localStorage.setItem(COLW_KEY, JSON.stringify(colWidths));
+  }
+  function widthOf(key){
+    if(colWidths[key] && colWidths[key] >= 30) return colWidths[key];
+    return getColumnDef(key).width || 100;
+  }
+
+  function uid(){ return Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+  function yen(n){
+    n = Math.round(n||0);
+    return "¥" + n.toLocaleString("ja-JP");
+  }
+  function pct(n){
+    if(!isFinite(n)) return "-";
+    return (n*100).toFixed(2) + "%";
+  }
+  function num(v){
+    v = parseFloat(v);
+    return isFinite(v) ? v : 0;
+  }
+  function nowLabel(){
+    var d = new Date();
+    function p(x){return (x<10?"0":"")+x;}
+    return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes());
+  }
+  function escapeAttr(s){
+    return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+  }
+
+  // ---------- default sample data ----------
+  function emptyItem(name){
+    return {
+      id: uid(), name: name || "新規項目", spec:"", qty:1, unit:"式",
+      unitSell:0, kakeRate:1, unitCost:0, unitActual:0, listed:true, hidden:false, custom:{}
+    };
+  }
+  function emptyCategory(name){
+    return { id: uid(), name: name || "新規大項目", collapsed:false, hidden:false, items:[ emptyItem() ] };
+  }
+  function mkItem(name, spec, qty, unit, sell, cost, actual){
+    var kakeRate = cost ? Math.round((sell/cost)*10000)/10000 : 1;
+    return {id:uid(), name:name, spec:spec, qty:qty, unit:unit, unitSell:sell, kakeRate:kakeRate, unitCost:cost, unitActual:actual, listed:true, hidden:false, custom:{}};
+  }
+  function mkCat(name, spec, items){
+    return {id:uid(), name:name, collapsed:false, hidden:false, items:items};
+  }
+  function imayoCategories(){
+    return [
+      mkCat("仮設工事","共通仮設費、直接仮設費",[
+        mkItem("仮設電気","",1,"式",103500,90000,90000),
+        mkItem("仮設トイレ","仮囲い含む",1,"式",66000,55000,55000),
+        mkItem("外部足場損料","くさび緊結式本足場",202,"㎡",1140,950,950),
+        mkItem("足場養生ネット","",202,"㎡",180,150,150),
+        mkItem("足場下養生","",1,"式",6000,5000,5000),
+        mkItem("内部足場","",1,"式",48000,40000,40000),
+        mkItem("後片付け清掃費","敷地内",92.12,"㎡",800,667,666),
+        mkItem("内部養生費","",92.12,"㎡",360,300,300),
+        mkItem("竣工時美装費","",92.12,"㎡",1320,1100,1100),
+        mkItem("産廃運搬処分費","",92.12,"㎡",3240,2700,2700),
+        mkItem("各種機械器具損料","",1,"式",48000,40000,40000)
+      ]),
+      mkCat("コンクリート工事","地盤改良、基礎、左官",[
+        mkItem("地盤調査費","",1,"式",72000,60000,60000),
+        mkItem("遣り方、杭芯","",1,"式",36000,30000,30000),
+        mkItem("杭打ち工事","RCパイル（近隣調査データによる概算）",1,"式",540000,450000,450000),
+        mkItem("布基礎","",84.8,"m",28800,24000,24000),
+        mkItem("断熱材施工費","防湿コン部分、立ち上げ上部",84.8,"㎡",1320,1100,1100),
+        mkItem("土間コンクリート","玄関、ポーチ t150",9.7,"㎡",13200,11000,11000),
+        mkItem("防湿コンクリート","t70",82.2,"㎡",6000,5000,5000),
+        mkItem("残土運搬処分費","場外搬出",16.2,"m³",4800,4000,4000),
+        mkItem("コンクリートポンプ車","圧送費",3,"回",54000,45000,45000),
+        mkItem("ホールダウン","",5,"本",2400,2000,2000),
+        mkItem("パイルカット","杭頭処理",45,"本",1560,1300,1300),
+        mkItem("基礎天端均し","金鏝仕上げ",84.8,"m",900,750,750),
+        mkItem("基礎仕上げ","ドイツ壁",25.2,"㎡",4000,3333,3333),
+        mkItem("玄関ポーチ仕上げ","モルタル",9.7,"㎡",9600,8000,8000)
+      ]),
+      mkCat("木工事","プレカット在来工法",[
+        mkItem("構造材","",1,"式",1166046,932837,932837),
+        mkItem("間柱","",1,"式",263416,210733,210733),
+        mkItem("羽柄材","",1,"式",919030,735224,735224),
+        mkItem("材料プレカット、加工費","",92.12,"㎡",4875,3900,3900),
+        mkItem("キャドオプション","",92.12,"㎡",375,300,300),
+        mkItem("厚床合板","3*6*ｔ24　実付き",50,"枚",4600,3680,3680),
+        mkItem("野地合板","3*6*ｔ12　実付き",72,"枚",2625,2100,2100),
+        mkItem("外壁用ＯＳＢ合板","3*10*ｔ9",72,"式",2750,2200,2200),
+        mkItem("構造用金物","ホールダウン、オネガコーナー他",1,"式",187500,150000,150000),
+        mkItem("大工手間","",27.92,"",38000,38000,38000),
+        mkItem("副資材","釘、ビス、テープ、ボンド等",92.12,"㎡",3125,2500,2500),
+        mkItem("石膏ボード","",1,"式",231250,185000,185000),
+        mkItem("フローリング","DAIKEN　MYフロア",72.7,"㎡",4375,3500,3500)
+      ]),
+      mkCat("断熱防水工事","基礎断熱＋付加断熱",[
+        mkItem("基礎断熱材","スタイロフォーム3種ｔ50",111,"枚",3600,3000,3000),
+        mkItem("壁断熱材1","GW16kg",17,"本",9000,7500,7500),
+        mkItem("壁断熱材2","スタイロフォーム3種ｔ50",99,"枚",3600,3000,3000),
+        mkItem("天井断熱材","ブローイングｔ300",85,"㎡",4800,4000,4000),
+        mkItem("屋根断熱材","スタイロフォーム2種ｔ20",68,"枚",1440,1200,1200),
+        mkItem("コーキング","",15,"本",864,480,720),
+        mkItem("タイベックシート","シルバー",4,"本",15840,13200,13200),
+        mkItem("気密テープ","エースクロス",20,"本",504,420,420),
+        mkItem("防水テープ","片面、両面",20,"本",840,700,700),
+        mkItem("ウレタン","",1,"式",96000,80000,80000),
+        mkItem("ポリロンフィルム","ダンタイト21",3,"本",13200,11000,11000)
+      ]),
+      mkCat("住宅設備工事","屋外本管接続、屋内給排水",[
+        mkItem("給水管分水及び撤去工事","アスファルト舗装復旧含む",1,"式",442853,369044,369044),
+        mkItem("給排水給湯工事","",1,"式",1026000,855000,855000),
+        mkItem("換気工事","ルフロ400　局所換気",1,"式",420000,350000,350000),
+        mkItem("暖房工事","エコジョーズ　パネルヒーター",1,"式",1351452,1126210,1126210),
+        mkItem("空調工事","エアコン2台　DAIKIN 4.0kw 2.2kw",1,"式",636000,530000,530000),
+        mkItem("ユニットバス","LIXIL　リデア1616",1,"式",457600,416000,416000),
+        mkItem("システムキッチン","LIXIL　シエラS　W2630",1,"式",492800,448000,448000),
+        mkItem("カップボード","LIXIL　シエラS　W2600",1,"式",299200,272000,272000),
+        mkItem("洗面化粧台","LIXIL　ピアラ　W900",1,"式",118800,108000,108000),
+        mkItem("トイレ","LIXIL　アメージュ",1,"式",158400,144000,144000),
+        mkItem("申請費","納付金、道路占有許可",1,"式",166625,133300,133300)
+      ]),
+      mkCat("電気工事","幹線、宅内配線、照明器具",[
+        mkItem("幹線工事","外部引き込み",1,"式",240177,208850,208850),
+        mkItem("電灯・コンセント設備","照明器具代含む（定価35万）",1,"式",826275,718500,718500),
+        mkItem("弱電設備・火報工事","感知器類",1,"式",32372,28150,28150),
+        mkItem("アンテナ工事","TV、BSCS、ブースター",1,"式",151110,131400,131400),
+        mkItem("接地工事","アース",1,"式",55315,48100,48100),
+        mkItem("北電申請費","",1,"式",34500,30000,30000)
+      ]),
+      mkCat("外装工事","",[
+        mkItem("窯業サイディング","ネオロック光セラ18",170,"枚",3900,3000,3000/170),
+        mkItem("出隅部材","L455",80,"本",1105,850,850),
+        mkItem("施工金物","スターター、固定金",1,"式",182676,140520,140520),
+        mkItem("副資材","釘、ビス、スペーサー",1,"式",33800,26000,26000),
+        mkItem("外壁施工費","",170,"枚",1950,1500,1500/170),
+        mkItem("出隅施工費","",80,"本",390,300,300),
+        mkItem("軒天ボード","",8,"枚",3650,2920,2920),
+        mkItem("軒天換気","",1,"式",58500,45000,45000)
+      ]),
+      mkCat("板金工事","屋根",[
+        mkItem("屋根工事","平成ルーフ　SGL ｔ0.35",111.6,"㎡",6360,5300,5300),
+        mkItem("アスファルトルーフィング","23kg",125,"㎡",1440,1200,1200),
+        mkItem("破風工事","平成ルーフ　同上",56,"m",4560,3800,3800),
+        mkItem("淀","平成ルーフ　同上",56,"m",1440,1200,1200)
+      ]),
+      mkCat("建具工事","サッシ、内装ドア",[
+        mkItem("内装ドア","YKKスマエル",1,"式",605000,550000,550000),
+        mkItem("造作材","窓台",1,"式",165000,150000,150000),
+        mkItem("収納造作材","ポリランバー、ハン",1,"式",240000,200000,200000),
+        mkItem("枕棚セット","",3,"台",6600,5500,5500),
+        mkItem("樹脂サッシ","YKKAPW430 寒冷地様",1,"式",583000,530000,530000),
+        mkItem("玄関ドア","YKKヴェナート",1,"枚",246400,224000,224000),
+        mkItem("網戸","",1,"式",66000,60000,60000),
+        mkItem("風除サッシ","アルミ製引戸及びFI",1,"式",369600,336000,336000)
+      ]),
+      mkCat("内装工事","天井壁クロス、",[
+        mkItem("ビニールクロス","天井、壁500番",316,"㎡",1440,1200,1200),
+        mkItem("長尺塩ビシート","東リ フロアリュー",1,"式",60000,50000,50000),
+        mkItem("ロールスクリーン","リビング、洋室3箇月",1,"式",312000,260000,260000),
+        mkItem("ロールスクリーン取付施工費","",1,"式",42000,35000,35000)
+      ]),
+      mkCat("雑工事","",[
+        mkItem("内部コーキング","",1,"式",30000,25000,25000),
+        mkItem("床下点検口","",1,"台",32832,27360,27360),
+        mkItem("天井点検口","",1,"台",18216,15180,15180),
+        mkItem("玄関ポスト","",1,"台",18000,15000,15000),
+        mkItem("内部塗装","",1,"式",60000,50000,50000),
+        mkItem("防腐塗料","",1,"式",48000,40000,40000)
+      ]),
+      mkCat("運搬諸経費","",[
+        mkItem("三昇運搬費","",1,"式",50000,40000,40000),
+        mkItem("三昇諸経費","",1,"式",37500,30000,30000),
+        mkItem("オオバ運搬交通費","",1,"式",18750,15000,15000),
+        mkItem("中川アルミ運搬交通費","",1,"式",112500,90000,90000),
+        mkItem("ニッショウ運賃","",1,"式",138500,110800,110800),
+        mkItem("ニッショウ諸経費","",1,"式",57500,46000,46000),
+        mkItem("太豊交通費","",1,"式",37500,30000,30000),
+        mkItem("太豊経費","",1,"式",37500,30000,30000),
+        mkItem("三真","",1,"式",25000,20000,20000),
+        mkItem("法定福利費","",1,"式",1043547,0,0),
+        mkItem("一般管理費","",1,"式",1304434,0,0)
+      ])
+    ];
+  }
+  function sampleState(){
+    return {
+      projectName: "今様邸新築工事",
+      status: "見積提出済",
+      taxRate: TAX_RATE,
+      columnOrder: DEFAULT_COLUMN_ORDER.slice(),
+      hiddenColumns: [],
+      customColumns: [],
+      categories: imayoCategories(),
+      estimateInfo: {
+        clientName: "今 美佳",
+        honorific: "様",
+        estimateNo: "見積00001",
+        siteAddress: "",
+        overview: "今様邸新築工事",
+        period: "打ち合わせ",
+        paymentTerms: "打ち合わせ",
+        validPeriod: "2ヶ月",
+        remarks: "",
+        showFooter: true,
+        company: {
+          name: "有限会社 太豊建設",
+          rep: "代表取締役　青塚 恒太",
+          zip: "〒059-1262",
+          address: "苫小牧市美原町3丁目1番5号",
+          tel: "(0144) 82-7648",
+          fax: "(0144) 82-7649",
+          invoice: "T5-4300-0206-0556"
+        }
+      }
+    };
+  }
+  function loadImayoData(){
+    if(!confirm("今様邸新築工事の実際の見積データを読み込みます。現在の編集内容は上書きされます。よろしいですか？")) return;
+    state = sampleState();
+    currentProjectId = null;
+    currentVersionIndex = 0;
+    renderHead(); applyAllWidths(); render();
+    renderVersionSelect();
+    updateLastSaved();
+    resetHistory();
+    scheduleAutosave();
+    showToast("今様邸新築工事のデータを読み込みました");
+  }
+  function defaultEstimateInfo(){
+    return {
+      clientName: "",
+      honorific: "御中",
+      estimateNo: "見積00001",
+      siteAddress: "",
+      overview: "",
+      period: "打ち合わせ",
+      paymentTerms: "打ち合わせ",
+      validPeriod: "2ヶ月",
+      remarks: "",
+      showFooter: true,
+      company: {
+        name: "有限会社 太豊建設",
+        rep: "代表取締役　青塚 恒太",
+        zip: "〒059-1262",
+        address: "苫小牧市美原町3丁目1番5号",
+        tel: "(0144) 82-7648",
+        fax: "(0144) 82-7649",
+        invoice: "T5-4300-0206-0556"
+      }
+    };
+  }
+  function normalizeState(s){
+    if(!s.columnOrder) s.columnOrder = DEFAULT_COLUMN_ORDER.slice();
+    if(s.columnOrder.indexOf("kakeRate") === -1){
+      var sellIdx = s.columnOrder.indexOf("sell");
+      s.columnOrder.splice(sellIdx >= 0 ? sellIdx+1 : s.columnOrder.length, 0, "kakeRate");
+    }
+    if(!s.hiddenColumns) s.hiddenColumns = [];
+    if(!s.customColumns) s.customColumns = [];
+    if(!s.estimateInfo) s.estimateInfo = defaultEstimateInfo();
+    if(!s.estimateInfo.company) s.estimateInfo.company = defaultEstimateInfo().company;
+    if(!s.estimateInfo.honorific) s.estimateInfo.honorific = "御中";
+    if(s.estimateInfo.showFooter === undefined) s.estimateInfo.showFooter = true;
+    (s.categories||[]).forEach(function(cat){
+      if(cat.hidden === undefined) cat.hidden = false;
+      (cat.items||[]).forEach(function(it){
+        if(it.hidden === undefined) it.hidden = false;
+        if(!it.custom) it.custom = {};
+        if(it.kakeRate === undefined) it.kakeRate = it.unitCost ? Math.round((it.unitSell/it.unitCost)*10000)/10000 : 1;
+      });
+    });
+    return s;
+  }
+
+  var state = null;
+  var currentProjectId = null;
+  var currentVersionIndex = 0;
+
+  // ---------- undo / redo ----------
+  var history = [];
+  var historyIndex = -1;
+  var HISTORY_MAX = 80;
+  var restoringHistory = false;
+  function resetHistory(){
+    history = [JSON.stringify(state)];
+    historyIndex = 0;
+    updateUndoRedoButtons();
+  }
+  function pushHistory(){
+    if(restoringHistory) return;
+    var snap = JSON.stringify(state);
+    if(historyIndex >= 0 && history[historyIndex] === snap) return;
+    history = history.slice(0, historyIndex+1);
+    history.push(snap);
+    if(history.length > HISTORY_MAX) history.shift();
+    historyIndex = history.length - 1;
+    updateUndoRedoButtons();
+  }
+  function undo(){
+    if(historyIndex <= 0) return;
+    historyIndex--;
+    restoringHistory = true;
+    state = normalizeState(JSON.parse(history[historyIndex]));
+    renderHead(); applyAllWidths(); render();
+    restoringHistory = false;
+    updateUndoRedoButtons();
+    scheduleAutosave();
+  }
+  function redo(){
+    if(historyIndex >= history.length-1) return;
+    historyIndex++;
+    restoringHistory = true;
+    state = normalizeState(JSON.parse(history[historyIndex]));
+    renderHead(); applyAllWidths(); render();
+    restoringHistory = false;
+    updateUndoRedoButtons();
+    scheduleAutosave();
+  }
+  function updateUndoRedoButtons(){
+    var u = document.getElementById("btnUndo");
+    var r = document.getElementById("btnRedo");
+    if(u) u.disabled = historyIndex <= 0;
+    if(r) r.disabled = historyIndex >= history.length-1;
+  }
+
+  // ---------- cell selection / copy-paste ----------
+  var rowIndexMap = [];
+  var colIndexMap = [];
+  var selStart = null, selEnd = null, isSelecting = false;
+  var clipboardValue = null;
+  function isFillableColumn(key){
+    var def = getColumnDef(key);
+    return !!def && def.editable && def.type !== "checkbox";
+  }
+  function syncSellFromRate(item){
+    if(item.unitCost){ item.unitSell = Math.round(item.unitCost * item.kakeRate * 100) / 100; }
+  }
+  function syncRateFromSell(item){
+    if(item.unitCost){ item.kakeRate = Math.round((item.unitSell / item.unitCost) * 10000) / 10000; }
+  }
+  function getCellValue(row, col){
+    var loc = rowIndexMap[row]; if(!loc) return undefined;
+    var cat = findCat(loc.catId); if(!cat) return undefined;
+    var item = findItem(cat, loc.itemId); if(!item) return undefined;
+    var key = colIndexMap[col];
+    if(key === "qty" || key === "unitSell" || key === "unitCost" || key === "unitActual" || key === "kakeRate") return item[key];
+    if(key === "name" || key === "spec" || key === "unit") return item[key];
+    return (item.custom && item.custom[key]) || "";
+  }
+  function setCellValue(row, col, val){
+    var loc = rowIndexMap[row]; if(!loc) return;
+    var cat = findCat(loc.catId); if(!cat) return;
+    var item = findItem(cat, loc.itemId); if(!item) return;
+    var key = colIndexMap[col];
+    if(key === "qty" || key === "unitSell" || key === "unitCost" || key === "unitActual" || key === "kakeRate"){
+      item[key] = num(val);
+      if(key === "kakeRate" || key === "unitCost"){ syncSellFromRate(item); }
+      else if(key === "unitSell"){ syncRateFromSell(item); }
+    } else if(key === "name" || key === "spec" || key === "unit"){
+      item[key] = (val===undefined||val===null) ? "" : String(val);
+    } else {
+      if(!item.custom) item.custom = {};
+      item.custom[key] = (val===undefined||val===null) ? "" : String(val);
+    }
+  }
+  function updateSelectionVisual(){
+    document.querySelectorAll("td.cell-selected").forEach(function(el){ el.classList.remove("cell-selected"); });
+    if(!selStart || !selEnd) return;
+    var r0 = Math.min(selStart.row, selEnd.row), r1 = Math.max(selStart.row, selEnd.row);
+    var c0 = Math.min(selStart.col, selEnd.col), c1 = Math.max(selStart.col, selEnd.col);
+    var tbody = document.getElementById("tbody");
+    for(var r=r0; r<=r1; r++){
+      var tr = tbody.querySelector('tr[data-rowidx="'+r+'"]');
+      if(!tr) continue;
+      for(var c=c0; c<=c1; c++){
+        if(!isFillableColumn(colIndexMap[c])) continue;
+        var td = tr.querySelector('td[data-colidx="'+c+'"]');
+        if(td) td.classList.add("cell-selected");
+      }
+    }
+  }
+  function pasteToSelection(){
+    if(!selStart || !selEnd || clipboardValue === null) return;
+    var r0 = Math.min(selStart.row, selEnd.row), r1 = Math.max(selStart.row, selEnd.row);
+    var c0 = Math.min(selStart.col, selEnd.col), c1 = Math.max(selStart.col, selEnd.col);
+    var count = 0;
+    for(var r=r0; r<=r1; r++){
+      if(!rowIndexMap[r]) continue;
+      for(var c=c0; c<=c1; c++){
+        if(!isFillableColumn(colIndexMap[c])) continue;
+        setCellValue(r, c, clipboardValue);
+        count++;
+      }
+    }
+    render();
+    updateSelectionVisual();
+    pushHistory();
+    scheduleAutosave();
+    showToast("貼り付けました（"+count+"件）");
+  }
+  function clearSelectionContents(){
+    if(!selStart || !selEnd) return;
+    if(!confirm("選択したセルの内容を削除しますか？")) return;
+    var r0 = Math.min(selStart.row, selEnd.row), r1 = Math.max(selStart.row, selEnd.row);
+    var c0 = Math.min(selStart.col, selEnd.col), c1 = Math.max(selStart.col, selEnd.col);
+    for(var r=r0; r<=r1; r++){
+      if(!rowIndexMap[r]) continue;
+      for(var c=c0; c<=c1; c++){
+        var key = colIndexMap[c];
+        if(!isFillableColumn(key)) continue;
+        var def = getColumnDef(key);
+        setCellValue(r, c, def.type === "number" ? 0 : "");
+      }
+    }
+    render();
+    updateSelectionVisual();
+    pushHistory();
+    scheduleAutosave();
+  }
+  function setupCellSelection(){
+    var tbody = document.getElementById("tbody");
+    tbody.addEventListener("mousedown", function(e){
+      var td = e.target.closest("td[data-colidx]");
+      if(!td){ selStart = selEnd = null; updateSelectionVisual(); return; }
+      var tr = td.closest("tr[data-rowidx]");
+      if(!tr){ selStart = selEnd = null; updateSelectionVisual(); return; }
+      var row = parseInt(tr.getAttribute("data-rowidx"), 10);
+      var col = parseInt(td.getAttribute("data-colidx"), 10);
+      if(!isFillableColumn(colIndexMap[col])){ selStart = selEnd = null; updateSelectionVisual(); return; }
+      selStart = {row:row, col:col};
+      selEnd = {row:row, col:col};
+      isSelecting = true;
+      updateSelectionVisual();
+    });
+    tbody.addEventListener("mousemove", function(e){
+      if(!isSelecting || !selStart) return;
+      var td = e.target.closest("td[data-colidx]");
+      if(!td) return;
+      var tr = td.closest("tr[data-rowidx]");
+      if(!tr) return;
+      var row = parseInt(tr.getAttribute("data-rowidx"), 10);
+      var col = parseInt(td.getAttribute("data-colidx"), 10);
+      if(selEnd && row === selEnd.row && col === selEnd.col) return;
+      selEnd = {row:row, col:col};
+      if(selStart.row !== selEnd.row || selStart.col !== selEnd.col){
+        document.body.classList.add("no-select");
+        if(document.activeElement && tbody.contains(document.activeElement)) document.activeElement.blur();
+        window.getSelection && window.getSelection().removeAllRanges();
+      }
+      updateSelectionVisual();
+    });
+    document.addEventListener("mouseup", function(){
+      isSelecting = false;
+      document.body.classList.remove("no-select");
+    });
+    document.addEventListener("mousedown", function(e){
+      if(tbody.contains(e.target)) return;
+      if(!selStart) return;
+      selStart = selEnd = null;
+      updateSelectionVisual();
+    });
+    document.addEventListener("keydown", function(e){
+      var modKey = e.ctrlKey || e.metaKey;
+      if(modKey && e.key.toLowerCase() === "z" && !e.shiftKey){
+        var tag = document.activeElement && document.activeElement.tagName;
+        if(tag !== "INPUT" && tag !== "TEXTAREA"){ e.preventDefault(); undo(); return; }
+      }
+      if(modKey && (e.key.toLowerCase() === "y" || (e.key.toLowerCase()==="z" && e.shiftKey))){
+        var tag2 = document.activeElement && document.activeElement.tagName;
+        if(tag2 !== "INPUT" && tag2 !== "TEXTAREA"){ e.preventDefault(); redo(); return; }
+      }
+      if(!selStart || !selEnd) return;
+      var isMulti = (selStart.row !== selEnd.row || selStart.col !== selEnd.col);
+      var activeInTable = document.activeElement && tbody.contains(document.activeElement);
+      var activeIsBody = document.activeElement === document.body;
+      if(!activeInTable && !activeIsBody) return;
+      var mod = e.ctrlKey || e.metaKey;
+      if(mod && e.key.toLowerCase() === "c"){
+        var val = getCellValue(selStart.row, selStart.col);
+        if(val !== undefined){
+          clipboardValue = val;
+          showToast("コピーしました");
+          if(isMulti) e.preventDefault();
+        }
+      } else if(mod && e.key.toLowerCase() === "v"){
+        if(clipboardValue !== null){
+          pasteToSelection();
+          e.preventDefault();
+        }
+      } else if((e.key === "Delete" || e.key === "Backspace") && isMulti){
+        clearSelectionContents();
+        e.preventDefault();
+      }
+    });
+  }
+
+  // ---------- calculations ----------
+  function calcItem(it){
+    var sell = it.qty * it.unitSell;
+    var cost = it.qty * it.unitCost;
+    var actual = it.qty * it.unitActual;
+    var profit = sell - cost;
+    var profitRate = sell !== 0 ? profit/sell : 0;
+    var aProfit = sell - actual;
+    var aProfitRate = sell !== 0 ? aProfit/sell : 0;
+    return {sell:sell, cost:cost, actual:actual, profit:profit, profitRate:profitRate, aProfit:aProfit, aProfitRate:aProfitRate};
+  }
+  function calcCategory(cat){
+    var t = {sell:0,cost:0,actual:0,profit:0,aProfit:0};
+    cat.items.forEach(function(it){
+      var c = calcItem(it);
+      t.sell += c.sell; t.cost += c.cost; t.actual += c.actual; t.profit += c.profit; t.aProfit += c.aProfit;
+    });
+    t.profitRate = t.sell !== 0 ? t.profit/t.sell : 0;
+    t.aProfitRate = t.sell !== 0 ? t.aProfit/t.sell : 0;
+    return t;
+  }
+  function calcGrand(){
+    var t = {sell:0,cost:0,actual:0,profit:0,aProfit:0};
+    state.categories.forEach(function(cat){
+      var c = calcCategory(cat);
+      t.sell += c.sell; t.cost += c.cost; t.actual += c.actual; t.profit += c.profit; t.aProfit += c.aProfit;
+    });
+    t.profitRate = t.sell !== 0 ? t.profit/t.sell : 0;
+    t.aProfitRate = t.sell !== 0 ? t.aProfit/t.sell : 0;
+    return t;
+  }
+
+  // ---------- header / colgroup ----------
+  function updateTableWidth(){
+    var total = 0;
+    visibleColumns().forEach(function(k){ total += widthOf(k); });
+    var t = document.getElementById("mainTable");
+    if(t) t.style.width = total + "px";
+  }
+  function renderHead(){
+    var cols = visibleColumns();
+    var colgroup = document.getElementById("colgroup");
+    colgroup.innerHTML = cols.map(function(k){
+      return '<col data-col="'+k+'" style="width:'+widthOf(k)+'px">';
+    }).join("");
+
+    var tr = document.getElementById("headRow");
+    tr.innerHTML = cols.map(function(k){
+      var def = getColumnDef(k);
+      return '<th class="'+(def.left?"left":"")+'" data-col="'+k+'">' +
+        '<span class="th-label">'+escapeAttr(def.label)+'</span>' +
+        '<span class="col-resizer" data-col="'+k+'" title="ドラッグで幅を調整／ダブルクリックで既定幅"></span>' +
+        '</th>';
+    }).join("");
+    updateTableWidth();
+  }
+
+  // ---------- summary ----------
+  function renderSummary(){
+    var g = calcGrand();
+    var bar = document.getElementById("summaryBar");
+    bar.innerHTML =
+      cellHtml("販売価格", yen(g.sell), yen(g.sell*(1+state.taxRate))+" (税込)") +
+      cellHtml("予定原価", yen(g.cost), yen(g.cost*(1+state.taxRate))+" (税込)") +
+      cellHtml("実際原価", yen(g.actual), yen(g.actual*(1+state.taxRate))+" (税込)") +
+      cellHtml("見積粗利", yen(g.profit), null, "purple") +
+      cellHtml("見積粗利率", pct(g.profitRate), null, "purple") +
+      cellHtml("粗利", yen(g.aProfit), null, "green") +
+      cellHtml("粗利率", pct(g.aProfitRate), null, "green");
+  }
+  function cellHtml(label, value, sub, colorClass){
+    return '<div class="cell">' +
+      '<div class="label">'+label+'</div>' +
+      '<div class="value'+(colorClass?" "+colorClass:"")+'">'+value+'</div>' +
+      (sub ? '<div class="subvalue">'+sub+'</div>' : '') +
+      '</div>';
+  }
+  function rateBadge(rate){
+    var cls = rate >= 0.15 ? "rate-good" : "rate-bad";
+    return '<span class="rate-badge '+cls+'">'+pct(rate)+'</span>';
+  }
+
+  // ---------- cell renderers ----------
+  function catHeaderCell(key, cat){
+    switch(key){
+      case "name":
+        return '<td class="left">' +
+          '<span class="collapse-toggle" data-act="toggleCat" data-cat="'+cat.id+'">'+(cat.collapsed?"▶":"▼")+'</span>' +
+          '<input class="cell-input cat-name-input" data-act="catName" data-cat="'+cat.id+'" value="'+escapeAttr(cat.name)+'">' +
+          '</td>';
+      case "actions":
+        return '<td class="row-actions">' +
+          '<button class="icon-btn" data-act="dupCat" data-cat="'+cat.id+'" title="複製">⧉</button>' +
+          '<button class="icon-btn danger" data-act="delCat" data-cat="'+cat.id+'" title="削除">🗑</button>' +
+          '</td>';
+      default: return '<td></td>';
+    }
+  }
+  function catSubtotalCell(key, cat, t){
+    switch(key){
+      case "name": return '<td class="left" style="padding-left:26px;">小計</td>';
+      case "sell": return '<td>'+yen(t.sell)+'</td>';
+      case "cost": return '<td>'+yen(t.cost)+'</td>';
+      case "actual": return '<td>'+yen(t.actual)+'</td>';
+      case "profit": return '<td>'+yen(t.profit)+'</td>';
+      case "profitRate": return '<td>'+pct(t.profitRate)+'</td>';
+      case "aProfit": return '<td>'+yen(t.aProfit)+'</td>';
+      case "aProfitRate": return '<td>'+pct(t.aProfitRate)+'</td>';
+      default: return '<td></td>';
+    }
+  }
+  function itemCell(key, cat, it, c, colIndex){
+    var d = 'data-cat="'+cat.id+'" data-item="'+it.id+'"';
+    var a = ' data-colidx="'+colIndex+'"';
+    switch(key){
+      case "name": return '<td'+a+' class="left"><input class="cell-input name-input" data-act="itemField" data-field="name" '+d+' value="'+escapeAttr(it.name)+'"></td>';
+      case "spec": return '<td'+a+' class="left"><input class="cell-input" data-act="itemField" data-field="spec" '+d+' value="'+escapeAttr(it.spec)+'"></td>';
+      case "qty": return '<td'+a+'><input class="cell-input" type="number" step="any" data-act="itemField" data-field="qty" '+d+' value="'+it.qty+'"></td>';
+      case "unit": return '<td'+a+'><input class="cell-input" style="text-align:center" data-act="itemField" data-field="unit" '+d+' value="'+escapeAttr(it.unit)+'"></td>';
+      case "unitSell": return '<td'+a+'><input class="cell-input" type="number" step="any" data-act="itemField" data-field="unitSell" '+d+' value="'+it.unitSell+'"></td>';
+      case "sell": return '<td'+a+'>'+yen(c.sell)+'<span class="tax-sub">税込:'+yen(c.sell*(1+state.taxRate))+'</span></td>';
+      case "kakeRate": return '<td'+a+' title="予定原価単価×掛け率＝販売単価"><input class="cell-input" type="number" step="0.01" data-act="itemField" data-field="kakeRate" '+d+' value="'+it.kakeRate+'"></td>';
+      case "unitCost": return '<td'+a+'><input class="cell-input" type="number" step="any" data-act="itemField" data-field="unitCost" '+d+' value="'+it.unitCost+'"></td>';
+      case "cost": return '<td'+a+'>'+yen(c.cost)+'<span class="tax-sub">税込:'+yen(c.cost*(1+state.taxRate))+'</span></td>';
+      case "unitActual": return '<td'+a+'><input class="cell-input" type="number" step="any" data-act="itemField" data-field="unitActual" '+d+' value="'+it.unitActual+'"></td>';
+      case "actual": return '<td'+a+'>'+yen(c.actual)+'<span class="tax-sub">税込:'+yen(c.actual*(1+state.taxRate))+'</span></td>';
+      case "profit": return '<td'+a+'>'+yen(c.profit)+'</td>';
+      case "profitRate": return '<td'+a+'>'+rateBadge(c.profitRate)+'</td>';
+      case "aProfit": return '<td'+a+'>'+yen(c.aProfit)+'</td>';
+      case "aProfitRate": return '<td'+a+'>'+rateBadge(c.aProfitRate)+'</td>';
+      case "listed": return '<td'+a+'><input type="checkbox" class="checkbox" data-act="itemListed" '+d+' '+(it.listed?"checked":"")+'></td>';
+      case "actions":
+        return '<td'+a+' class="row-actions">' +
+          '<button class="icon-btn" data-act="dupItem" '+d+' title="複製">⧉</button>' +
+          '<button class="icon-btn danger" data-act="delItem" '+d+' title="削除">🗑</button>' +
+          '</td>';
+      default:
+        return '<td'+a+' class="left"><input class="cell-input" data-act="itemCustomField" data-col="'+key+'" '+d+' value="'+escapeAttr((it.custom && it.custom[key]) || "")+'"></td>';
+    }
+  }
+
+  // ---------- render ----------
+  function render(){
+    document.getElementById("projectName").value = state.projectName;
+    document.getElementById("statusPill").textContent = state.status || "見積作成中";
+    renderSummary();
+
+    var cols = visibleColumns();
+    colIndexMap = cols.slice();
+    rowIndexMap = [];
+    var tbody = document.getElementById("tbody");
+    tbody.innerHTML = "";
+
+    state.categories.forEach(function(cat){
+      if(cat.hidden) return;
+      var catCalc = calcCategory(cat);
+
+      var trHead = document.createElement("tr");
+      trHead.className = "cat-header-row";
+      trHead.setAttribute("data-cat", cat.id);
+      trHead.setAttribute("data-rowtype", "cat");
+      trHead.innerHTML = cols.map(function(k){ return catHeaderCell(k, cat); }).join("");
+      tbody.appendChild(trHead);
+
+      if(!cat.collapsed){
+        cat.items.forEach(function(it){
+          if(it.hidden) return;
+          var c = calcItem(it);
+          var rowIdx = rowIndexMap.length;
+          rowIndexMap.push({catId:cat.id, itemId:it.id});
+          var tr = document.createElement("tr");
+          tr.className = "item-row";
+          tr.setAttribute("data-cat", cat.id);
+          tr.setAttribute("data-item", it.id);
+          tr.setAttribute("data-rowtype", "item");
+          tr.setAttribute("data-rowidx", rowIdx);
+          tr.innerHTML = cols.map(function(k, ci){ return itemCell(k, cat, it, c, ci); }).join("");
+          tbody.appendChild(tr);
+        });
+
+        var trAdd = document.createElement("tr");
+        trAdd.className = "add-item-row";
+        trAdd.innerHTML = '<td colspan="'+cols.length+'"><button class="btn btn-sm" data-act="addItem" data-cat="'+cat.id+'">＋ 項目を追加</button></td>';
+        tbody.appendChild(trAdd);
+      }
+
+      var trSub = document.createElement("tr");
+      trSub.className = "cat-subtotal-row";
+      trSub.setAttribute("data-cat", cat.id);
+      trSub.setAttribute("data-rowtype", "cat");
+      trSub.innerHTML = cols.map(function(k){ return catSubtotalCell(k, cat, catCalc); }).join("");
+      tbody.appendChild(trSub);
+    });
+
+    updateHiddenBadge();
+    updateSelectionVisual();
+  }
+
+  function findCat(id){ return state.categories.find(function(c){return c.id === id;}); }
+  function findItem(cat, id){ return cat.items.find(function(i){return i.id === id;}); }
+
+  // ---------- item operations ----------
+  function addItemToCat(catId){
+    findCat(catId).items.push(emptyItem());
+    render(); pushHistory(); scheduleAutosave();
+  }
+  function insertItem(catId, itemId, side){
+    var cat = findCat(catId);
+    var idx = cat.items.findIndex(function(i){return i.id === itemId;});
+    cat.items.splice(side === "above" ? idx : idx+1, 0, emptyItem());
+    render(); pushHistory(); scheduleAutosave();
+  }
+  function duplicateItem(catId, itemId){
+    var cat = findCat(catId);
+    var item = findItem(cat, itemId);
+    var copy = JSON.parse(JSON.stringify(item));
+    copy.id = uid();
+    var idx = cat.items.findIndex(function(i){return i.id === item.id;});
+    cat.items.splice(idx+1, 0, copy);
+    render(); pushHistory(); scheduleAutosave();
+  }
+  function deleteItem(catId, itemId){
+    var cat = findCat(catId);
+    cat.items = cat.items.filter(function(i){return i.id !== itemId;});
+    render(); pushHistory(); scheduleAutosave();
+  }
+  function moveItem(catId, itemId, dir){
+    var cat = findCat(catId);
+    var idx = cat.items.findIndex(function(i){return i.id === itemId;});
+    var newIdx = idx + dir;
+    if(newIdx < 0 || newIdx >= cat.items.length) return;
+    var tmp = cat.items[newIdx]; cat.items[newIdx] = cat.items[idx]; cat.items[idx] = tmp;
+    render(); pushHistory(); scheduleAutosave();
+  }
+  function hideItem(catId, itemId){
+    findItem(findCat(catId), itemId).hidden = true;
+    render(); pushHistory(); scheduleAutosave();
+  }
+  function clearItemContent(catId, itemId){
+    if(!confirm("この項目の内容をすべて削除しますか？")) return;
+    var it = findItem(findCat(catId), itemId);
+    it.name = ""; it.spec = ""; it.qty = 0; it.unit = ""; it.unitSell = 0; it.kakeRate = 1; it.unitCost = 0; it.unitActual = 0; it.custom = {};
+    render(); pushHistory(); scheduleAutosave();
+  }
+
+  // ---------- category operations ----------
+  function insertCategory(catId, side){
+    var idx = state.categories.findIndex(function(c){return c.id === catId;});
+    state.categories.splice(side === "above" ? idx : idx+1, 0, emptyCategory());
+    render(); pushHistory(); scheduleAutosave();
+  }
+  function duplicateCategory(catId){
+    var cat = findCat(catId);
+    var copy = JSON.parse(JSON.stringify(cat));
+    copy.id = uid();
+    copy.items.forEach(function(i){ i.id = uid(); });
+    var idx = state.categories.findIndex(function(c){return c.id === cat.id;});
+    state.categories.splice(idx+1, 0, copy);
+    render(); pushHistory(); scheduleAutosave();
+  }
+  function deleteCategory(catId){
+    if(!confirm("この大項目を削除しますか？（中の項目もすべて削除されます）")) return;
+    state.categories = state.categories.filter(function(c){return c.id !== catId;});
+    render(); pushHistory(); scheduleAutosave();
+  }
+  function moveCategory(catId, dir){
+    var idx = state.categories.findIndex(function(c){return c.id === catId;});
+    var newIdx = idx + dir;
+    if(newIdx < 0 || newIdx >= state.categories.length) return;
+    var tmp = state.categories[newIdx]; state.categories[newIdx] = state.categories[idx]; state.categories[idx] = tmp;
+    render(); pushHistory(); scheduleAutosave();
+  }
+  function hideCategory(catId){
+    findCat(catId).hidden = true;
+    render(); pushHistory(); scheduleAutosave();
+  }
+  function clearCategoryContent(catId){
+    if(!confirm("この大項目内のすべての項目の内容を削除しますか？")) return;
+    findCat(catId).items.forEach(function(it){
+      it.name = ""; it.spec = ""; it.qty = 0; it.unit = ""; it.unitSell = 0; it.kakeRate = 1; it.unitCost = 0; it.unitActual = 0; it.custom = {};
+    });
+    render(); pushHistory(); scheduleAutosave();
+  }
+
+  // ---------- column operations ----------
+  function insertColumn(refKey, side){
+    var label = prompt("新しい列の名前を入力してください", "新しい列");
+    if(label === null) return;
+    if(!label.trim()) label = "新しい列";
+    var key = "custom_" + uid();
+    state.customColumns.push({key:key, label:label.trim(), width:120});
+    var idx = state.columnOrder.indexOf(refKey);
+    state.columnOrder.splice(side === "left" ? idx : idx+1, 0, key);
+    colWidths[key] = 120;
+    renderHead(); render(); saveColWidths(); pushHistory(); scheduleAutosave();
+  }
+  function duplicateColumn(key){
+    var def = getColumnDef(key);
+    if(def.core) return;
+    var newKey = "custom_" + uid();
+    state.customColumns.push({key:newKey, label:def.label+"のコピー", width:def.width});
+    var idx = state.columnOrder.indexOf(key);
+    state.columnOrder.splice(idx+1, 0, newKey);
+    state.categories.forEach(function(cat){
+      cat.items.forEach(function(it){
+        if(!it.custom) it.custom = {};
+        it.custom[newKey] = it.custom[key] || "";
+      });
+    });
+    colWidths[newKey] = widthOf(key);
+    renderHead(); render(); saveColWidths(); pushHistory(); scheduleAutosave();
+  }
+  function deleteColumn(key){
+    var def = getColumnDef(key);
+    if(def.core) return;
+    if(!confirm("この列を削除しますか？（データも削除されます）")) return;
+    state.customColumns = state.customColumns.filter(function(c){return c.key !== key;});
+    state.columnOrder = state.columnOrder.filter(function(k){return k !== key;});
+    state.hiddenColumns = state.hiddenColumns.filter(function(k){return k !== key;});
+    state.categories.forEach(function(cat){
+      cat.items.forEach(function(it){ if(it.custom) delete it.custom[key]; });
+    });
+    renderHead(); render(); pushHistory(); scheduleAutosave();
+  }
+  function canMoveColumn(key, dir){
+    var def = getColumnDef(key);
+    if(!def.movable) return false;
+    var idx = state.columnOrder.indexOf(key);
+    var newIdx = idx + dir;
+    if(newIdx < 1 || newIdx > state.columnOrder.length - 2) return false;
+    return true;
+  }
+  function moveColumn(key, dir){
+    if(!canMoveColumn(key, dir)) return;
+    var idx = state.columnOrder.indexOf(key);
+    var newIdx = idx + dir;
+    var tmp = state.columnOrder[newIdx];
+    state.columnOrder[newIdx] = key;
+    state.columnOrder[idx] = tmp;
+    renderHead(); render(); pushHistory(); scheduleAutosave();
+  }
+  function hideColumn(key){
+    var def = getColumnDef(key);
+    if(!def.hideable) return;
+    if(state.hiddenColumns.indexOf(key) === -1) state.hiddenColumns.push(key);
+    renderHead(); render(); pushHistory(); scheduleAutosave();
+  }
+  function clearColumnContent(key){
+    var def = getColumnDef(key);
+    if(!def.clearable) return;
+    if(!confirm("この列の内容をすべて削除しますか？")) return;
+    state.categories.forEach(function(cat){
+      cat.items.forEach(function(it){
+        if(key === "name") it.name = "";
+        else if(key === "spec") it.spec = "";
+        else if(key === "qty") it.qty = 0;
+        else if(key === "unit") it.unit = "";
+        else if(key === "unitSell") it.unitSell = 0;
+        else if(key === "kakeRate") it.kakeRate = 1;
+        else if(key === "unitCost") it.unitCost = 0;
+        else if(key === "unitActual") it.unitActual = 0;
+        else if(it.custom) it.custom[key] = "";
+      });
+    });
+    render(); pushHistory(); scheduleAutosave();
+  }
+
+  // ---------- hidden badge / show all ----------
+  function countHidden(){
+    var n = state.hiddenColumns.length;
+    state.categories.forEach(function(cat){
+      if(cat.hidden) n++;
+      cat.items.forEach(function(it){ if(it.hidden) n++; });
+    });
+    return n;
+  }
+  function updateHiddenBadge(){
+    var btn = document.getElementById("btnShowHidden");
+    var n = countHidden();
+    if(n > 0){
+      btn.style.display = "inline-flex";
+      btn.textContent = "🙈 非表示を解除（" + n + "）";
+    } else {
+      btn.style.display = "none";
+    }
+  }
+  function showAllHidden(){
+    state.hiddenColumns = [];
+    state.categories.forEach(function(cat){
+      cat.hidden = false;
+      cat.items.forEach(function(it){ it.hidden = false; });
+    });
+    renderHead(); render(); pushHistory(); scheduleAutosave();
+    showToast("非表示をすべて解除しました");
+  }
+  document.getElementById("btnShowHidden").addEventListener("click", showAllHidden);
+
+  // ---------- context menu ----------
+  var ctxMenuEl = document.getElementById("ctxMenu");
+  function openContextMenu(x, y, items){
+    ctxMenuEl.innerHTML = items.map(function(it, idx){
+      if(it.sep) return '<li class="ctx-sep"></li>';
+      return '<li class="ctx-item'+(it.disabled?" disabled":"")+'" data-idx="'+idx+'">'+it.label+'</li>';
+    }).join("");
+    ctxMenuEl._actions = items;
+    ctxMenuEl.classList.add("show");
+    var maxX = window.innerWidth - 220;
+    var maxY = window.innerHeight - (items.length*32 + 20);
+    ctxMenuEl.style.left = Math.min(x, Math.max(0,maxX)) + "px";
+    ctxMenuEl.style.top = Math.min(y, Math.max(0,maxY)) + "px";
+  }
+  function closeContextMenu(){ ctxMenuEl.classList.remove("show"); }
+  ctxMenuEl.addEventListener("click", function(e){
+    var li = e.target.closest(".ctx-item");
+    if(!li || li.classList.contains("disabled")) return;
+    var idx = parseInt(li.getAttribute("data-idx"), 10);
+    var action = ctxMenuEl._actions[idx] && ctxMenuEl._actions[idx].action;
+    closeContextMenu();
+    if(typeof action === "function") action();
+  });
+  document.addEventListener("mousedown", function(e){
+    if(ctxMenuEl.classList.contains("show") && !ctxMenuEl.contains(e.target)) closeContextMenu();
+  });
+  window.addEventListener("scroll", closeContextMenu, true);
+  window.addEventListener("resize", closeContextMenu);
+  window.addEventListener("blur", closeContextMenu);
+
+  function buildColumnMenu(key){
+    var def = getColumnDef(key);
+    return [
+      {label:"⬅ 左に列を追加", action:function(){ insertColumn(key, "left"); }},
+      {label:"➡ 右に列を追加", action:function(){ insertColumn(key, "right"); }},
+      {sep:true},
+      {label:"⧉ 列を複製", action:function(){ duplicateColumn(key); }, disabled:!def.deletable},
+      {label:"🗑 列を削除", action:function(){ deleteColumn(key); }, disabled:!def.deletable},
+      {sep:true},
+      {label:"◀ 左に移動", action:function(){ moveColumn(key,-1); }, disabled:!canMoveColumn(key,-1)},
+      {label:"▶ 右に移動", action:function(){ moveColumn(key,1); }, disabled:!canMoveColumn(key,1)},
+      {sep:true},
+      {label:"🙈 非表示", action:function(){ hideColumn(key); }, disabled:!def.hideable},
+      {label:"✖ 内容を全て削除", action:function(){ clearColumnContent(key); }, disabled:!def.clearable}
+    ];
+  }
+  function buildItemMenu(catId, itemId){
+    var cat = findCat(catId);
+    var idx = cat.items.findIndex(function(i){return i.id === itemId;});
+    return [
+      {label:"＋ 上に追加", action:function(){ insertItem(catId, itemId, "above"); }},
+      {label:"＋ 下に追加", action:function(){ insertItem(catId, itemId, "below"); }},
+      {sep:true},
+      {label:"⧉ 複製", action:function(){ duplicateItem(catId, itemId); }},
+      {label:"🗑 削除", action:function(){ deleteItem(catId, itemId); }},
+      {sep:true},
+      {label:"↑ 上に移動", action:function(){ moveItem(catId, itemId, -1); }, disabled: idx <= 0},
+      {label:"↓ 下に移動", action:function(){ moveItem(catId, itemId, 1); }, disabled: idx >= cat.items.length-1},
+      {sep:true},
+      {label:"🙈 非表示", action:function(){ hideItem(catId, itemId); }},
+      {label:"✖ 内容を全て削除", action:function(){ clearItemContent(catId, itemId); }}
+    ];
+  }
+  function buildCategoryMenu(catId){
+    var idx = state.categories.findIndex(function(c){return c.id === catId;});
+    return [
+      {label:"＋ 上に大項目を追加", action:function(){ insertCategory(catId, "above"); }},
+      {label:"＋ 下に大項目を追加", action:function(){ insertCategory(catId, "below"); }},
+      {sep:true},
+      {label:"⧉ 複製", action:function(){ duplicateCategory(catId); }},
+      {label:"🗑 削除", action:function(){ deleteCategory(catId); }},
+      {sep:true},
+      {label:"↑ 上に移動", action:function(){ moveCategory(catId, -1); }, disabled: idx <= 0},
+      {label:"↓ 下に移動", action:function(){ moveCategory(catId, 1); }, disabled: idx >= state.categories.length-1},
+      {sep:true},
+      {label:"🙈 非表示", action:function(){ hideCategory(catId); }},
+      {label:"✖ 内容を全て削除", action:function(){ clearCategoryContent(catId); }}
+    ];
+  }
+
+  document.querySelector("thead").addEventListener("contextmenu", function(e){
+    var th = e.target.closest("th[data-col]");
+    if(!th) return;
+    e.preventDefault();
+    openContextMenu(e.clientX, e.clientY, buildColumnMenu(th.getAttribute("data-col")));
+  });
+  document.getElementById("tbody").addEventListener("contextmenu", function(e){
+    var itemRow = e.target.closest('tr[data-rowtype="item"]');
+    var catRow = e.target.closest('tr[data-rowtype="cat"]');
+    if(itemRow){
+      e.preventDefault();
+      openContextMenu(e.clientX, e.clientY, buildItemMenu(itemRow.getAttribute("data-cat"), itemRow.getAttribute("data-item")));
+    } else if(catRow){
+      e.preventDefault();
+      openContextMenu(e.clientX, e.clientY, buildCategoryMenu(catRow.getAttribute("data-cat")));
+    }
+  });
+
+  // ---------- column resize ----------
+  function setupColumnResize(){
+    var thead = document.querySelector("thead");
+    var dragKey = null, startX = 0, startWidth = 0, dragHandle = null;
+
+    thead.addEventListener("mousedown", function(e){
+      var handle = e.target.closest(".col-resizer");
+      if(!handle) return;
+      e.preventDefault();
+      dragKey = handle.getAttribute("data-col");
+      dragHandle = handle;
+      startX = e.clientX;
+      startWidth = widthOf(dragKey);
+      handle.classList.add("col-resizing");
+      document.body.style.cursor = "col-resize";
+    });
+    document.addEventListener("mousemove", function(e){
+      if(!dragKey) return;
+      var newWidth = Math.max(30, Math.round(startWidth + (e.clientX - startX)));
+      colWidths[dragKey] = newWidth;
+      var col = document.querySelector('#colgroup col[data-col="'+dragKey+'"]');
+      if(col) col.style.width = newWidth + "px";
+      updateTableWidth();
+    });
+    document.addEventListener("mouseup", function(){
+      if(!dragKey) return;
+      if(dragHandle) dragHandle.classList.remove("col-resizing");
+      dragKey = null; dragHandle = null;
+      document.body.style.cursor = "";
+      saveColWidths();
+      updateTableWidth();
+    });
+    thead.addEventListener("dblclick", function(e){
+      var handle = e.target.closest(".col-resizer");
+      if(!handle) return;
+      var key = handle.getAttribute("data-col");
+      var def = getColumnDef(key);
+      colWidths[key] = def.width;
+      var col = document.querySelector('#colgroup col[data-col="'+key+'"]');
+      if(col) col.style.width = def.width + "px";
+      saveColWidths();
+      updateTableWidth();
+    });
+  }
+
+  // ---------- event delegation (inputs) ----------
+  document.getElementById("tbody").addEventListener("input", function(e){
+    var t = e.target;
+    var act = t.getAttribute("data-act");
+    if(act === "itemField"){
+      var cat = findCat(t.getAttribute("data-cat"));
+      var item = findItem(cat, t.getAttribute("data-item"));
+      var field = t.getAttribute("data-field");
+      if(field === "qty" || field === "unitSell" || field === "unitCost" || field === "unitActual" || field === "kakeRate"){
+        item[field] = num(t.value);
+        if(field === "kakeRate" || field === "unitCost"){ syncSellFromRate(item); }
+        else if(field === "unitSell"){ syncRateFromSell(item); }
+      } else {
+        item[field] = t.value;
+      }
+      renderSummary();
+    } else if(act === "itemCustomField"){
+      var cat2 = findCat(t.getAttribute("data-cat"));
+      var item2 = findItem(cat2, t.getAttribute("data-item"));
+      if(!item2.custom) item2.custom = {};
+      item2.custom[t.getAttribute("data-col")] = t.value;
+    } else if(act === "catName"){
+      findCat(t.getAttribute("data-cat")).name = t.value;
+    }
+    scheduleAutosave();
+  });
+  document.getElementById("tbody").addEventListener("change", function(e){
+    var t = e.target;
+    if(t.getAttribute("data-act") === "itemListed"){
+      var cat = findCat(t.getAttribute("data-cat"));
+      findItem(cat, t.getAttribute("data-item")).listed = t.checked;
+      pushHistory();
+      scheduleAutosave();
+    }
+  });
+  document.getElementById("tbody").addEventListener("click", function(e){
+    var t = e.target.closest("[data-act]");
+    if(!t) return;
+    var act = t.getAttribute("data-act");
+    var catId = t.getAttribute("data-cat");
+    var itemId = t.getAttribute("data-item");
+    if(act === "toggleCat"){ findCat(catId).collapsed ^= true; render(); }
+    else if(act === "addItem"){ addItemToCat(catId); }
+    else if(act === "delItem"){ deleteItem(catId, itemId); }
+    else if(act === "dupItem"){ duplicateItem(catId, itemId); }
+    else if(act === "delCat"){ deleteCategory(catId); }
+    else if(act === "dupCat"){ duplicateCategory(catId); }
+  });
+  document.getElementById("tbody").addEventListener("blur", function(e){
+    if(e.target.matches(".cell-input")){ render(); pushHistory(); }
+  }, true);
+
+  // ---------- top bar ----------
+  document.getElementById("projectName").addEventListener("input", function(e){
+    state.projectName = e.target.value;
+    scheduleAutosave();
+  });
+  document.getElementById("projectName").addEventListener("blur", function(){
+    pushHistory();
+  });
+  document.getElementById("btnAddCategory").addEventListener("click", function(){
+    state.categories.push(emptyCategory());
+    render();
+    pushHistory();
+    scheduleAutosave();
+  });
+  document.getElementById("btnLoadImayo").addEventListener("click", loadImayoData);
+  document.getElementById("btnNew").addEventListener("click", function(){
+    if(!confirm("現在の編集内容は保存されていない場合失われます。新規見積を作成しますか？")) return;
+    state = sampleState();
+    state.categories = [ emptyCategory("大項目1") ];
+    state.projectName = "新規見積";
+    currentProjectId = null;
+    currentVersionIndex = 0;
+    renderHead(); applyAllWidths(); render();
+    renderVersionSelect();
+    updateLastSaved();
+    resetHistory();
+  });
+  function applyAllWidths(){
+    visibleColumns().forEach(function(k){
+      var col = document.querySelector('#colgroup col[data-col="'+k+'"]');
+      if(col) col.style.width = widthOf(k) + "px";
+    });
+  }
+
+  // ---------- persistence ----------
+  function loadProjects(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }catch(e){ return []; }
+  }
+  function saveProjects(list){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  }
+
+  var autosaveTimer = null;
+  function scheduleAutosave(){
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(function(){
+      localStorage.setItem("concrewEstimateDraft_v1", JSON.stringify({state:state, currentProjectId:currentProjectId, currentVersionIndex:currentVersionIndex}));
+    }, 400);
+  }
+
+  document.getElementById("btnSave").addEventListener("click", function(){
+    var projects = loadProjects();
+    var snapshot = JSON.parse(JSON.stringify(state));
+    var versionEntry = { versionId: uid(), savedAt: nowLabel(), data: snapshot };
+
+    if(currentProjectId){
+      var proj = projects.find(function(p){return p.id === currentProjectId;});
+      if(proj){
+        proj.name = state.projectName;
+        proj.versions.unshift(versionEntry);
+        currentVersionIndex = 0;
+      } else {
+        currentProjectId = null;
+      }
+    }
+    if(!currentProjectId){
+      var newProj = { id: uid(), name: state.projectName, versions: [versionEntry] };
+      projects.unshift(newProj);
+      currentProjectId = newProj.id;
+      currentVersionIndex = 0;
+    }
+    saveProjects(projects);
+    renderVersionSelect();
+    updateLastSaved();
+    showToast("登録しました（新しい版として保存）");
+  });
+
+  document.getElementById("btnOverwrite").addEventListener("click", function(){
+    var projects = loadProjects();
+    var snapshot = JSON.parse(JSON.stringify(state));
+    if(currentProjectId){
+      var proj = projects.find(function(p){return p.id === currentProjectId;});
+      if(proj && proj.versions[currentVersionIndex]){
+        proj.name = state.projectName;
+        proj.versions[currentVersionIndex] = { versionId: proj.versions[currentVersionIndex].versionId, savedAt: nowLabel(), data: snapshot };
+        saveProjects(projects);
+        renderVersionSelect();
+        updateLastSaved();
+        showToast("上書き保存しました");
+        return;
+      }
+    }
+    // 保存済みプロジェクトがまだ無い場合は登録と同じ扱いにする
+    document.getElementById("btnSave").click();
+  });
+
+  document.getElementById("btnUndo").addEventListener("click", undo);
+  document.getElementById("btnRedo").addEventListener("click", redo);
+
+  function renderVersionSelect(){
+    var sel = document.getElementById("versionSelect");
+    sel.innerHTML = "";
+    if(!currentProjectId){
+      var opt = document.createElement("option");
+      opt.textContent = "未保存の下書き";
+      sel.appendChild(opt);
+      return;
+    }
+    var projects = loadProjects();
+    var proj = projects.find(function(p){return p.id === currentProjectId;});
+    if(!proj) return;
+    proj.versions.forEach(function(v, i){
+      var opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = v.savedAt + (i===0 ? "（最新）" : "");
+      if(i === currentVersionIndex) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+  document.getElementById("versionSelect").addEventListener("change", function(e){
+    if(!currentProjectId) return;
+    var projects = loadProjects();
+    var proj = projects.find(function(p){return p.id === currentProjectId;});
+    if(!proj) return;
+    var idx = parseInt(e.target.value, 10);
+    var v = proj.versions[idx];
+    if(!v) return;
+    state = normalizeState(JSON.parse(JSON.stringify(v.data)));
+    currentVersionIndex = idx;
+    renderHead(); applyAllWidths(); render();
+    updateLastSaved();
+    resetHistory();
+  });
+
+  function updateLastSaved(){
+    var el = document.getElementById("lastSaved");
+    if(!currentProjectId){ el.textContent = "未保存"; return; }
+    var projects = loadProjects();
+    var proj = projects.find(function(p){return p.id === currentProjectId;});
+    if(proj && proj.versions[currentVersionIndex]){
+      el.textContent = "最終保存: " + proj.versions[currentVersionIndex].savedAt;
+    }
+  }
+
+  // ---------- 保存済み一覧 modal ----------
+  var listOverlay = document.getElementById("listOverlay");
+  document.getElementById("btnList").addEventListener("click", function(){
+    renderProjList();
+    listOverlay.classList.add("show");
+  });
+  document.getElementById("closeList").addEventListener("click", closeList);
+  document.getElementById("closeList2").addEventListener("click", closeList);
+  listOverlay.addEventListener("click", function(e){ if(e.target === listOverlay) closeList(); });
+  function closeList(){ listOverlay.classList.remove("show"); }
+
+  function renderProjList(){
+    var wrap = document.getElementById("projList");
+    var projects = loadProjects();
+    if(projects.length === 0){
+      wrap.innerHTML = '<div class="empty-state">保存された見積・予算はまだありません</div>';
+      return;
+    }
+    wrap.innerHTML = "";
+    projects.forEach(function(p){
+      var latest = p.versions[0];
+      var g = latest ? calcGrandOf(latest.data) : null;
+      var row = document.createElement("div");
+      row.className = "proj-item";
+      row.innerHTML =
+        '<div>' +
+          '<div class="name">'+escapeAttr(p.name)+'</div>' +
+          '<div class="meta">最終保存: '+ (latest?latest.savedAt:"-") + (g?"　販売価格: "+yen(g.sell):"") + '　版数: '+p.versions.length+'</div>' +
+        '</div>' +
+        '<div class="proj-actions">' +
+          '<button class="btn btn-sm" data-open="'+p.id+'">開く</button>' +
+          '<button class="btn btn-sm btn-danger" data-del="'+p.id+'">削除</button>' +
+        '</div>';
+      wrap.appendChild(row);
+    });
+    wrap.querySelectorAll("[data-open]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        openProject(btn.getAttribute("data-open"));
+        closeList();
+      });
+    });
+    wrap.querySelectorAll("[data-del]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        if(!confirm("この見積・予算を削除しますか？（すべての版が削除されます）")) return;
+        var projects = loadProjects().filter(function(p){return p.id !== btn.getAttribute("data-del");});
+        saveProjects(projects);
+        if(currentProjectId === btn.getAttribute("data-del")){
+          currentProjectId = null;
+          renderVersionSelect();
+          updateLastSaved();
+        }
+        renderProjList();
+      });
+    });
+  }
+  function calcGrandOf(s){
+    var t = {sell:0,cost:0,actual:0,profit:0,aProfit:0};
+    s.categories.forEach(function(cat){
+      cat.items.forEach(function(it){
+        t.sell += it.qty*it.unitSell;
+        t.cost += it.qty*it.unitCost;
+        t.actual += it.qty*it.unitActual;
+      });
+    });
+    return t;
+  }
+  function openProject(id){
+    var projects = loadProjects();
+    var proj = projects.find(function(p){return p.id === id;});
+    if(!proj || !proj.versions.length) return;
+    state = normalizeState(JSON.parse(JSON.stringify(proj.versions[0].data)));
+    currentProjectId = proj.id;
+    currentVersionIndex = 0;
+    renderHead(); applyAllWidths(); render();
+    renderVersionSelect();
+    updateLastSaved();
+    resetHistory();
+  }
+
+  // ---------- 見積書情報 modal ----------
+  var infoOverlay = document.getElementById("infoOverlay");
+  function openInfoModal(){
+    var info = state.estimateInfo || defaultEstimateInfo();
+    var co = info.company || defaultEstimateInfo().company;
+    document.getElementById("infoClientName").value = info.clientName || "";
+    document.getElementById("infoHonorific").value = info.honorific || "御中";
+    document.getElementById("infoEstimateNo").value = info.estimateNo || "";
+    document.getElementById("infoSiteAddress").value = info.siteAddress || "";
+    document.getElementById("infoOverview").value = info.overview || "";
+    document.getElementById("infoPeriod").value = info.period || "";
+    document.getElementById("infoPaymentTerms").value = info.paymentTerms || "";
+    document.getElementById("infoValidPeriod").value = info.validPeriod || "";
+    document.getElementById("infoRemarks").value = info.remarks || "";
+    document.getElementById("infoShowFooter").checked = info.showFooter !== false;
+    document.getElementById("infoCoName").value = co.name || "";
+    document.getElementById("infoCoRep").value = co.rep || "";
+    document.getElementById("infoCoZip").value = co.zip || "";
+    document.getElementById("infoCoAddress").value = co.address || "";
+    document.getElementById("infoCoTel").value = co.tel || "";
+    document.getElementById("infoCoFax").value = co.fax || "";
+    document.getElementById("infoCoInvoice").value = co.invoice || "";
+    infoOverlay.classList.add("show");
+  }
+  function closeInfoModal(){ infoOverlay.classList.remove("show"); }
+  function saveInfoModal(){
+    state.estimateInfo = {
+      clientName: document.getElementById("infoClientName").value,
+      honorific: document.getElementById("infoHonorific").value,
+      estimateNo: document.getElementById("infoEstimateNo").value,
+      siteAddress: document.getElementById("infoSiteAddress").value,
+      overview: document.getElementById("infoOverview").value,
+      period: document.getElementById("infoPeriod").value,
+      paymentTerms: document.getElementById("infoPaymentTerms").value,
+      validPeriod: document.getElementById("infoValidPeriod").value,
+      remarks: document.getElementById("infoRemarks").value,
+      showFooter: document.getElementById("infoShowFooter").checked,
+      company: {
+        name: document.getElementById("infoCoName").value,
+        rep: document.getElementById("infoCoRep").value,
+        zip: document.getElementById("infoCoZip").value,
+        address: document.getElementById("infoCoAddress").value,
+        tel: document.getElementById("infoCoTel").value,
+        fax: document.getElementById("infoCoFax").value,
+        invoice: document.getElementById("infoCoInvoice").value
+      }
+    };
+    pushHistory();
+    scheduleAutosave();
+    closeInfoModal();
+    showToast("見積書情報を保存しました");
+  }
+  document.getElementById("btnEstimateInfo").addEventListener("click", openInfoModal);
+  document.getElementById("closeInfo").addEventListener("click", closeInfoModal);
+  document.getElementById("closeInfo2").addEventListener("click", closeInfoModal);
+  document.getElementById("btnInfoSave").addEventListener("click", saveInfoModal);
+  infoOverlay.addEventListener("click", function(e){ if(e.target === infoOverlay) closeInfoModal(); });
+
+  // ---------- 見積書出力 ----------
+  function escHtml(s){
+    return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+  function buildEstimateHtml(){
+    var info = state.estimateInfo || defaultEstimateInfo();
+    var co = info.company || defaultEstimateInfo().company;
+    var taxRate = state.taxRate || 0.1;
+
+    // ---- collect category subtotals (listed items only) ----
+    var cats = [];
+    var grandSell = 0;
+    state.categories.forEach(function(cat){
+      if(cat.hidden) return;
+      var items = cat.items.filter(function(it){ return !it.hidden && it.listed; });
+      if(!items.length) return;
+      var subtotal = 0;
+      items.forEach(function(it){ subtotal += it.qty * it.unitSell; });
+      grandSell += subtotal;
+      cats.push({name:cat.name, spec:cat.spec, items:items, subtotal:subtotal});
+    });
+    var taxAmount = Math.round(grandSell * taxRate);
+    var total = grandSell + taxAmount;
+
+    var d = new Date();
+    function p2(x){ return (x<10?"0":"")+x; }
+    var dateStr = d.getFullYear()+"年"+p2(d.getMonth()+1)+"月"+p2(d.getDate())+"日";
+
+    // ---- shared CSS ----
+    var css =
+      '@page{ size: A4 landscape; margin: 12mm 14mm; }' +
+      '*{box-sizing:border-box;}' +
+      'body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:#222;margin:0;}' +
+      '.sheet{width:100%;padding:6mm 4mm;page-break-after:always;page-break-inside:avoid;position:relative;overflow:hidden;}' +
+      '.sheet:last-child{page-break-after:auto;}' +
+      '.doc-head{display:flex;justify-content:space-between;font-size:10.5px;color:#555;margin-bottom:4px;}' +
+      'table{width:100%;border-collapse:collapse;font-size:12px;}' +
+      'th{background:#eef0f4;border:1px solid #999;padding:5px 8px;font-size:11px;}' +
+      'td{border:1px solid #bbb;padding:4px 8px;}' +
+      'td.l{text-align:left;} td.r{text-align:right;} td.c{text-align:center;}' +
+      'tr.cat td{background:#eef0f7;font-weight:700;}' +
+      'tr.subtotal td{background:#fafafa;font-weight:600;}' +
+      '@media print{ .sheet{padding:0;} }';
+
+    // ---- 鏡 (cover page) ----
+    var cover =
+      '<div class="sheet" style="max-width:900px;margin:0 auto;">' +
+        '<div class="doc-head"><span>No. '+escHtml(info.estimateNo)+'</span><span>Page. 1</span></div>' +
+        '<div style="border:2px solid #222;text-align:center;font-size:24px;font-weight:700;letter-spacing:.6em;padding:10px 0;margin-bottom:18px;">御見積書</div>' +
+        '<div style="font-size:12px;margin-bottom:2px;">'+dateStr+'</div>' +
+        '<div style="font-size:16px;font-weight:700;border-bottom:1.5px solid #222;display:inline-block;padding-bottom:2px;margin-bottom:10px;">'+escHtml(info.clientName||"　")+'　'+escHtml(info.honorific||"御中")+'</div>' +
+        '<div style="font-size:12.5px;margin-bottom:2px;">工事件名：'+escHtml(state.projectName)+'</div>' +
+        '<div style="font-size:12px;color:#555;margin-bottom:14px;">下記のとおり御見積申し上げます。</div>' +
+        '<div style="text-align:center;font-size:26px;font-weight:700;margin:14px 0 8px;">御見積金額　'+yen(total)+'　－</div>' +
+        '<div style="text-align:center;font-size:12px;color:#555;border-top:1px solid #999;border-bottom:2.5px solid #222;padding:8px 0 14px;margin-bottom:22px;">内消費税および地方消費税　'+yen(taxAmount)+'　－　　税抜合計金額　'+yen(grandSell)+'　－</div>' +
+        '<div style="display:flex;justify-content:space-between;gap:24px;">' +
+          '<div style="font-size:12.5px;line-height:2;">' +
+            (info.siteAddress ? '工事場所：'+escHtml(info.siteAddress)+'<br>' : '') +
+            '工事概要：'+escHtml(info.overview||state.projectName)+'<br>' +
+            '工事期間：'+escHtml(info.period)+'<br>' +
+            '支払条件：'+escHtml(info.paymentTerms)+'<br>' +
+            '有効期限：'+escHtml(info.validPeriod) +
+          '</div>' +
+          '<div style="font-size:12.5px;line-height:1.9;text-align:left;min-width:260px;">' +
+            '<div style="font-size:14px;font-weight:700;margin-bottom:4px;">'+escHtml(co.name)+'</div>' +
+            (co.rep ? escHtml(co.rep)+'<br>' : '') +
+            (co.zip ? escHtml(co.zip)+'<br>' : '') +
+            (co.address ? escHtml(co.address)+'<br>' : '') +
+            (co.tel ? 'TEL. '+escHtml(co.tel)+'<br>' : '') +
+            (co.fax ? 'FAX. '+escHtml(co.fax)+'<br>' : '') +
+            (co.invoice ? '<div style="margin-top:8px;display:flex;align-items:center;gap:10px;">インボイス登録番号 '+escHtml(co.invoice)+'<span style="border:1px solid #999;border-radius:50%;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;">印</span></div>' : '') +
+          '</div>' +
+        '</div>' +
+        (info.remarks ? '<div style="margin-top:26px;font-size:12.5px;"><div style="font-weight:700;border-bottom:1px solid #222;display:inline-block;margin-bottom:6px;">備考</div><div style="white-space:pre-wrap;line-height:1.8;">'+escHtml(info.remarks)+'</div></div>' : '') +
+      '</div>';
+
+    // ---- 内訳 (summary breakdown) ----
+    var showFooter = info.showFooter !== false;
+    var footerLine = showFooter
+      ? '<div style="font-size:11px;color:#666;">'+escHtml(state.projectName)+'　/　'+escHtml(info.clientName||"")+(info.clientName ? '　'+escHtml(info.honorific||"御中") : "")+'　/　'+dateStr+'　/　No.'+escHtml(info.estimateNo)+'</div>'
+      : '';
+    var summaryRows = cats.map(function(c, i){
+      var memo = c.items.length===1 ? escHtml(c.items[0].spec||"") : "";
+      return '<tr><td class="c">'+(i+1)+'</td><td class="l">'+escHtml(c.name)+'</td><td class="r">1</td><td class="c">式</td><td class="r">'+yen(c.subtotal)+'</td><td class="l">'+memo+'</td></tr>';
+    }).join("");
+    var summary =
+      '<div class="sheet">' +
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">' +
+          '<div style="font-size:16px;font-weight:700;">見積書内訳</div>' +
+          footerLine +
+        '</div>' +
+        '<table><thead><tr><th style="width:5%">No</th><th style="width:34%">工事名称</th><th style="width:8%">数量</th><th style="width:8%">単位</th><th style="width:20%">金額</th><th style="width:25%">備考</th></tr></thead>' +
+        '<tbody>' + summaryRows +
+        '<tr><td colspan="4" class="r" style="font-weight:700;">小　計</td><td class="r" style="font-weight:700;">'+yen(grandSell)+'</td><td></td></tr>' +
+        '<tr><td colspan="4" class="r">消費税（'+Math.round(taxRate*100)+'%）</td><td class="r">'+yen(taxAmount)+'</td><td></td></tr>' +
+        '<tr><td colspan="4" class="r" style="font-weight:700;font-size:13px;">合　計（税込）</td><td class="r" style="font-weight:700;font-size:13px;">'+yen(total)+'</td><td></td></tr>' +
+        '</tbody></table>' +
+      '</div>';
+
+    // ---- per-category detail sheets ----
+    var detailSheets = cats.map(function(c, i){
+      var rows = c.items.map(function(it){
+        return '<tr><td class="l">'+escHtml(it.name)+'</td><td class="r">'+it.qty+'</td><td class="c">'+escHtml(it.unit)+'</td><td class="r">'+yen(it.unitSell)+'</td><td class="r">'+yen(it.qty*it.unitSell)+'</td><td class="l">'+escHtml(it.spec)+'</td></tr>';
+      }).join("");
+      return '<div class="sheet">' +
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">' +
+          '<div style="font-size:15px;font-weight:700;">'+(i+1)+'. '+escHtml(c.name)+'</div>' +
+          footerLine +
+        '</div>' +
+        '<table><thead><tr><th style="width:28%">工事名称</th><th style="width:8%">数量</th><th style="width:8%">単位</th><th style="width:14%">単価</th><th style="width:16%">金額</th><th style="width:26%">形状寸法等</th></tr></thead>' +
+        '<tbody>' + rows +
+        '<tr><td colspan="4" class="r" style="font-weight:700;">小　計</td><td class="r" style="font-weight:700;">'+yen(c.subtotal)+'</td><td></td></tr>' +
+        '</tbody></table>' +
+      '</div>';
+    }).join("");
+
+    return '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">' +
+      '<title>'+escHtml(state.projectName)+' 御見積書</title>' +
+      '<style>'+css+'</style></head><body>' +
+      cover + summary + detailSheets +
+      '</body></html>';
+  }
+  function openEstimateModal(){
+    var html = buildEstimateHtml();
+    var wrap = document.getElementById("estimatePreview");
+    wrap.innerHTML = '<iframe id="estimateFrame" style="width:100%;height:70vh;border:none;display:block;"></iframe>';
+    var frame = document.getElementById("estimateFrame");
+    frame.srcdoc = html;
+    document.getElementById("estimateOverlay").classList.add("show");
+  }
+  function downloadEstimateHtml(){
+    var html = buildEstimateHtml();
+    var blob = new Blob([html], {type:"text/html"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = (state.projectName || "見積書") + "_見積書.html";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+    showToast("ダウンロードしました");
+  }
+  function printEstimate(){
+    var frame = document.getElementById("estimateFrame");
+    if(!frame || !frame.contentWindow) return;
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+  }
+  document.getElementById("btnEstimateOutput").addEventListener("click", openEstimateModal);
+  document.getElementById("closeEstimate").addEventListener("click", function(){ document.getElementById("estimateOverlay").classList.remove("show"); });
+  document.getElementById("closeEstimate2").addEventListener("click", function(){ document.getElementById("estimateOverlay").classList.remove("show"); });
+  document.getElementById("estimateOverlay").addEventListener("click", function(e){ if(e.target === this) this.classList.remove("show"); });
+  document.getElementById("btnEstimateDownload").addEventListener("click", downloadEstimateHtml);
+  document.getElementById("btnEstimatePrint").addEventListener("click", printEstimate);
+
+  // ---------- toast ----------
+  var toastTimer = null;
+  function showToast(msg){
+    var el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 1800);
+  }
+
+  // ---------- init ----------
+  function init(){
+    var draftRaw = localStorage.getItem("concrewEstimateDraft_v1");
+    if(draftRaw){
+      try{
+        var draft = JSON.parse(draftRaw);
+        state = normalizeState(draft.state);
+        currentProjectId = draft.currentProjectId;
+        currentVersionIndex = draft.currentVersionIndex || 0;
+      }catch(e){ state = sampleState(); }
+    } else {
+      state = sampleState();
+    }
+    loadColWidths();
+    renderHead();
+    applyAllWidths();
+    setupColumnResize();
+    setupCellSelection();
+    render();
+    renderVersionSelect();
+    updateLastSaved();
+    resetHistory();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
