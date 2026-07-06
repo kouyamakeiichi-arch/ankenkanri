@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Construction Estimate Pro</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f7f7f7;--bg3:#efefef;
+  --text:#1a1a1a;--text2:#555;--text3:#999;
+  --border:#d0d0d0;--border2:#b0b0b0;
+  --accent:#2563eb;--green:#16a34a;--red:#dc2626;
+  --th-bg:#eef2ff;--tr-hover:#f5f7ff;--metric-bg:#f0f4ff;
+}
+body.dark{--bg:#1a1a2e;--bg2:#16213e;--bg3:#0f3460;--text:#e0e0e0;--text2:#aaa;--text3:#666;--border:#334;--border2:#557;--th-bg:#1e2a4a;--tr-hover:#1e2a3a;--metric-bg:#1e2a4a;}
+body.cad{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--text:#39d353;--text2:#58a6ff;--text3:#3fb950;--border:#30363d;--border2:#484f58;--accent:#58a6ff;--th-bg:#161b22;--tr-hover:#1c2128;--metric-bg:#161b22;}
+body.gray{--bg:#f4f4f4;--bg2:#ebebeb;--bg3:#e0e0e0;--text:#222;--text2:#555;--text3:#888;--border:#c0c0c0;--border2:#a0a0a0;--th-bg:#e0e5eb;--tr-hover:#eaeef4;--metric-bg:#e8ecf4;}
+body.navy{--bg:#0f172a;--bg2:#1e293b;--bg3:#334155;--text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;--border:#334155;--border2:#475569;--accent:#38bdf8;--th-bg:#1e293b;--tr-hover:#1e2d3d;--metric-bg:#1e293b;}
+body{font-family:'Segoe UI','Hiragino Sans','Yu Gothic UI',sans-serif;font-size:14px;background:var(--bg);color:var(--text)}
+
+/* ===== TOPBAR ===== */
+.topbar{background:var(--bg2);border-bottom:2px solid var(--border2);padding:8px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.logo-main{font-size:17px;font-weight:700;letter-spacing:.08em;color:var(--accent);font-family:Georgia,serif;cursor:pointer;border-bottom:1px dashed var(--accent)}
+.logo-main:hover{opacity:.8}
+.logo-sub{font-size:10px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase}
+.topbar-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.theme-btns{display:flex;gap:4px;align-items:center}
+.tb{width:18px;height:18px;border-radius:50%;border:2px solid var(--border2);cursor:pointer;transition:.15s}
+.tb:hover,.tb.on{transform:scale(1.25);border-color:var(--accent)}
+.tw{background:#fff}.tg{background:#bbb}.td{background:#2a2a3e}.tc{background:#0d1117;border-color:#39d353!important}.tn{background:#0f172a;border-color:#38bdf8!important}
+.btn{padding:5px 12px;border:1px solid var(--border2);border-radius:5px;cursor:pointer;font-size:13px;background:var(--bg2);color:var(--text);font-family:inherit;transition:.15s;white-space:nowrap}
+.btn:hover{background:var(--bg3)}
+.btn.on,.btn.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.warn{background:#d97706;color:#fff;border-color:#d97706}
+.btn.danger{background:var(--red);color:#fff;border-color:var(--red)}
+.save-st{font-size:11px;color:var(--text3);white-space:nowrap}
+.copyright{font-size:10px;color:var(--text3);white-space:nowrap;letter-spacing:.03em}
+
+/* 物件ボタン */
+.proj-btn{display:flex;align-items:center;gap:6px;padding:5px 12px;border:1px solid var(--accent);border-radius:5px;cursor:pointer;font-size:13px;background:var(--bg);color:var(--accent);font-family:inherit;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-btn:hover{background:var(--metric-bg)}
+
+/* ===== METRICS ===== */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px 16px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.mc{background:var(--metric-bg);border:1px solid var(--border);border-radius:7px;padding:10px 12px}
+.mc-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px}
+.mc-val{font-size:19px;font-weight:700}
+.blue{color:var(--accent)}.green{color:var(--green)}
+
+/* ===== TABS ===== */
+.tabs-wrap{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 16px}
+.tabs{display:flex;flex-wrap:wrap;gap:2px;padding-top:7px}
+.tab{padding:5px 9px;cursor:pointer;font-size:12px;border-radius:5px 5px 0 0;border:1px solid transparent;border-bottom:none;margin-bottom:-1px;white-space:nowrap;transition:.1s}
+.tab.on{font-weight:600;border-color:var(--border)}
+.tab:hover:not(.on){background:var(--bg3)}
+.tab-label{font-size:12px;font-weight:600;cursor:pointer;pointer-events:none;white-space:nowrap}
+.tab-edit{display:none;border:none;font-size:12px;font-weight:600;color:inherit;width:90px;background:rgba(255,255,255,.15);border-radius:3px;padding:1px 4px;font-family:inherit}
+.tab-edit:focus{outline:1px solid rgba(255,255,255,.6);display:inline-block}
+.cat-inp{background:transparent;border:none;font-size:12px;font-weight:600;color:inherit;max-width:110px;cursor:pointer;font-family:inherit;padding:0}
+.cat-inp:focus{outline:1px solid rgba(255,255,255,.4);border-radius:2px;background:rgba(255,255,255,.1)}
+
+/* ===== SECTION ===== */
+.sec{margin:14px 16px;background:var(--bg);border:1px solid var(--border);border-radius:7px;overflow:hidden}
+.sec-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.sec-ttl{font-size:14px;font-weight:600}
+.badge{display:inline-block;padding:2px 9px;border-radius:4px;font-size:12px;font-weight:600}
+.badge.good{background:#dcfce7;color:#166534}.badge.bad{background:#fee2e2;color:#991b1b}
+
+/* ===== TABLE ===== */
+.tw-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+th{padding:7px 5px;background:var(--th-bg);border-right:1px solid var(--border);border-bottom:2px solid var(--border2);font-weight:600;font-size:12px;color:var(--text2);text-align:right;white-space:nowrap}
+th.L{text-align:left}th.C{text-align:center}
+td{padding:5px 5px;border-right:1px solid var(--border);border-bottom:1px dashed var(--border);text-align:right;vertical-align:middle;font-size:13px}
+td.L{text-align:left}td.C{text-align:center;color:var(--text3);font-size:12px}
+td.gr{color:var(--text3);font-size:12px}
+tbody tr:hover td{background:var(--tr-hover)}
+tfoot td{background:var(--bg2);font-weight:700;font-size:13px;border-right:1px solid var(--border);border-top:2px solid var(--border2);border-bottom:2px solid var(--border2)}
+th:first-child,td:first-child{text-align:center}
+th:last-child,td:last-child{border-right:none}
+tfoot td:first-child{border-left:none}
+input[type=text],input[type=number]{width:100%;border:none;background:transparent;font-size:13px;color:var(--text);padding:1px 0;font-family:inherit;text-align:right}
+input[type=text]{text-align:left}
+input.C{text-align:center}
+input:focus{outline:1px solid var(--accent);border-radius:2px;background:var(--metric-bg)}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:1px 5px;border-radius:3px}
+.del-btn:hover{color:var(--red);background:#fee2e2}
+.add-btn{width:100%;padding:7px;font-size:12px;color:var(--text3);border:1px dashed var(--border2);border-top:none;background:transparent;cursor:pointer;font-family:inherit}
+.add-btn:hover{background:var(--bg2)}
+
+/* ===== SUMMARY TOTALS ===== */
+.tot-area{padding:14px 16px;display:flex;justify-content:flex-end}
+.tot-box{border:1px solid var(--border);border-radius:7px;overflow:hidden;min-width:360px}
+.tot-row{display:flex;align-items:center;border-bottom:1px dashed var(--border);padding:7px 14px;gap:12px}
+.tot-row:last-child{border-bottom:none}
+.tot-lbl{flex:1;font-size:13px;color:var(--text2);text-align:right;padding-right:8px}
+.tot-val{font-size:14px;font-weight:700;min-width:120px;text-align:right}
+.tot-row.grand{background:var(--bg2)}
+.tot-row.grand .tot-lbl{font-size:14px;font-weight:600;color:var(--text)}
+.tot-row.grand .tot-val{font-size:17px;color:var(--accent)}
+.disc-inp{width:110px;text-align:right;font-size:13px;border:1px solid var(--border2);border-radius:4px;padding:3px 6px;background:var(--bg);color:var(--text)}
+
+/* ===== VIEWS ===== */
+.det-v,.alt-v{display:none}
+.det-v.on,.alt-v.on{display:block}
+
+/* ===== MODAL BASE ===== */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;justify-content:center;align-items:center}
+.modal-ov.on{display:flex}
+.modal{background:var(--bg);border:1px solid var(--border2);border-radius:10px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;padding:20px}
+.modal h2{font-size:16px;font-weight:600;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.f-row{display:grid;grid-template-columns:130px 1fr;align-items:center;gap:8px;margin-bottom:10px}
+.f-row label{font-size:13px;color:var(--text2);text-align:right}
+.f-inp{width:100%;border:1px solid var(--border2);border-radius:5px;padding:6px 10px;font-size:13px;background:var(--bg);color:var(--text);font-family:inherit}
+.f-inp:focus{outline:none;border-color:var(--accent)}
+.modal-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.f-sec{font-weight:600;font-size:13px;margin:14px 0 8px;color:var(--text2)}
+
+/* ===== 物件管理モーダル ===== */
+.proj-modal{width:640px}
+.proj-list{border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:14px}
+.proj-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);transition:.15s}
+.proj-item:last-child{border-bottom:none}
+.proj-item:hover{background:var(--bg3)}
+.proj-item.active{background:var(--metric-bg);border-left:3px solid var(--accent)}
+.proj-item-name{flex:1;font-size:14px;font-weight:500;cursor:pointer}
+.proj-item-name-edit{flex:1;border:1px solid var(--border2);border-radius:4px;padding:4px 8px;font-size:13px;background:var(--bg);color:var(--text);font-family:inherit}
+.proj-item-date{font-size:11px;color:var(--text3);white-space:nowrap}
+.proj-new-area{display:flex;gap:8px;align-items:center}
+.proj-new-inp{flex:1;border:1px solid var(--border2);border-radius:5px;padding:7px 10px;font-size:13px;background:var(--bg);color:var(--text);font-family:inherit}
+.proj-new-inp:focus{outline:none;border-color:var(--accent)}
+.proj-empty{padding:20px;text-align:center;color:var(--text3);font-size:13px}
+
+/* ===== QUOTE PREVIEW ===== */
+.qprev-wrap{margin:14px 16px}
+.qprev{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:24px 28px;max-width:640px;margin:0 auto}
+.q-hr2{border:none;border-top:2px solid var(--border2);margin:14px 0}
+.stamp-box{width:64px;height:64px;border:1px solid var(--border2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text3)}
+
+/* ===== PRINT: A4 横 全ページ ===== */
+@media print{
+  @page{size:A4 landscape;margin:8mm 12mm}
+  .no-print,.topbar,.metrics,.tabs-wrap,.modal-ov,.save-st{display:none!important}
+  body{font-size:9.5pt;color:#000;background:#fff;font-family:'Yu Gothic','MS Gothic','Hiragino Sans',sans-serif}
+  .det-v,.alt-v{display:none!important}
+  #print-area{display:block!important}
+  .p-page{page-break-after:always;page-break-inside:avoid}
+  .p-page:last-child{page-break-after:auto}
+
+  /* 表紙 */
+  .pc-outer{border:1.5px solid #333;padding:16px 24px;min-height:176mm;position:relative;box-sizing:border-box}
+  .pc-no-line{display:flex;justify-content:space-between;font-size:9pt;margin-bottom:8px}
+  .pc-title-box{border:2px solid #333;padding:5px 20px;font-size:20pt;font-weight:700;letter-spacing:.25em;text-align:center;display:block;margin:8px auto 10px}
+  .pc-sep{border:none;border-top:1px solid #888;margin:6px 0}
+  .pc-sep2{border:none;border-top:1.5px solid #555;margin:10px 0}
+  .pc-date{font-size:9.5pt;margin-bottom:4px}
+  .pc-client{font-size:13pt;font-weight:700;text-decoration:underline;margin-bottom:4px}
+  .pc-kojimei{font-size:9.5pt;margin-bottom:3px}
+  .pc-shita{font-size:9.5pt;margin-bottom:14px}
+  /* ★ 見積金額を大きく ★ */
+  .pc-amount-wrap{text-align:center;margin:14px 0 12px;border-bottom:1.5px solid #555;padding-bottom:10px}
+  .pc-amount-lbl{font-size:20pt;font-weight:700;margin-right:16px;letter-spacing:.05em}
+  .pc-amount{font-size:22pt;font-weight:700;letter-spacing:.08em}
+  .pc-sub-amounts{font-size:9.5pt;margin-top:8px;color:#333}
+  .pc-bottom{display:flex;justify-content:space-between;align-items:flex-start;margin-top:14px}
+  .pc-left{font-size:9.5pt;line-height:2.1}
+  .pc-right{font-size:9.5pt;line-height:2.1;text-align:left;min-width:200px}
+  .pc-right-co1{font-size:9pt;color:#666}
+  .pc-right-co2{font-size:12pt;font-weight:700}
+  .pc-stamp-wrap{display:flex;align-items:center;gap:10px;margin-top:4px}
+  .pc-stamp{border:1px solid #aaa;width:52px;height:52px;display:inline-flex;align-items:center;justify-content:center;font-size:9pt;flex-shrink:0}
+
+  /* 共通テーブル */
+  .pt{width:100%;border-collapse:collapse;font-size:9.5pt;table-layout:fixed}
+  .pt th{padding:3px 3px;background:#e4e9f2;border:1px solid #888;font-weight:700;font-size:8.5pt;text-align:right;white-space:nowrap}
+  .pt th.L{text-align:left}.pt th.C{text-align:center}
+  .pt td{padding:2px 3px;border-right:1px solid #bbb;border-bottom:1px dotted #ccc;text-align:right;vertical-align:middle;font-size:9pt}
+  .pt td.L{text-align:left}.pt td.C{text-align:center;font-size:9pt}
+  .pt tbody tr:nth-child(even) td{background:#f8f8f8}
+  .pt tfoot td{background:#e4e9f2;font-weight:700;border:1px solid #888;border-top:2px solid #555}
+  .pt th:first-child,.pt td:first-child{border-left:1px solid #888;text-align:center}
+  .pt th:last-child,.pt td:last-child{border-right:1px solid #888}
+
+  /* ページヘッダー */
+  .p-hdr{border-bottom:2px solid #333;padding-bottom:4px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:flex-end}
+  .p-hdr-title{font-size:12pt;font-weight:700}
+  .p-hdr-sub{font-size:8pt;color:#555}
+}
+#print-area{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar no-print">
+  <div>
+    <div class="logo-main" id="app-title" onclick="editAppTitle()" title="ダブルクリックで編集">Construction Estimate Pro</div>
+    <div class="logo-sub" id="co-sub">Loading...</div>
+  </div>
+  <div class="topbar-r">
+    <span class="save-st" id="save-st">—</span>
+    <!-- 物件選択ボタン -->
+    <button class="proj-btn" onclick="openProjModal()">
+      📁 <span id="cur-proj-name" style="max-width:180px;overflow:hidden;text-overflow:ellipsis">物件を選択</span> ▼
+    </button>
+    <div class="theme-btns">
+      <span style="font-size:11px;color:var(--text3)">背景:</span>
+      <div class="tb tw on" onclick="setTheme('white',this)"></div>
+      <div class="tb tg" onclick="setTheme('gray',this)"></div>
+      <div class="tb td" onclick="setTheme('dark',this)"></div>
+      <div class="tb tc" onclick="setTheme('cad',this)"></div>
+      <div class="tb tn" onclick="setTheme('navy',this)"></div>
+    </div>
+    <div style="display:flex;gap:4px">
+      <button class="btn on" id="btn-detail" onclick="switchView('detail')">明細入力</button>
+      <button class="btn" id="btn-summary" onclick="switchView('summary')">見積鏡</button>
+      <button class="btn" id="btn-quote" onclick="switchView('quote')">御見積書</button>
+    </div>
+    <div style="display:flex;gap:4px">
+      <button class="btn" id="btn-undo" onclick="undo()" title="元に戻す (Ctrl+Z)" style="font-size:15px;padding:4px 10px" disabled>↩</button>
+      <button class="btn" id="btn-redo" onclick="redo()" title="やり直し (Ctrl+Y)" style="font-size:15px;padding:4px 10px" disabled>↪</button>
+    </div>
+    <button class="btn warn no-print" onclick="saveNow()">💾 保存</button>
+    <button class="btn no-print" onclick="showSettings()">⚙ 会社設定</button>
+    <button class="btn pri no-print" onclick="doPrint()">🖨 印刷</button>
+    <button class="btn pri no-print" onclick="savePDF()" style="background:#e53e3e;border-color:#e53e3e">📄 PDFで保存</button>
+    <button class="btn no-print" onclick="exportData()" title="データをJSONファイルで書き出す">📤 書き出し</button>
+    <button class="btn no-print" onclick="document.getElementById('import-file').click()" title="全データ上書き読み込み">📥 読み込み（上書き）</button>
+    <button class="btn no-print" onclick="document.getElementById('import-add-file').click()" title="物件を追加読み込み（既存データは残る）" style="background:#0891b2;color:#fff;border-color:#0891b2">📥 読み込み（追加）</button>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
+    <input type="file" id="import-add-file" accept=".json" style="display:none" onchange="importAddData(this)">
+    <span class="copyright">© KOUYAMA 2026.6.20&nbsp;|&nbsp;Ver 1.0.0</span>
+  </div>
+</div>
+
+<!-- METRICS -->
+<div class="metrics no-print">
+  <div class="mc"><div class="mc-lbl">実行金額合計</div><div class="mc-val" id="m-exec">—</div></div>
+  <div class="mc"><div class="mc-lbl">見積金額合計</div><div class="mc-val blue" id="m-dec">—</div></div>
+  <div class="mc"><div class="mc-lbl">粗利合計</div><div class="mc-val green" id="m-margin">—</div></div>
+  <div class="mc"><div class="mc-lbl">利益率</div><div class="mc-val" id="m-rate">—</div></div>
+</div>
+
+<!-- DETAIL VIEW -->
+<div class="det-v on" id="detail-view">
+  <div class="tabs-wrap no-print">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0 0 0">
+      <div class="tabs" id="cat-tabs"></div>
+      <div style="display:flex;gap:4px;padding:0 8px 6px;flex-shrink:0">
+        <button class="btn" style="font-size:11px;padding:3px 8px;background:#16a34a;color:#fff;border-color:#16a34a" onclick="addCategory()" title="工事を追加">＋ 工事追加</button>
+        <button class="btn danger" style="font-size:11px;padding:3px 8px" onclick="deleteCategory()" title="現在の工事を削除">🗑 工事削除</button>
+      </div>
+    </div>
+  </div>
+  <div id="det-sec"></div>
+</div>
+
+<!-- SUMMARY VIEW -->
+<div class="alt-v" id="summary-view">
+  <div class="sec">
+    <div class="sec-hd"><div class="sec-ttl">見積鏡（工事別集計）</div></div>
+    <div class="tw-wrap">
+      <table>
+        <colgroup><col style="width:34px"><col style="width:30%"><col style="width:7%"><col style="width:6%"><col style="width:13%"><col style="width:6%"><col style="width:13%"><col style="width:12%"></colgroup>
+        <thead><tr>
+          <th class="C">No</th><th class="L">工事名称</th>
+          <th>数量</th><th class="L">単位</th>
+          <th>実行金額</th><th>掛率</th>
+          <th>見積金額</th><th>粗利</th>
+        </tr></thead>
+        <tbody id="sum-body"></tbody>
+      </table>
+    </div>
+    <div class="tot-area"><div class="tot-box" id="sum-tots"></div></div>
+  </div>
+</div>
+
+<!-- QUOTE VIEW -->
+<div class="alt-v" id="quote-view">
+  <div class="qprev-wrap"><div class="qprev" id="qprev"></div></div>
+</div>
+
+</div>
+
+<!-- PRINT AREA -->
+<div id="print-area"></div>
+
+<!-- ===== 物件管理モーダル ===== -->
+<div class="modal-ov" id="proj-modal">
+  <div class="modal proj-modal">
+    <h2>📁 物件管理</h2>
+    <div id="proj-list-wrap"></div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px">▼ 新規物件を作成</div>
+      <div class="proj-new-area">
+        <input class="proj-new-inp" id="new-proj-inp" placeholder="物件名を入力（例：〇〇邸新築工事）" onkeydown="if(event.key==='Enter')addProj()">
+        <button class="btn pri" onclick="addProj()">＋ 作成</button>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeProjModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 会社設定モーダル ===== -->
+<div class="modal-ov" id="smodal">
+  <div class="modal">
+    <h2>⚙ 会社・見積設定</h2>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px">設定は物件ごとに保存されます</div>
+    <div class="f-sec">— 発行会社情報 —</div>
+    <div class="f-row"><label>会社名</label><input class="f-inp" id="s-co1"></div>
+    <div class="f-row"><label>会社名（サブ）</label><input class="f-inp" id="s-co2"></div>
+    <div class="f-row"><label>代表者</label><input class="f-inp" id="s-rep"></div>
+    <div class="f-row"><label>郵便番号</label><input class="f-inp" id="s-zip"></div>
+    <div class="f-row"><label>住所①</label><input class="f-inp" id="s-addr1"></div>
+    <div class="f-row"><label>住所②</label><input class="f-inp" id="s-addr2"></div>
+    <div class="f-row"><label>TEL</label><input class="f-inp" id="s-tel"></div>
+    <div class="f-row"><label>FAX</label><input class="f-inp" id="s-fax"></div>
+    <div class="f-row"><label>インボイス番号</label><input class="f-inp" id="s-inv"></div>
+    <div class="f-sec">— 見積書情報 —</div>
+    <div class="f-row"><label>見積番号</label><input class="f-inp" id="s-no"></div>
+    <div class="f-row"><label>発行日</label><input class="f-inp" id="s-date"></div>
+    <div class="f-row"><label>有効期限</label><input class="f-inp" id="s-valid"></div>
+    <div class="f-row"><label>支払条件</label><input class="f-inp" id="s-pay"></div>
+    <div class="f-sec">— 宛先・工事情報 —</div>
+    <div class="f-row"><label>宛先</label><input class="f-inp" id="s-client"></div>
+    <div class="f-row"><label>工事件名</label><input class="f-inp" id="s-proj"></div>
+    <div class="f-row"><label>工事場所</label><input class="f-inp" id="s-loc"></div>
+    <div class="f-row"><label>工事概要</label><input class="f-inp" id="s-ovr"></div>
+    <div class="f-row"><label>工事期間</label><input class="f-inp" id="s-period"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeSettings()">キャンセル</button>
+      <button class="btn pri" onclick="saveSettings()">保存して閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== CONSTANTS =====
+const APP_VER='1.0.0';
+const APP_DATE='2026.6.20';
+const COPYRIGHT=`© KOUYAMA ${APP_DATE}`;
+
+const DEF_CATS=[
+  {id:1,name:"仮設工事",items:[
+    {no:1,name:"仮設トイレ費用",kei:"トイレ囲いL字含む・特殊液含む",qty:1,unit:"式",price:60000,rate:1.25},
+    {no:2,name:"足場組",kei:"養生ネット含む",qty:265,unit:"㎡",price:1100,rate:1.25},
+    {no:3,name:"足場下養生",kei:"",qty:1,unit:"式",price:5000,rate:1.25},
+    {no:4,name:"機械器具損料",kei:"",qty:1,unit:"式",price:50000,rate:1.25},
+    {no:5,name:"仮設電気",kei:"別途",qty:0,unit:"",price:0,rate:1.25},
+    {no:6,name:"跡片付清掃費",kei:"",qty:143,unit:"㎡",price:300,rate:1.25},
+    {no:7,name:"養生費",kei:"",qty:143,unit:"㎡",price:300,rate:1.25},
+    {no:8,name:"竣工時クリーニング",kei:"",qty:43,unit:"坪",price:1200,rate:1.25},
+    {no:9,name:"廃棄物処理費",kei:"",qty:143,unit:"㎡",price:2000,rate:1.25}
+  ]},
+  {id:2,name:"土工事",items:[{no:1,name:"化粧砂利敷き",kei:"",qty:1,unit:"式",price:35000,rate:1.25}]},
+  {id:3,name:"杭打工事",items:[{no:1,name:"RCパイル",kei:"5m 8本の場合",qty:1,unit:"式",price:320000,rate:1.25}]},
+  {id:4,name:"コンクリート工事",items:[
+    {no:1,name:"水盛遣方損料",kei:"",qty:7.5,unit:"㎡",price:2500,rate:1.25},
+    {no:2,name:"墨出し費",kei:"",qty:7.5,unit:"㎡",price:2500,rate:1.25},
+    {no:3,name:"掘削",kei:"",qty:6.6,unit:"㎥",price:5000,rate:1.25},
+    {no:4,name:"埋め戻し",kei:"",qty:6.6,unit:"㎥",price:5000,rate:1.25},
+    {no:5,name:"残土処分費",kei:"",qty:2,unit:"㎥",price:7000,rate:1.25},
+    {no:6,name:"切り込み砂利",kei:"",qty:1.3,unit:"㎥",price:6000,rate:1.25},
+    {no:7,name:"ベース枠",kei:"",qty:3.3,unit:"㎡",price:6000,rate:1.25},
+    {no:8,name:"布枠",kei:"",qty:19.7,unit:"㎡",price:6000,rate:1.25},
+    {no:9,name:"同上副資材",kei:"",qty:23,unit:"㎡",price:700,rate:1.25},
+    {no:10,name:"型枠運搬費",kei:"",qty:23,unit:"㎡",price:1200,rate:1.25},
+    {no:11,name:"鉄筋加工・運搬費",kei:"",qty:160,unit:"kg",price:330,rate:1.25},
+    {no:12,name:"コンクリート18-18",kei:"捨てコン・防湿コン空積料含む",qty:0.33,unit:"㎥",price:32230,rate:1.25},
+    {no:13,name:"コンクリート21-18",kei:"ベース・布・土間コン空積料含む",qty:2.2,unit:"㎥",price:31610,rate:1.25},
+    {no:14,name:"コンクリート打設費",kei:"",qty:2.53,unit:"㎥",price:13800,rate:1.25},
+    {no:15,name:"コンクリートポンプ車",kei:"",qty:3,unit:"回",price:48000,rate:1.25},
+    {no:16,name:"アンカーセット",kei:"",qty:1,unit:"式",price:5000,rate:1.25},
+    {no:17,name:"土木重機運搬",kei:"",qty:1,unit:"式",price:50000,rate:1.25},
+    {no:18,name:"業務交通費",kei:"",qty:1,unit:"式",price:30000,rate:1.25},
+    {no:19,name:"諸経費",kei:"",qty:1,unit:"式",price:30000,rate:1.25}
+  ]},
+  {id:5,name:"木工事",items:[
+    {no:1,name:"構造材・羽柄材・建築金物",kei:"プレカット加工・運搬費含む",qty:20.6,unit:"㎥",price:159710,rate:1.25},
+    {no:2,name:"屋根構造用合板",kei:"3×6 t12㎜実付き",qty:55,unit:"枚",price:2100,rate:1.25},
+    {no:3,name:"壁構造用合板",kei:"3×10×t9㎜",qty:92,unit:"枚",price:2200,rate:1.25},
+    {no:4,name:"床構造用合板（加工まで）",kei:"3×6 t28㎜実付き",qty:54,unit:"枚",price:6060,rate:1.25},
+    {no:5,name:"大工手間",kei:"増築部分",qty:26.6,unit:"坪",price:58000,rate:1.25},
+    {no:6,name:"大工手間",kei:"サッシ撤去・取付",qty:4,unit:"ヶ所",price:22000,rate:1.25},
+    {no:7,name:"大工手間",kei:"柱追加",qty:5,unit:"ヶ所",price:22000,rate:1.25},
+    {no:8,name:"大工手間",kei:"まぐさ追加",qty:1,unit:"式",price:22000,rate:1.25},
+    {no:9,name:"大工手間",kei:"桁撤去・既存天井アレンジ",qty:1,unit:"式",price:44000,rate:1.25},
+    {no:10,name:"大工手間",kei:"窓撤去・下地",qty:1,unit:"式",price:22000,rate:1.25},
+    {no:11,name:"大工手間",kei:"既存外壁材他撤去",qty:1,unit:"式",price:66000,rate:1.25},
+    {no:12,name:"大工手間",kei:"既存事務室壁アレンジ",qty:1,unit:"式",price:66000,rate:1.25},
+    {no:13,name:"大工手間",kei:"配管スペース造作",qty:1,unit:"式",price:22000,rate:1.25},
+    {no:14,name:"大工手間",kei:"1階筋交い追加",qty:1,unit:"式",price:66000,rate:1.25},
+    {no:15,name:"大工手間",kei:"2階床造作",qty:1,unit:"式",price:220000,rate:1.25},
+    {no:16,name:"大工手間",kei:"既存屋根解体①",qty:1,unit:"式",price:132000,rate:1.25},
+    {no:17,name:"大工手間",kei:"既存屋根解体②",qty:1,unit:"式",price:132000,rate:1.25},
+    {no:18,name:"釘・金物・ビス・ボンド他",kei:"",qty:1,unit:"式",price:200000,rate:1.25},
+    {no:19,name:"壁・天井ボード",kei:"運搬費含む",qty:1,unit:"式",price:194000,rate:1.25},
+    {no:20,name:"床下地合板",kei:"3×6×t12㎜",qty:55,unit:"枚",price:2100,rate:1.25}
+  ]},
+  {id:6,name:"屋根・板金工事",items:[
+    {no:1,name:"既存屋根板金解体撤去",kei:"庇（2ヵ所）は除く",qty:92.2,unit:"㎡",price:650,rate:1.25},
+    {no:2,name:"既存アスファルトルーフィング解体撤去",kei:"庇（2ヵ所）は除く",qty:80.1,unit:"㎡",price:650,rate:1.25},
+    {no:3,name:"産業廃棄物処分費",kei:"",qty:1,unit:"式",price:45000,rate:1.25},
+    {no:4,name:"運搬・諸経費",kei:"既存分",qty:1,unit:"式",price:42500,rate:1.25},
+    {no:5,name:"屋根新規平成ルーフ",kei:"SGLカラー t=0.35",qty:93.9,unit:"㎡",price:3800,rate:1.25},
+    {no:6,name:"アスファルトルーフィング",kei:"23kg",qty:103.3,unit:"㎡",price:650,rate:1.25},
+    {no:7,name:"破風・淀",kei:"SGLカラー t=0.35",qty:41.2,unit:"m",price:3000,rate:1.25},
+    {no:8,name:"端部掴込納め",kei:"",qty:39.2,unit:"式",price:1000,rate:1.25},
+    {no:9,name:"運搬・荷揚費",kei:"新規分",qty:1,unit:"式",price:20000,rate:1.25},
+    {no:10,name:"諸経費",kei:"新規分",qty:1,unit:"式",price:38740,rate:1.25}
+  ]},
+  {id:7,name:"外装工事",items:[
+    {no:1,name:"サイディング本体14",kei:"セラディール親水14モダンストライプ",qty:200,unit:"枚",price:2200,rate:1.25},
+    {no:2,name:"同質出隅",kei:"L455内寸75",qty:75,unit:"枚",price:700,rate:1.25},
+    {no:3,name:"リング釘40",kei:"",qty:98,unit:"袋",price:280,rate:1.25},
+    {no:4,name:"補修液",kei:"表面",qty:2,unit:"缶",price:1600,rate:1.25},
+    {no:5,name:"スペーサー",kei:"2mm",qty:1,unit:"束",price:4500,rate:1.25},
+    {no:6,name:"鋼板製ハット型ジョイナー",kei:"L2000",qty:70,unit:"本",price:180,rate:1.25},
+    {no:7,name:"鋼板製片ハット型ジョイナー",kei:"L2000",qty:80,unit:"本",price:180,rate:1.25},
+    {no:8,name:"通気土台水切",kei:"WKA2201SW",qty:3,unit:"本",price:2500,rate:1.25},
+    {no:9,name:"出隅",kei:"WKA2201SW",qty:2,unit:"本",price:150,rate:1.25},
+    {no:10,name:"入隅",kei:"WKA2201SW",qty:1,unit:"本",price:150,rate:1.25},
+    {no:11,name:"サイディング施工費",kei:"",qty:228,unit:"㎡",price:1200,rate:1.25},
+    {no:12,name:"短尺出隅取付費",kei:"",qty:75,unit:"本",price:250,rate:1.25},
+    {no:13,name:"土台水切取付費",kei:"",qty:1,unit:"式",price:10000,rate:1.25},
+    {no:14,name:"コーキング工事",kei:"",qty:380,unit:"m",price:500,rate:1.25},
+    {no:15,name:"透湿防水シート",kei:"1×50m",qty:5,unit:"本",price:5500,rate:1.25},
+    {no:16,name:"軒天換気部材",kei:"FV-N12F-L27-BK",qty:6,unit:"本",price:3060,rate:1.25},
+    {no:17,name:"同上出隅",kei:"FV-12FFSD-BK",qty:2,unit:"個",price:840,rate:1.25},
+    {no:18,name:"ジョントカバー",kei:"FV-N12FJC-BK",qty:6,unit:"個",price:340,rate:1.25},
+    {no:19,name:"軒天ボード",kei:"ニチハ軒天12（平）",qty:2,unit:"枚",price:2920,rate:1.25},
+    {no:20,name:"軒天ボード用補修液",kei:"",qty:1,unit:"缶",price:940,rate:1.25}
+  ]},
+  {id:8,name:"断熱防水工事",items:[
+    {no:1,name:"床断熱材",kei:"3種 3×6×t50",qty:5,unit:"枚",price:2100,rate:1.25},
+    {no:2,name:"床断熱材",kei:"100㎜ 910 ダブル",qty:2,unit:"本",price:6300,rate:1.25},
+    {no:3,name:"壁断熱材",kei:"",qty:14,unit:"本",price:6300,rate:1.25},
+    {no:4,name:"壁断熱材",kei:"3種 3×6×t30",qty:138,unit:"枚",price:1260,rate:1.25},
+    {no:5,name:"天井ブローイング",kei:"2階 300㎜",qty:80.32,unit:"㎡",price:2480,rate:1.25},
+    {no:6,name:"屋根断熱材",kei:"2種 3×6×t20",qty:55,unit:"枚",price:740,rate:1.25},
+    {no:7,name:"コーキング",kei:"",qty:5,unit:"本",price:720,rate:1.25},
+    {no:8,name:"気密テープ",kei:"エースクロス",qty:30,unit:"本",price:420,rate:1.25},
+    {no:9,name:"防水テープ",kei:"片面・両面",qty:30,unit:"本",price:700,rate:1.25},
+    {no:10,name:"ウレタン",kei:"",qty:1,unit:"式",price:30000,rate:1.25},
+    {no:11,name:"ポリロンフィルム0.2",kei:"ダンタイト21 2.1×48m",qty:3,unit:"本",price:11000,rate:1.25}
+  ]},
+  {id:9,name:"左官工事",items:[
+    {no:1,name:"基礎モルタルハキツケ仕上げ",kei:"",qty:4.5,unit:"㎡",price:8000,rate:1.25},
+    {no:2,name:"天端均し",kei:"",qty:1,unit:"式",price:30000,rate:1.25},
+    {no:3,name:"諸経費",kei:"",qty:1,unit:"式",price:3600,rate:1.25}
+  ]},
+  {id:10,name:"塗装工事",items:[{no:1,name:"内部・外部塗装",kei:"部分補修等",qty:1,unit:"式",price:50000,rate:1.25}]},
+  {id:11,name:"サッシ工事",items:[
+    {no:1,name:"PW",kei:"プラマード H断熱仕様",qty:1,unit:"式",price:530000,rate:1.25},
+    {no:2,name:"網戸",kei:"",qty:1,unit:"台",price:120000,rate:1.25}
+  ]},
+  {id:12,name:"建具工事",items:[{no:1,name:"内装建具・造作材",kei:"Smayell スタンダード",qty:1,unit:"式",price:244000,rate:1.25}]},
+  {id:13,name:"内装工事",items:[
+    {no:1,name:"1階 事務所天井・壁クロス貼替",kei:"クロスは500番",qty:130,unit:"㎡",price:1500,rate:1.25},
+    {no:2,name:"階段下収納天井・壁クロス",kei:"",qty:15,unit:"㎡",price:1300,rate:1.25},
+    {no:3,name:"ホール・階段天井・壁クロス",kei:"",qty:73,unit:"㎡",price:1300,rate:1.25},
+    {no:4,name:"書庫天井・壁クロス",kei:"",qty:29,unit:"㎡",price:1300,rate:1.25},
+    {no:5,name:"会議室天井・壁クロス",kei:"",qty:82,unit:"㎡",price:1300,rate:1.25},
+    {no:6,name:"ホール天井・壁クロス",kei:"",qty:12,unit:"㎡",price:1300,rate:1.25},
+    {no:7,name:"トイレ天井・壁クロス",kei:"",qty:13.5,unit:"㎡",price:1300,rate:1.25},
+    {no:8,name:"社長室天井・壁クロス",kei:"",qty:72.5,unit:"㎡",price:1300,rate:1.25},
+    {no:9,name:"階段ホール床貼り",kei:"東リマチュア",qty:19.5,unit:"㎡",price:5000,rate:1.25},
+    {no:10,name:"見切り金物",kei:"",qty:25.5,unit:"m",price:3000,rate:1.25},
+    {no:11,name:"2階 床貼り",kei:"東リマチュア",qty:70.5,unit:"㎡",price:5000,rate:1.25},
+    {no:12,name:"1階 ホールダブルロールスクリーン",kei:"",qty:1,unit:"台",price:42896,rate:1.25},
+    {no:13,name:"2階 ホールダブルロールスクリーン",kei:"",qty:1,unit:"台",price:42896,rate:1.25},
+    {no:14,name:"会議室ロールスクリーン",kei:"W1690 H1370",qty:2,unit:"台",price:46312,rate:1.25},
+    {no:15,name:"社長室ロールスクリーン①",kei:"W1690 H1370",qty:2,unit:"台",price:46312,rate:1.25},
+    {no:16,name:"社長室ロールスクリーン②",kei:"W740 H1370",qty:1,unit:"台",price:39088,rate:1.25},
+    {no:17,name:"取り付け費",kei:"",qty:7,unit:"台",price:2000,rate:1.25}
+  ]},
+  {id:14,name:"設備機器工事",items:[
+    {no:1,name:"ウォシュレット一体形便器ZJ1",kei:"手洗い無し",qty:1,unit:"台",price:75000,rate:1.25},
+    {no:2,name:"洗面化粧台",kei:"パナソニックCラインW750",qty:1,unit:"台",price:105680,rate:1.25}
+  ]},
+  {id:15,name:"電気工事",items:[{no:1,name:"別途予算取して下さい",kei:"",qty:0,unit:"",price:0,rate:1.0}]},
+  {id:16,name:"設備工事",items:[
+    {no:1,name:"衛生設備工事",kei:"",qty:1,unit:"式",price:274430,rate:1.25},
+    {no:2,name:"換気設備工事",kei:"",qty:1,unit:"式",price:162600,rate:1.25},
+    {no:3,name:"暖房設備工事",kei:"",qty:1,unit:"式",price:489550,rate:1.25},
+    {no:4,name:"エアコン移設工事",kei:"",qty:1,unit:"式",price:23420,rate:1.25}
+  ]},
+  {id:17,name:"雑工事",items:[
+    {no:1,name:"内部コーキング",kei:"",qty:1,unit:"式",price:20000,rate:1.25},
+    {no:2,name:"天井点検口",kei:"SPC-S4545AH3 JOTO",qty:1,unit:"台",price:15180,rate:1.25},
+    {no:3,name:"床下点検口（1階階段下）",kei:"SPF-R60F12-B",qty:1,unit:"式",price:27360,rate:1.25},
+    {no:4,name:"壁付手摺工事",kei:"階段部分",qty:1,unit:"式",price:37840,rate:1.25},
+    {no:5,name:"枕棚板セット9尺",kei:"ME10B2-41",qty:1,unit:"セット",price:10220,rate:1.25},
+    {no:6,name:"枕棚板セット6尺",kei:"ME10B2-31",qty:2,unit:"セット",price:5490,rate:1.25},
+    {no:7,name:"枕棚板セット4.5尺",kei:"ME10B2-21",qty:1,unit:"セット",price:5360,rate:1.25},
+    {no:8,name:"キッチンパネルパニート",kei:"3×8 洗面台ヨコ",qty:5,unit:"枚",price:10500,rate:1.25},
+    {no:9,name:"同上施工セット",kei:"",qty:5,unit:"セット",price:1200,rate:1.25},
+    {no:10,name:"同上見切材",kei:"",qty:3,unit:"本",price:550,rate:1.25}
+  ]},
+  {id:18,name:"設計及び申請料",items:[
+    {no:1,name:"確認申請図面",kei:"",qty:88,unit:"㎡",price:3000,rate:1.25},
+    {no:2,name:"構造検討",kei:"",qty:88,unit:"㎡",price:2000,rate:1.25}
+  ]},
+  {id:19,name:"運搬・諸経費",items:[
+    {no:1,name:"運搬・現場経費",kei:"",qty:1,unit:"式",price:200000,rate:1.0},
+    {no:2,name:"現場管理費①",kei:"人件費",qty:1,unit:"式",price:1275000,rate:1.0},
+    {no:3,name:"現場管理費②",kei:"車輌費",qty:1,unit:"式",price:180000,rate:1.0},
+    {no:4,name:"現場管理費③",kei:"燃料費他",qty:1,unit:"式",price:150000,rate:1.0},
+    {no:5,name:"諸経費",kei:"一般経費",qty:1,unit:"式",price:1500000,rate:2.14}
+  ]}
+];
+
+const DEF_CFG={
+  co1:"有限会社 太豊建設",co2:"",rep:"代表取締役　青塚 恒太",
+  zip:"〒059-1262",addr1:"苫小牧市美原町3丁目1番5号",addr2:"",
+  tel:"(0144) 82-7648",fax:"(0144) 82-7649",inv:"T5-4300-0206-0556",
+  no:"見積00001",date:"令和7年10月20日",valid:"2ヶ月",pay:"打ち合わせ",
+  client:"有限会社 オオバ電設",proj:"オオバ電設事務所増築工事",
+  loc:"苫小牧市新開町4丁目4番3号",ovr:"事務所増築工事",period:"打ち合わせ"
+};
+
+// ===== 物件管理 =====
+// projects: [{id, name, createdAt, cats, cfg, discount}]
+const PROJ_LIST_KEY='cep9_projects';
+const PROJ_CUR_KEY='cep9_current';
+const TC=['#3b82f6','#ef4444','#f59e0b','#10b981','#8b5cf6','#ec4899','#06b6d4','#f97316','#6366f1','#14b8a6','#a855f7','#84cc16','#d946ef','#22c55e','#2563eb','#dc2626','#7c3aed','#0891b2','#c2410c'];
+const MAX=21;
+
+let projects=[];
+let curProjId=null;
+let curView='detail';
+let curCat=0;
+let autoTimer=null;
+
+// Undo/Redo 履歴
+let undoStack=[];
+let redoStack=[];
+const MAX_HISTORY=50;
+
+function snapshot(){
+  // 現在の物件データをディープコピーして履歴に積む
+  try{
+    undoStack.push(JSON.stringify({projects:projects,curProjId:curProjId,curCat:curCat}));
+    if(undoStack.length>MAX_HISTORY)undoStack.shift();
+    redoStack=[];// 新操作でRedoはクリア
+    updateUndoRedoBtns();
+  }catch(e){}
+}
+
+function undo(){
+  if(undoStack.length===0)return;
+  try{
+    // 現状をRedoに積む
+    redoStack.push(JSON.stringify({projects:projects,curProjId:curProjId,curCat:curCat}));
+    // 一つ前に戻す
+    const prev=JSON.parse(undoStack.pop());
+    projects=prev.projects;
+    curProjId=prev.curProjId;
+    curCat=prev.curCat||0;
+    updateUndoRedoBtns();
+    updateProjBtn();
+    document.getElementById('co-sub').textContent=curCfg().co1||'';
+    sched();
+    renderAll();
+  }catch(e){console.warn('undo error',e);}
+}
+
+function redo(){
+  if(redoStack.length===0)return;
+  try{
+    undoStack.push(JSON.stringify({projects:projects,curProjId:curProjId,curCat:curCat}));
+    const next=JSON.parse(redoStack.pop());
+    projects=next.projects;
+    curProjId=next.curProjId;
+    curCat=next.curCat||0;
+    updateUndoRedoBtns();
+    updateProjBtn();
+    document.getElementById('co-sub').textContent=curCfg().co1||'';
+    sched();
+    renderAll();
+  }catch(e){console.warn('redo error',e);}
+}
+
+function updateUndoRedoBtns(){
+  const bu=document.getElementById('btn-undo');
+  const br=document.getElementById('btn-redo');
+  if(bu){bu.disabled=undoStack.length===0;bu.style.opacity=undoStack.length===0?'0.35':'1';}
+  if(br){br.disabled=redoStack.length===0;br.style.opacity=redoStack.length===0?'0.35':'1';}
+}
+
+// Ctrl+Z / Ctrl+Y キーボードショートカット
+document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!e.shiftKey){e.preventDefault();undo();}
+  if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.key==='z'&&e.shiftKey))){e.preventDefault();redo();}
+});
+
+// 現在物件のデータ取得
+function curProj(){return projects.find(p=>p.id===curProjId)||null;}
+function curData(){return curProj()?curProj().cats:[];}
+function curCfg(){return curProj()?curProj().cfg:{};}
+function curDiscount(){return curProj()?curProj().discount:0;}
+
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+function editAppTitle(){
+  const el=document.getElementById('app-title');
+  const cur=el.textContent;
+  const nv=prompt('アプリ名を変更してください：',cur);
+  if(nv&&nv.trim()){
+    el.textContent=nv.trim();
+    try{localStorage.setItem('cep9_apptitle',nv.trim());}catch(e){}
+  }
+}
+function loadAppTitle(){
+  try{
+    const t=localStorage.getItem('cep9_apptitle');
+    if(t)document.getElementById('app-title').textContent=t;
+  }catch(e){}
+}
+function loadAll(){
+  try{
+    const ps=localStorage.getItem(PROJ_LIST_KEY);
+    projects=ps?JSON.parse(ps):[];
+    curProjId=localStorage.getItem(PROJ_CUR_KEY)||null;
+    // 初回：サンプル物件を作成
+    if(projects.length===0){
+      const id=genId();
+      projects=[{
+        id,name:"オオバ電設事務所増築工事",
+        createdAt:new Date().toLocaleDateString('ja-JP'),
+        cats:JSON.parse(JSON.stringify(DEF_CATS)),
+        cfg:JSON.parse(JSON.stringify(DEF_CFG)),
+        discount:0
+      }];
+      curProjId=id;
+      persistAll();
+    }
+    if(!curProjId||!projects.find(p=>p.id===curProjId)){
+      curProjId=projects[0].id;
+    }
+  }catch(e){
+    const id=genId();
+    projects=[{id,name:"新規物件",createdAt:new Date().toLocaleDateString('ja-JP'),cats:JSON.parse(JSON.stringify(DEF_CATS)),cfg:JSON.parse(JSON.stringify(DEF_CFG)),discount:0}];
+    curProjId=id;
+  }
+  updateProjBtn();
+  document.getElementById('co-sub').textContent=curCfg().co1||'';
+}
+
+function persistAll(){
+  try{
+    localStorage.setItem(PROJ_LIST_KEY,JSON.stringify(projects));
+    localStorage.setItem(PROJ_CUR_KEY,curProjId);
+  }catch(e){console.warn('保存失敗',e);}
+}
+
+function saveNow(){
+  persistAll();
+  const n=new Date();
+  document.getElementById('save-st').textContent='💾 保存済 '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+}
+function sched(){
+  clearTimeout(autoTimer);
+  document.getElementById('save-st').textContent='✏ 編集中...';
+  autoTimer=setTimeout(saveNow,3000);
+}
+
+function updateProjBtn(){
+  const p=curProj();
+  document.getElementById('cur-proj-name').textContent=p?p.name:'物件なし';
+}
+
+// ===== 物件モーダル =====
+function openProjModal(){
+  renderProjList();
+  document.getElementById('proj-modal').className='modal-ov on';
+}
+function closeProjModal(){document.getElementById('proj-modal').className='modal-ov';}
+
+function renderProjList(){
+  const wrap=document.getElementById('proj-list-wrap');
+  if(projects.length===0){
+    wrap.innerHTML='<div class="proj-list"><div class="proj-empty">物件がありません。下から新規作成してください。</div></div>';
+    return;
+  }
+  wrap.innerHTML=`<div class="proj-list">${projects.map(p=>`
+    <div class="proj-item${p.id===curProjId?' active':''}">
+      <div class="proj-item-name" onclick="switchProj('${p.id}')" title="クリックで切り替え">${p.name}</div>
+      <div class="proj-item-date">${p.createdAt||''}</div>
+      <button class="btn" style="font-size:11px;padding:3px 8px" onclick="renameProj('${p.id}')">✏</button>
+      <button class="btn danger" style="font-size:11px;padding:3px 8px" onclick="deleteProj('${p.id}')">🗑</button>
+    </div>`).join('')}</div>`;
+}
+
+function switchProj(id){
+  saveNow();
+  curProjId=id;
+  curCat=0;
+  persistAll();
+  updateProjBtn();
+  document.getElementById('co-sub').textContent=curCfg().co1||'';
+  closeProjModal();
+  renderAll();
+}
+
+function addProj(){
+  const inp=document.getElementById('new-proj-inp');
+  const name=inp.value.trim();
+  if(!name){inp.focus();return;}
+  const id=genId();
+  projects.push({
+    id,name,
+    createdAt:new Date().toLocaleDateString('ja-JP'),
+    cats:JSON.parse(JSON.stringify(DEF_CATS)),
+    cfg:JSON.parse(JSON.stringify(DEF_CFG)),
+    discount:0
+  });
+  inp.value='';
+  saveNow();
+  renderProjList();
+}
+
+function renameProj(id){
+  const p=projects.find(x=>x.id===id);if(!p)return;
+  const newName=prompt('物件名を変更してください：',p.name);
+  if(newName&&newName.trim()){
+    p.name=newName.trim();
+    saveNow();
+    renderProjList();
+    if(id===curProjId)updateProjBtn();
+  }
+}
+
+function deleteProj(id){
+  if(projects.length<=1){alert('最後の物件は削除できません。');return;}
+  const p=projects.find(x=>x.id===id);if(!p)return;
+  if(!confirm(`「${p.name}」を削除しますか？\nこの操作は元に戻せません。`))return;
+  projects=projects.filter(x=>x.id!==id);
+  if(curProjId===id){curProjId=projects[0].id;curCat=0;}
+  saveNow();
+  renderProjList();
+  updateProjBtn();
+  renderAll();
+}
+
+// ===== CALC =====
+function ci(it){const e=Math.round(it.qty*it.price);const d=Math.round(e*it.rate);return{exec:e,dec:d,margin:d-e};}
+function cc(cat){let e=0,d=0,m=0;cat.items.forEach(it=>{const c=ci(it);e+=c.exec;d+=c.dec;m+=c.margin;});return{exec:e,dec:d,margin:m};}
+function ca(){
+  let e=0,d=0,m=0;
+  curData().forEach(cat=>{const c=cc(cat);e+=c.exec;d+=c.dec;m+=c.margin;});
+  const disc=curDiscount();
+  const ad=d-disc;const tax=Math.round(ad*0.1);
+  const pr=ad>0?Math.round((m-disc)/ad*1000)/10:0;
+  return{exec:e,dec:d,margin:m,ad,tax,total:ad+tax,pr};
+}
+function fmt(n){return Math.round(n).toLocaleString('ja-JP');}
+function formatNum(v){
+  // カンマを除去して数値に変換し、カンマ付きで返す
+  const n=parseFloat(String(v).replace(/,/g,''));
+  if(isNaN(n)||n===0)return '';
+  return n.toLocaleString('ja-JP');
+}
+
+// ===== THEME =====
+function setTheme(t,el){
+  document.body.className=t==='white'?'':t;
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
+  if(el)el.classList.add('on');
+}
+
+// ===== VIEW =====
+function switchView(v){
+  curView=v;
+  document.getElementById('detail-view').className='det-v'+(v==='detail'?' on':'');
+  ['summary','quote'].forEach(vv=>document.getElementById(vv+'-view').className='alt-v'+(v===vv?' on':''));
+  ['detail','summary','quote'].forEach(vv=>{const b=document.getElementById('btn-'+vv);if(b)b.className='btn'+(v===vv?' on':'');});
+  renderAll();
+}
+
+// ===== RENDER =====
+function renderMetrics(){
+  const t=ca();
+  document.getElementById('m-exec').textContent='¥'+fmt(t.exec);
+  document.getElementById('m-dec').textContent='¥'+fmt(t.dec);
+  document.getElementById('m-margin').textContent='¥'+fmt(t.margin);
+  document.getElementById('m-rate').textContent=t.pr+'%';
+}
+
+function renderTabs(){
+  document.getElementById('cat-tabs').innerHTML=curData().map((c,i)=>{
+    const col=TC[i%TC.length];const on=i===curCat;
+    return `<div class="tab${on?' on':''}"
+      id="tab-${i}"
+      style="${on?'background:'+col+';color:#fff;border-color:'+col+';border-bottom-color:'+col+';':'color:'+col+';border-color:'+col+';'}"
+      onclick="selCat(${i})"
+      ondblclick="startEditTab(${i},event)">
+      <span class="tab-label" style="color:${on?'#fff':col}">★ ${c.name}</span>
+      <input class="tab-edit" id="tab-inp-${i}" value="${c.name}"
+        onclick="event.stopPropagation()"
+        onblur="finishEditTab(${i},this)"
+        onkeydown="if(event.key==='Enter')this.blur()"
+        style="color:${on?'#fff':col}">
+    </div>`;
+  }).join('');
+}
+
+function startEditTab(i,e){
+  e.stopPropagation();
+  const inp=document.getElementById('tab-inp-'+i);
+  const lbl=inp.previousElementSibling;
+  if(!inp)return;
+  lbl.style.display='none';
+  inp.style.display='inline-block';
+  inp.focus();inp.select();
+}
+function finishEditTab(i,inp){
+  const lbl=inp.previousElementSibling;
+  const v=inp.value.trim();
+  if(v&&v!==curData()[i].name){snapshot();curData()[i].name=v;sched();}
+  inp.style.display='none';
+  lbl.style.display='inline-block';
+  lbl.textContent='★ '+(v||curData()[i].name);
+  renderMetrics();
+}
+function renderDetail(){
+  const data=curData();if(!data.length)return;
+  const cat=data[curCat];const tot=cc(cat);
+  const pr=tot.dec>0?Math.round(tot.margin/tot.dec*1000)/10:0;
+  const rows=cat.items.map((it,idx)=>{
+    const c=ci(it);const hv=it.qty>0&&it.price>0;
+    return `<tr>
+      <td class="C">${it.no}</td>
+      <td class="L"><input type="text" value="${it.name}" onchange="updItem(${idx},'name',this.value)"></td>
+      <td class="L"><input type="text" value="${it.kei}" onchange="updItem(${idx},'kei',this.value)" style="font-size:11px;color:var(--text3)"></td>
+      <td><input type="text" class="C" value="${it.qty||''}"
+        onfocus="this.value=this.value.replace(/,/g,'')"
+        onblur="this.value=formatNum(this.value);updItem(${idx},'qty',parseFloat(this.value.replace(/,/g,''))||0)"
+        onchange="updItem(${idx},'qty',parseFloat(this.value.replace(/,/g,''))||0)"
+        style="text-align:right"></td>
+      <td><input type="text" class="C" value="${it.unit}" onchange="updItem(${idx},'unit',this.value)"></td>
+      <td><input type="text" value="${it.price?fmt(it.price):''}"
+        onfocus="this.value=this.value.replace(/,/g,'')"
+        onblur="this.value=formatNum(this.value);updItem(${idx},'price',parseFloat(this.value.replace(/,/g,''))||0)"
+        onchange="updItem(${idx},'price',parseFloat(this.value.replace(/,/g,''))||0)"
+        style="text-align:right"></td>
+      <td style="font-weight:600">${hv?fmt(c.exec):''}</td>
+      <td><input type="text" value="${it.rate}"
+        onfocus="this.value=this.value.replace(/,/g,'')"
+        onblur="updItem(${idx},'rate',parseFloat(this.value.replace(/,/g,''))||1)"
+        style="text-align:right;width:50px"></td>
+      <td class="gr">${it.price?fmt(Math.round(it.price*it.rate)):''}</td>
+      <td style="font-weight:600;color:var(--accent)">${hv?fmt(c.dec):''}</td>
+      <td style="color:var(--green)">${hv?fmt(c.margin):''}</td>
+      <td><button class="del-btn" onclick="delItem(${idx})">✕</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('det-sec').innerHTML=`
+    <div class="sec">
+      <div class="sec-hd">
+        <div class="sec-ttl">${cat.id}. ${cat.name}　<span style="font-size:11px;color:var(--text3);font-weight:400">${cat.items.length}/${MAX}行</span></div>
+        <span class="badge ${pr>=20?'good':'bad'}">利益率 ${pr}%</span>
+      </div>
+      <div class="tw-wrap"><table>
+        <colgroup><col style="width:30px"><col style="width:18%"><col style="width:13%"><col style="width:6%"><col style="width:5%"><col style="width:8%"><col style="width:8%"><col style="width:5%"><col style="width:7%"><col style="width:8%"><col style="width:7%"><col style="width:28px"></colgroup>
+        <thead><tr>
+          <th>No</th><th class="L">工事名称</th><th class="L">形状寸法等</th>
+          <th>数量</th><th>単位</th><th>単価（実行）</th>
+          <th>実行金額</th><th>掛率</th><th>決定単価</th>
+          <th>決定金額</th><th>粗利</th><th></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr>
+          <td colspan="6" style="text-align:right;color:var(--text2);padding-right:6px">小　計</td>
+          <td style="font-weight:700">${fmt(tot.exec)}</td><td></td><td></td>
+          <td style="font-weight:700;color:var(--accent)">${fmt(tot.dec)}</td>
+          <td style="color:var(--green)">${fmt(tot.margin)}</td><td></td>
+        </tr></tfoot>
+      </table></div>
+      ${cat.items.length<MAX?`<button class="add-btn" onclick="addItem()">＋ 行を追加（残${MAX-cat.items.length}行）</button>`:''}
+    </div>`;
+}
+
+function renderSummary(){
+  const all=ca();const disc=curDiscount();
+  document.getElementById('sum-body').innerHTML=curData().map(cat=>{
+    const t=cc(cat);
+    return `<tr>
+      <td class="C">${cat.id}</td><td class="L">${cat.name}</td>
+      <td>1</td><td class="L">式</td>
+      <td>${fmt(t.exec)}</td><td class="gr">—</td>
+      <td style="color:var(--accent);font-weight:600">${fmt(t.dec)}</td>
+      <td style="color:var(--green)">${fmt(t.margin)}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('sum-tots').innerHTML=`
+    <div class="tot-row"><span class="tot-lbl">小　計</span><span class="tot-val">¥${fmt(all.dec)}</span></div>
+    <div class="tot-row">
+      <span class="tot-lbl">値引き　▲</span>
+      <input class="disc-inp" type="number" value="${disc}" min="0" onchange="setDiscount(parseInt(this.value)||0)"> 円
+    </div>
+    <div class="tot-row">
+      <span class="tot-lbl">値引後 小計</span><span class="tot-val">¥${fmt(all.ad)}</span>
+      <span class="badge ${all.pr>=20?'good':'bad'}" style="margin-left:8px;font-size:11px">利益率 ${all.pr}%</span>
+    </div>
+    <div class="tot-row"><span class="tot-lbl">消費税（10%）</span><span class="tot-val">¥${fmt(all.tax)}</span></div>
+    <div class="tot-row grand"><span class="tot-lbl">合　計</span><span class="tot-val blue">¥${fmt(all.total)}</span></div>`;
+}
+
+function renderQuote(){
+  const all=ca();const s=curCfg();
+  document.getElementById('qprev').innerHTML=`
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:6px">
+      <span>No.&nbsp;${s.no}</span><span>Page.&nbsp;1</span>
+    </div>
+    <div style="border:2px solid var(--border2);text-align:center;padding:6px;font-size:20px;font-weight:700;letter-spacing:.2em;margin-bottom:10px">御　見　積　書</div>
+    <div class="q-hr2"></div>
+    <div style="font-size:13px;margin-bottom:5px">${s.date}</div>
+    <div style="font-size:15px;font-weight:700;text-decoration:underline;margin-bottom:5px">${s.client}　御中</div>
+    <div style="font-size:13px;margin-bottom:16px">工事件名：${s.proj}<br>下記のとおり御見積申し上げます。</div>
+    <div style="text-align:center;border-bottom:2px solid var(--border2);padding-bottom:12px;margin-bottom:14px">
+      <div><span style="font-size:18pt;font-weight:700">見積金額　</span><span style="font-size:22pt;font-weight:700;letter-spacing:.06em">¥ ${fmt(all.total)}&thinsp;－</span></div>
+      <div style="font-size:11pt;color:var(--text2);margin-top:6px">内消費税および地方消費税　¥ ${fmt(all.tax)}&thinsp;－　／　税抜合計金額　¥ ${fmt(all.ad)}&thinsp;－</div>
+    </div>
+    <div class="q-hr2"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div style="font-size:13px;line-height:2.2">
+        <div>工事場所：${s.loc}</div><div>工事概要：${s.ovr}</div>
+        <div>工事期間：${s.period}</div><div>支払条件：${s.pay}</div><div>有効期限：${s.valid}</div>
+      </div>
+      <div style="font-size:13px;line-height:2;text-align:left">
+        ${s.co2?`<div style="font-size:10px;color:var(--text3)">${s.co2}</div>`:''}
+        <div style="font-size:14px;font-weight:700">${s.co1}</div>
+        <div>${s.rep}</div><div>${s.zip}</div>
+        <div>${s.addr1}${s.addr2?' '+s.addr2:''}</div>
+        <div>TEL.&nbsp;${s.tel}</div><div>FAX.&nbsp;${s.fax}</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+          <span style="font-size:12px">インボイス登録番号&nbsp;${s.inv}</span>
+          <div class="stamp-box">印</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ===== INTERACTIONS =====
+function addCategory(){
+  const name=prompt('新しい工事名称を入力してください：','新規工事');
+  if(!name||!name.trim())return;
+  snapshot();
+  const data=curData();
+  const newId=Math.max(...data.map(c=>c.id),0)+1;
+  data.push({
+    id:newId,
+    name:name.trim(),
+    items:[]
+  });
+  curCat=data.length-1;
+  sched();renderAll();
+}
+
+function deleteCategory(){
+  const data=curData();
+  if(data.length<=1){alert('最後の工事は削除できません。');return;}
+  const cat=data[curCat];
+  if(!confirm(`「${cat.name}」を削除しますか？
+明細データもすべて削除されます。`))return;
+  data.splice(curCat,1);
+  if(curCat>=data.length)curCat=data.length-1;
+  sched();renderAll();
+}
+
+function renumberItems(items){
+  // Noを1から連番に振り直す
+  items.forEach((it,i)=>{it.no=i+1;});
+}
+
+function updItem(idx,f,v){
+  snapshot();
+  curData()[curCat].items[idx][f]=v;
+  sched();renderAll();
+}
+function addItem(){
+  const cat=curData()[curCat];if(cat.items.length>=MAX)return;
+  snapshot();
+  cat.items.push({no:cat.items.length+1,name:"",kei:"",qty:1,unit:"式",price:0,rate:1.25});
+  renumberItems(cat.items);
+  sched();renderAll();
+}
+function delItem(idx){
+  snapshot();
+  curData()[curCat].items.splice(idx,1);
+  renumberItems(curData()[curCat].items);
+  sched();renderAll();
+}
+function selCat(i){curCat=i;renderAll();}
+function setDiscount(v){if(curProj())curProj().discount=v;sched();renderAll();}
+
+// ===== SETTINGS =====
+function showSettings(){
+  const s=curCfg();
+  ['co1','co2','rep','zip','addr1','addr2','tel','fax','inv','no','date','valid','pay','client','proj','loc','ovr','period'].forEach(k=>{
+    const el=document.getElementById('s-'+k);if(el)el.value=s[k]||'';
+  });
+  document.getElementById('smodal').className='modal-ov on';
+}
+function closeSettings(){document.getElementById('smodal').className='modal-ov';}
+function saveSettings(){
+  const p=curProj();if(!p)return;
+  ['co1','co2','rep','zip','addr1','addr2','tel','fax','inv','no','date','valid','pay','client','proj','loc','ovr','period'].forEach(k=>{
+    const el=document.getElementById('s-'+k);if(el)p.cfg[k]=el.value;
+  });
+  document.getElementById('co-sub').textContent=p.cfg.co1||'';
+  closeSettings();saveNow();renderAll();
+}
+
+// ===== PRINT =====
+// ===== PDF保存 =====
+function savePDF(){
+  buildPrint();
+  setTimeout(()=>{
+    // Chromeの印刷ダイアログを開く
+    // ユーザーが「送信先→PDFに保存」を選ぶだけでOK
+    const style=document.createElement('style');
+    style.id='pdf-hint-style';
+    style.textContent=`
+      @media print{
+        body::before{
+          content:"";
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    window.print();
+    setTimeout(()=>{
+      const s=document.getElementById('pdf-hint-style');
+      if(s)s.remove();
+    },2000);
+  },150);
+}
+
+// ===== データ書き出し（JSON） =====
+function exportData(){
+  try{
+    const exportObj={
+      version:"1.0",
+      exportDate:new Date().toLocaleString('ja-JP'),
+      projects:projects,
+      currentProjectId:curProjId
+    };
+    const json=JSON.stringify(exportObj,null,2);
+    const blob=new Blob([json],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    const d=new Date();
+    const ds=d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0');
+    a.download='mitsumori_data_'+ds+'.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    alert('データを書き出しました！\nファイル名: mitsumori_data_'+ds+'.json');
+  }catch(e){
+    alert('書き出しに失敗しました: '+e.message);
+  }
+}
+
+// ===== データ読み込み（JSON） =====
+function importData(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const obj=JSON.parse(e.target.result);
+      if(!obj.projects||!Array.isArray(obj.projects)){
+        alert('このファイルは対応していない形式です。');
+        return;
+      }
+      if(!confirm(`「${file.name}」を読み込みます。\n現在のデータは上書きされます。\n続けますか？`)){
+        input.value='';return;
+      }
+      snapshot();
+      projects=obj.projects;
+      curProjId=obj.currentProjectId||projects[0].id;
+      if(!projects.find(p=>p.id===curProjId))curProjId=projects[0].id;
+      curCat=0;
+      saveNow();
+      updateProjBtn();
+      document.getElementById('co-sub').textContent=curCfg().co1||'';
+      renderAll();
+      alert('データを読み込みました！\n物件数：'+projects.length+'件');
+    }catch(ex){
+      alert('読み込みに失敗しました。\n正しいファイルか確認してください。\n'+ex.message);
+    }
+    input.value='';
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+// ===== 物件追加インポート =====
+function importAddData(input){
+  var file=input.files[0];
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var obj=JSON.parse(e.target.result);
+      if(!obj.projects||!Array.isArray(obj.projects)){
+        alert('このファイルは対応していない形式です。');
+        input.value='';return;
+      }
+      var existIds={};
+      projects.forEach(function(p){existIds[p.id]=true;});
+      var newProjs=obj.projects.filter(function(p){return !existIds[p.id];});
+      var dupProjs=obj.projects.filter(function(p){return !!existIds[p.id];});
+      var lines=[];
+      lines.push('読み込むファイル: '+file.name);
+      lines.push('');
+      lines.push('追加される物件: '+newProjs.length+'件');
+      newProjs.forEach(function(p){lines.push('  '+p.name);});
+      if(dupProjs.length>0){
+        lines.push('');
+        lines.push('重複のためスキップ: '+dupProjs.length+'件');
+        dupProjs.forEach(function(p){lines.push('  '+p.name);});
+      }
+      lines.push('');
+      lines.push('追加しますか？');
+      if(!confirm(lines.join('\n'))){input.value='';return;}
+      if(newProjs.length===0){
+        alert('追加できる物件がありませんでした。');
+        input.value='';return;
+      }
+      snapshot();
+      newProjs.forEach(function(p){
+        p.id=genId();
+        projects.push(p);
+      });
+      saveNow();
+      renderAll();
+      alert(newProjs.length+'件の物件を追加しました！');
+    }catch(ex){
+      alert('読み込みに失敗しました: '+ex.message);
+    }
+    input.value='';
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+function buildPrint(){
+  const all=ca();const s=curCfg();const disc=curDiscount();
+  let h='';
+
+  // PAGE 1: 御見積書
+  h+=`<div class="p-page">
+    <div class="pc-outer">
+      <div class="pc-no-line"><span>No.&nbsp;${s.no}</span><span>Page.&nbsp;1</span></div>
+      <div class="pc-title-box">御　見　積　書</div>
+      <hr class="pc-sep">
+      <div class="pc-date">${s.date}</div>
+      <div class="pc-client">${s.client}　御中</div>
+      <div class="pc-kojimei">工事件名：${s.proj}</div>
+      <div class="pc-shita">下記のとおり御見積申し上げます。</div>
+      <div class="pc-amount-wrap">
+        <div>
+          <span class="pc-amount-lbl">見積金額</span>
+          <span class="pc-amount">¥&thinsp;${fmt(all.total)}&thinsp;－</span>
+        </div>
+        <div class="pc-sub-amounts">内消費税および地方消費税　¥&thinsp;${fmt(all.tax)}&thinsp;－&emsp;税抜合計金額　¥&thinsp;${fmt(all.ad)}&thinsp;－</div>
+      </div>
+      <hr class="pc-sep2">
+      <div class="pc-bottom">
+        <div class="pc-left">
+          <div>工事場所：${s.loc}</div><div>工事概要：${s.ovr}</div>
+          <div>工事期間：${s.period}</div><div>支払条件：${s.pay}</div><div>有効期限：${s.valid}</div>
+        </div>
+        <div class="pc-right">
+          ${s.co2?`<div class="pc-right-co1">${s.co2}</div>`:''}
+          <div class="pc-right-co2">${s.co1}</div>
+          <div>${s.rep}</div><div>${s.zip}</div>
+          <div>${s.addr1}${s.addr2?' '+s.addr2:''}</div>
+          <div>TEL.&nbsp;${s.tel}</div><div>FAX.&nbsp;${s.fax}</div>
+          <div class="pc-stamp-wrap">
+            <span>インボイス登録番号&nbsp;${s.inv}</span>
+            <span class="pc-stamp">印</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  // PAGE 2: 見積書内訳（鏡）1ページ
+  const discR=disc>0?`<tr>
+    <td colspan="4" style="text-align:right;background:#e4e9f2;border:1px solid #888;font-weight:700;color:#c00">値引き　▲</td>
+    <td style="border:1px solid #888;color:#c00;text-align:right">${fmt(disc)}</td>
+    <td style="border:1px solid #888"></td></tr>`:'';
+
+  const mRows=curData().map(cat=>{
+    const t=cc(cat);
+    const note=cat.id===15?'別途予算取して下さい':'';
+    return `<tr>
+      <td style="text-align:center;border-left:1px solid #888">${cat.id}</td>
+      <td style="text-align:left">${cat.name}</td>
+      <td style="text-align:center">1</td><td style="text-align:center">式</td>
+      <td style="text-align:right">${t.dec>0?fmt(t.dec):''}</td>
+      <td style="text-align:left;border-right:1px solid #888">${note}</td>
+    </tr>`;
+  }).join('');
+
+  h+=`<div class="p-page">
+    <div class="p-hdr">
+      <div class="p-hdr-title">見 積 書 内 訳</div>
+      <div class="p-hdr-sub">${s.proj}　/　${s.client}　/　${s.date}　/　No.${s.no}</div>
+    </div>
+    <table class="pt" style="font-size:8pt">
+      <colgroup>
+        <col style="width:28px"><col style="width:40%">
+        <col style="width:8%"><col style="width:6%">
+        <col style="width:20%"><col>
+      </colgroup>
+      <thead><tr>
+        <th class="C">No</th><th class="L">工事名称</th>
+        <th class="C">数量</th><th class="C">単位</th>
+        <th>金　額</th><th class="L">備　考</th>
+      </tr></thead>
+      <tbody style="font-size:8pt">${mRows}</tbody>
+      <tfoot>
+        <tr><td colspan="4" style="text-align:right;background:#e4e9f2;border:1px solid #888;font-weight:700">小　計</td><td style="text-align:right;border:1px solid #888">${fmt(all.dec)}</td><td style="border:1px solid #888"></td></tr>
+        ${discR}
+        <tr><td colspan="4" style="text-align:right;background:#e4e9f2;border:1px solid #888;font-weight:700">値引後　小計</td><td style="text-align:right;border:1px solid #888">${fmt(all.ad)}</td><td style="border:1px solid #888"></td></tr>
+        <tr><td colspan="4" style="text-align:right;background:#e4e9f2;border:1px solid #888;font-weight:700">消費税（10%）</td><td style="text-align:right;border:1px solid #888">${fmt(all.tax)}</td><td style="border:1px solid #888"></td></tr>
+        <tr><td colspan="4" style="text-align:right;background:#ccd4e8;border:2px solid #555;font-size:11pt;font-weight:700">合　計（税込）</td><td style="text-align:right;border:2px solid #555;font-size:11pt;font-weight:700">${fmt(all.total)}</td><td style="border:1px solid #888"></td></tr>
+      </tfoot>
+    </table>
+  </div>`;
+
+  // PAGES 3+: 工事別明細
+  curData().forEach(cat=>{
+    const tot=cc(cat);
+    const rows=cat.items.map(it=>{
+      const c=ci(it);const hv=it.qty>0&&it.price>0;
+      return `<tr>
+        <td style="text-align:center;border-left:1px solid #888">${it.no}</td>
+        <td style="text-align:left">${it.name}</td>
+        <td style="text-align:center">${it.qty||''}</td>
+        <td style="text-align:center">${it.unit}</td>
+        <td style="text-align:right">${it.price&&it.rate?fmt(Math.round(it.price*it.rate)):''}</td>
+        <td style="text-align:right">${hv?fmt(c.dec):''}</td>
+        <td style="text-align:left;border-right:1px solid #888">${it.kei}</td>
+      </tr>`;
+    }).join('');
+    h+=`<div class="p-page">
+      <div class="p-hdr">
+        <div class="p-hdr-title">${cat.id}.　${cat.name}</div>
+        <div class="p-hdr-sub">${s.proj}　/　${s.client}　/　${s.date}　/　No.${s.no}</div>
+      </div>
+      <table class="pt">
+        <colgroup>
+          <col style="width:28px"><col style="width:32%">
+          <col style="width:8%"><col style="width:6%">
+          <col style="width:14%"><col style="width:14%"><col>
+        </colgroup>
+        <thead><tr>
+          <th class="C">No</th><th class="L">工事名称</th>
+          <th class="C">数量</th><th class="C">単位</th>
+          <th>単　価</th><th>金　額</th>
+          <th class="L">形状寸法等</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr>
+          <td colspan="4" style="text-align:right;background:#e4e9f2;border:1px solid #888;font-weight:700">小　計</td>
+          <td style="border:1px solid #888"></td>
+          <td style="text-align:right;background:#e4e9f2;border:1px solid #888;font-weight:700">${tot.dec>0?fmt(tot.dec):''}</td>
+          <td style="border:1px solid #888"></td>
+        </tr></tfoot>
+      </table>
+    </div>`;
+  });
+
+  document.getElementById('print-area').innerHTML=h;
+}
+
+function doPrint(){buildPrint();setTimeout(()=>{window.print();},150);}
+
+function renderAll(){
+  renderMetrics();renderTabs();
+  if(curView==='detail')renderDetail();
+  else if(curView==='summary')renderSummary();
+  else renderQuote();
+}
+
+loadAll();loadAppTitle();updateUndoRedoBtns();renderAll();
+</script>
+</body>
+</html>
