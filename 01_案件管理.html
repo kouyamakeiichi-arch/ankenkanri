@@ -133,6 +133,49 @@
   .spinner { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--primary-soft); border-top-color: var(--primary); animation: spin .7s linear infinite; margin-right: 8px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* ---------------- 案件詳細(ハブ画面) ---------------- */
+  .detail-page { position: fixed; inset: 0; background: var(--bg); z-index: 250; overflow-y: auto; }
+  .detail-page__inner { max-width: 900px; margin: 0 auto; padding: 20px 20px 60px; }
+  .detail-back { display: inline-flex; align-items: center; gap: 6px; font-family: inherit; font-size: 13px; font-weight: 700; color: var(--text-secondary); background: none; border: none; cursor: pointer; padding: 6px 0; margin-bottom: 10px; }
+  .detail-back:hover { color: var(--primary); }
+  .detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 6px; flex-wrap: wrap; }
+  .detail-head__no { font-family: 'Courier New', monospace; font-size: 12px; color: var(--text-tertiary); }
+  .detail-head__name { font-size: 20px; font-weight: 900; margin: 2px 0 8px; }
+  .detail-head__meta { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .detail-tabs { display: flex; gap: 6px; overflow-x: auto; margin: 18px 0 16px; scrollbar-width: none; }
+  .detail-tabs::-webkit-scrollbar { display: none; }
+  .detail-tab { font-family: inherit; font-weight: 700; font-size: 13px; padding: 9px 15px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); cursor: pointer; white-space: nowrap; }
+  .detail-tab.is-active { background: var(--primary); border-color: var(--primary); color: white; }
+  .detail-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .detail-section-title { font-size: 13px; font-weight: 700; color: var(--text-secondary); margin: 0 0 10px; }
+  .detail-info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 20px; margin-bottom: 16px; }
+  @media (max-width: 640px) { .detail-info-grid { grid-template-columns: 1fr; } }
+  .detail-info-item .l { font-size: 11.5px; color: var(--text-tertiary); margin-bottom: 2px; }
+  .detail-info-item .v { font-size: 13.5px; font-weight: 600; }
+  .detail-summary-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+  .detail-summary-item { background: var(--bg); border-radius: 10px; padding: 10px 16px; flex: 1; min-width: 120px; }
+  .detail-summary-item .l { font-size: 11.5px; color: var(--text-tertiary); margin-bottom: 2px; }
+  .detail-summary-item .v { font-family: 'Courier New', monospace; font-weight: 700; font-size: 15px; }
+  .detail-list-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .detail-list-row:last-child { border-bottom: none; }
+  .detail-list-row .main { flex: 1; min-width: 0; }
+  .detail-list-row .main .t1 { font-weight: 700; }
+  .detail-list-row .main .t2 { color: var(--text-tertiary); font-size: 11.5px; margin-top: 1px; }
+  .detail-empty { color: var(--text-tertiary); font-size: 13px; padding: 20px 0; text-align: center; }
+  .detail-file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 14px; }
+  .detail-file-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px; position: relative; }
+  .detail-file-card__name { font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .detail-file-card__sub { font-size: 10.5px; color: var(--text-tertiary); margin: 3px 0 8px; }
+  .detail-file-card__actions { display: flex; justify-content: space-between; }
+  .detail-upload-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .detail-upload-row select { font-family: inherit; font-size: 12.5px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+  .detail-task-add { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; margin-bottom: 16px; padding: 14px; background: var(--bg); border-radius: 10px; }
+  .detail-task-add input[type="date"] { font-family: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
+  .detail-task-add textarea { flex: 1; min-width: 180px; font-family: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; resize: vertical; }
+  .link-jump { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; color: var(--primary); text-decoration: none; }
+  .link-jump:hover { text-decoration: underline; }
+  @media (max-width: 640px) { .detail-page__inner { padding: 14px 12px 70px; } }
+
   /* ---------------- サイドバー / ハンバーガー ---------------- */
   .hamburger-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; flex-shrink: 0; }
   .hamburger-btn:hover { background: #F1EFFB; }
@@ -252,6 +295,7 @@
 </div>
 
 <div id="modalRoot"></div>
+<div id="detailRoot"></div>
 <div id="toastRoot"></div>
 
 <script>
@@ -263,6 +307,15 @@
   var BUILDINGS_KEY = "taiho_buildings_v2";
   var SETTINGS_STATUS_KEY = "taiho_settings_project_status_v1";
   var SETTINGS_TYPE_KEY = "taiho_settings_project_types_v1";
+  /* 案件詳細ハブで参照する他モジュールのキー(読み取り・一部書き込み) */
+  var FILES_KEY = "taiho_files_v1";
+  var SCHEDULE_TASKS_KEY = "taiho_schedule_tasks_v1";
+  var CONTRACTORS_KEY = "taiho_contractors_v1";
+  var ORDERS_KEY = "taiho_orders_v1";
+  var BILLINGS_KEY = "taiho_billings_v1";
+  var WORKLOGS_KEY = "taiho_worklogs_v1";
+  var REQUESTS_KEY = "taiho_requests_v1";
+  var MAX_FILE_SIZE = 1.5 * 1024 * 1024;
   function storageGet(key) {
     return new Promise(function (resolve) {
       if (window.db) {
@@ -329,8 +382,37 @@
   ];
   var MANAGER_SUGGESTIONS = ["遠藤了介", "kouyama", "soumu", "jimu", "k.aotsuka"];
 
+  /* 案件詳細ハブ(⑤金銭管理・④日報)で表示に使うステータス定義 */
+  var ORDER_STATUS = [
+    { id: "estimating", label: "見積中",   color: "#F59E0B" },
+    { id: "ordered",    label: "発注済み", color: "#6C47FF" },
+    { id: "completed",  label: "完了",     color: "#10B981" },
+    { id: "cancelled",  label: "キャンセル", color: "#94A3B8" }
+  ];
+  var BILLING_STATUS = [
+    { id: "unbilled", label: "未請求",   color: "#94A3B8" },
+    { id: "billed",   label: "請求済み", color: "#F59E0B" },
+    { id: "received", label: "入金済み", color: "#10B981" }
+  ];
+  var REQUEST_STATUS = [
+    { id: "pending",  label: "承認待ち", color: "#F59E0B" },
+    { id: "approved", label: "承認済み", color: "#10B981" },
+    { id: "rejected", label: "却下",     color: "#F0525C" }
+  ];
+  var FOLDERS = [
+    { id: "shared",    label: "全業者共有" },
+    { id: "photos",    label: "写真" },
+    { id: "estimate",  label: "見積書" },
+    { id: "invoice",   label: "請求書" },
+    { id: "materials", label: "資料" }
+  ];
+
   function statusOf(id) { for (var i=0;i<STATUS_LIST.length;i++) if (STATUS_LIST[i].id===id) return STATUS_LIST[i]; return STATUS_LIST[0]; }
   function typeOf(id) { for (var i=0;i<TYPE_LIST.length;i++) if (TYPE_LIST[i].id===id) return TYPE_LIST[i]; return TYPE_LIST[0]; }
+  function orderStatusOf(id) { for (var i=0;i<ORDER_STATUS.length;i++) if (ORDER_STATUS[i].id===id) return ORDER_STATUS[i]; return ORDER_STATUS[0]; }
+  function billingStatusOf(id) { for (var i=0;i<BILLING_STATUS.length;i++) if (BILLING_STATUS[i].id===id) return BILLING_STATUS[i]; return BILLING_STATUS[0]; }
+  function requestStatusOf(id) { for (var i=0;i<REQUEST_STATUS.length;i++) if (REQUEST_STATUS[i].id===id) return REQUEST_STATUS[i]; return REQUEST_STATUS[0]; }
+  function folderOf(id) { for (var i=0;i<FOLDERS.length;i++) if (FOLDERS[i].id===id) return FOLDERS[i]; return FOLDERS[0]; }
 
   function findCustomerIdByName(name) {
     if (!name) return "";
@@ -373,6 +455,24 @@
     return "¥" + Number(v).toLocaleString("ja-JP");
   }
 
+  function fmtSize(bytes) {
+    if (!bytes) return "0KB";
+    if (bytes < 1024*1024) return Math.round(bytes/1024) + "KB";
+    return (bytes/1024/1024).toFixed(1) + "MB";
+  }
+  function fmtDateTime(v) {
+    var d = new Date(v);
+    if (isNaN(d.getTime())) return "-";
+    return d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate();
+  }
+  function fmtDateShort(v) {
+    if (!v) return "-";
+    var d = new Date(v + "T00:00:00");
+    if (isNaN(d.getTime())) return "-";
+    return (d.getMonth()+1) + "/" + d.getDate() + "(" + ["日","月","火","水","木","金","土"][d.getDay()] + ")";
+  }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
   function seedProjects() {
     return [
       { id: "seed-17", no: 17, typeId: "super", name: "日本製鋼所内 NH72型2連棟 基礎工事、確認申請", customerName: "(株)ナガワ 登別営業所", buildingName: "", status: "inquiry", manager: "遠藤了介", creator: "遠藤了介", contractDate: "", startDate: "", completionDate: "", contractAmount: "" },
@@ -392,7 +492,12 @@
     ];
   }
 
-  var state = { projects: [], customers: [], buildings: [], loading: true, search: "", activeType: "all", activeStatus: null, hideDone: false };
+  var state = {
+    projects: [], customers: [], buildings: [], loading: true, search: "", activeType: "all", activeStatus: null, hideDone: false,
+    /* 案件詳細ハブ用 */
+    files: [], scheduleTasks: [], contractors: [], orders: [], billings: [], worklogs: [], requests: [],
+    secondaryLoaded: false, detailProjectId: null, detailTab: "info"
+  };
   var modalState = null;
   var confirmDeleteId = null;
 
@@ -406,6 +511,8 @@
   var ICON_CHECK = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>';
   var ICON_ALERT = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="confirm-box__icon"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>';
   var ICON_CHEV = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="status-pill__chev"><path d="m6 9 6 6 6-6"/></svg>';
+  var ICON_CHEV_R = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="m9 18 6-6-6-6"/></svg>';
+  var ICON_UPLOAD = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12 4 4m-4-4-4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>';
 
   var toastTimer = null;
   function showToast(msg) {
@@ -514,7 +621,7 @@
         '<tr>' +
           '<td class="cell-no">' + esc(p.no) + '</td>' +
           '<td><div class="cell-name-wrap"><span class="type-bar" style="--bar-color:' + t.color + '"></span>' +
-            '<button class="cell-name" data-edit="' + p.id + '">' + esc(p.name) + '</button></div></td>' +
+            '<button class="cell-name" data-detail="' + p.id + '">' + esc(p.name) + '</button></div></td>' +
           '<td><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span></td>' +
           '<td>' + statusPillHtml(p.id, p.status, "") + '</td>' +
           '<td>' + esc(p.customerName || "-") + '</td>' +
@@ -531,7 +638,7 @@
       cardItems +=
         '<div class="project-card" style="--bar-color:' + t.color + '">' +
           '<div class="project-card__top"><div><div class="project-card__no">No.' + esc(p.no) + '</div>' +
-          '<div class="project-card__name">' + esc(p.name) + '</div></div>' +
+          '<button class="cell-name project-card__name" data-detail="' + p.id + '" style="display:block;">' + esc(p.name) + '</button></div>' +
           '<button class="icon-btn" data-edit="' + p.id + '" aria-label="編集">' + ICON_PENCIL + '</button></div>' +
           '<div class="project-card__meta"><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span>' +
           (p.customerName ? '<span>' + ICON_USER + esc(p.customerName) + '</span>' : '') +
@@ -571,6 +678,13 @@
         var id = el.getAttribute("data-edit");
         var p = state.projects.find(function (x) { return x.id === id; });
         if (p) openModal(true, p);
+      });
+    });
+    area.querySelectorAll("[data-detail]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var id = el.getAttribute("data-detail");
+        var p = state.projects.find(function (x) { return x.id === id; });
+        if (p) openDetailView(p.id);
       });
     });
     area.querySelectorAll("[data-status-change]").forEach(function (el) {
@@ -704,10 +818,343 @@
     });
   }
 
+  /* =====================================================================
+     案件詳細ハブ画面
+     ===================================================================== */
+  var DETAIL_TABS = [
+    { id: "info",     label: "基本情報" },
+    { id: "customer", label: "顧客・建物" },
+    { id: "files",    label: "ファイル" },
+    { id: "schedule", label: "工程表" },
+    { id: "money",    label: "金銭" },
+    { id: "worklog",  label: "日報・申請" }
+  ];
+
+  function loadSecondaryData() {
+    if (state.secondaryLoaded) return Promise.resolve();
+    return Promise.all([
+      storageGet(FILES_KEY), storageGet(SCHEDULE_TASKS_KEY), storageGet(CONTRACTORS_KEY),
+      storageGet(ORDERS_KEY), storageGet(BILLINGS_KEY), storageGet(WORKLOGS_KEY), storageGet(REQUESTS_KEY)
+    ]).then(function (res) {
+      function arr(i) { try { var v = res[i] && res[i].value ? JSON.parse(res[i].value) : null; return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+      state.files = arr(0);
+      state.scheduleTasks = arr(1);
+      state.contractors = arr(2);
+      state.orders = arr(3);
+      state.billings = arr(4);
+      state.worklogs = arr(5);
+      state.requests = arr(6);
+      state.secondaryLoaded = true;
+    }).catch(function () { state.secondaryLoaded = true; });
+  }
+
+  function contractorName(id) { var c = state.contractors.find(function (x) { return x.id === id; }); return c ? c.name : "-"; }
+
+  function openDetailView(projectId) {
+    state.detailProjectId = projectId;
+    state.detailTab = "info";
+    var root = document.getElementById("detailRoot");
+    root.innerHTML = '<div class="detail-page"><div class="detail-page__inner"><div class="loading-wrap"><span class="spinner"></span> 読み込み中...</div></div></div>';
+    loadSecondaryData().then(function () { renderDetailView(); });
+  }
+  function closeDetailView() {
+    state.detailProjectId = null;
+    document.getElementById("detailRoot").innerHTML = "";
+  }
+
+  function renderDetailView() {
+    var p = state.projects.find(function (x) { return x.id === state.detailProjectId; });
+    var root = document.getElementById("detailRoot");
+    if (!p) { root.innerHTML = ""; return; }
+    var t = typeOf(p.typeId), s = statusOf(p.status);
+
+    var tabsHtml = DETAIL_TABS.map(function (tb) {
+      return '<button class="detail-tab' + (tb.id===state.detailTab?" is-active":"") + '" data-dtab="' + tb.id + '">' + tb.label + '</button>';
+    }).join("");
+
+    root.innerHTML =
+      '<div class="detail-page"><div class="detail-page__inner">' +
+      '<button class="detail-back" id="detailBackBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>案件一覧に戻る</button>' +
+      '<div class="detail-head">' +
+        '<div><div class="detail-head__no">No.' + esc(p.no) + '</div><div class="detail-head__name">' + esc(p.name) + '</div>' +
+        '<div class="detail-head__meta"><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span>' + statusPillHtml(p.id, p.status, "sm") + '</div></div>' +
+        '<button class="btn btn--ghost" id="detailEditBtn">' + ICON_PENCIL + ' 基本情報を編集</button>' +
+      '</div>' +
+      '<div class="detail-tabs">' + tabsHtml + '</div>' +
+      '<div class="detail-panel" id="detailPanel"></div>' +
+      '</div></div>';
+
+    document.getElementById("detailBackBtn").addEventListener("click", closeDetailView);
+    document.getElementById("detailEditBtn").addEventListener("click", function () { openModal(true, p); });
+    root.querySelectorAll("[data-dtab]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.detailTab = btn.getAttribute("data-dtab");
+        renderDetailView();
+      });
+    });
+
+    renderDetailPanel(p);
+  }
+
+  function renderDetailPanel(p) {
+    var panel = document.getElementById("detailPanel");
+    if (state.detailTab === "info") return renderDetailInfo(panel, p);
+    if (state.detailTab === "customer") return renderDetailCustomer(panel, p);
+    if (state.detailTab === "files") return renderDetailFiles(panel, p);
+    if (state.detailTab === "schedule") return renderDetailSchedule(panel, p);
+    if (state.detailTab === "money") return renderDetailMoney(panel, p);
+    if (state.detailTab === "worklog") return renderDetailWorklog(panel, p);
+  }
+
+  /* ---- 基本情報タブ ---- */
+  function renderDetailInfo(panel, p) {
+    panel.innerHTML =
+      '<div class="detail-info-grid">' +
+      infoItem("契約日", fmtDate(p.contractDate)) +
+      infoItem("着工日", fmtDate(p.startDate)) +
+      infoItem("完工日", fmtDate(p.completionDate)) +
+      infoItem("契約金額", fmtYen(p.contractAmount)) +
+      infoItem("担当者", p.manager || "-") +
+      infoItem("作成者", p.creator || "-") +
+      '</div>' +
+      '<p style="font-size:12.5px;color:var(--text-tertiary);margin:0;">右上の「基本情報を編集」からタイプ・名前・日付・金額などを編集できます。</p>';
+  }
+  function infoItem(label, value) {
+    return '<div class="detail-info-item"><div class="l">' + esc(label) + '</div><div class="v">' + esc(value) + '</div></div>';
+  }
+
+  /* ---- 顧客・建物タブ ---- */
+  function renderDetailCustomer(panel, p) {
+    var c = state.customers.find(function (x) { return x.id === p.customerId; });
+    var b = state.buildings.find(function (x) { return x.id === p.buildingId; });
+    var html = '<div class="detail-section-title">顧客</div>';
+    if (c) {
+      html += '<div class="detail-info-grid">' +
+        infoItem("顧客名", c.name + (c.honorific ? " " + c.honorific : "")) +
+        infoItem("担当", c.manager || "-") +
+        infoItem("電話番号", c.phone || "-") +
+        infoItem("住所", (c.zip ? "〒" + c.zip + " " : "") + (c.address || "-")) +
+        '</div>';
+    } else {
+      html += '<div class="detail-empty">この案件には顧客が紐付けられていません</div>';
+    }
+    html += '<div class="detail-section-title" style="margin-top:18px;">建物</div>';
+    if (b) {
+      html += '<div class="detail-info-grid">' +
+        infoItem("建物名", b.name) +
+        infoItem("住所", (b.zip ? "〒" + b.zip + " " : "") + (b.address || "-")) +
+        '</div>';
+    } else {
+      html += '<div class="detail-empty">この案件には建物が紐付けられていません</div>';
+    }
+    html += '<p style="margin-top:16px;"><a class="link-jump" href="02_顧客建物管理.html">②顧客・建物管理を開く ' + ICON_CHEV_R + '</a></p>';
+    panel.innerHTML = html;
+  }
+
+  /* ---- ファイルタブ ---- */
+  function projectFiles() {
+    return state.files.filter(function (f) { return f.projectId === state.detailProjectId; }).sort(function (a,b) { return b.uploadedAt - a.uploadedAt; });
+  }
+  function renderDetailFiles(panel, p) {
+    var list = projectFiles();
+    var folderOptions = FOLDERS.map(function (f) { return '<option value="' + f.id + '">' + esc(f.label) + '</option>'; }).join("");
+    var html =
+      '<div class="detail-section-title">この案件のファイル(' + list.length + '件)</div>' +
+      '<div class="detail-upload-row">' +
+        '<select id="detailFolderSelect">' + folderOptions + '</select>' +
+        '<button class="btn btn--primary btn--sm" id="detailUploadBtn">' + ICON_UPLOAD + ' アップロード</button>' +
+        '<input type="file" id="detailFileInput" accept="image/*,application/pdf" multiple style="display:none" />' +
+        '<span style="font-size:11px;color:var(--text-tertiary);">画像・PDF、1ファイル1.5MBまで</span>' +
+      '</div>';
+    if (!list.length) {
+      html += '<div class="detail-empty">まだファイルがアップロードされていません</div>';
+    } else {
+      html += '<div class="detail-file-grid">' + list.map(function (f) {
+        return '<div class="detail-file-card">' +
+          '<div class="detail-file-card__name">' + esc(f.name) + '</div>' +
+          '<div class="detail-file-card__sub">' + esc(folderOf(f.folderId).label) + ' ・ ' + fmtSize(f.sizeBytes) + '</div>' +
+          '<div class="detail-file-card__actions">' +
+          '<a class="icon-btn" href="' + f.dataUrl + '" target="_blank" rel="noopener" title="開く"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg></a>' +
+          '<button class="icon-btn" data-fdel="' + f.id + '" title="削除">' + ICON_TRASH + '</button>' +
+          '</div></div>';
+      }).join("") + '</div>';
+    }
+    html += '<p style="margin-top:16px;"><a class="link-jump" href="03_ファイル管理.html">③ファイル管理を開く ' + ICON_CHEV_R + '</a></p>';
+    panel.innerHTML = html;
+
+    document.getElementById("detailUploadBtn").addEventListener("click", function () { document.getElementById("detailFileInput").click(); });
+    document.getElementById("detailFileInput").addEventListener("change", function (e) {
+      var files = Array.prototype.slice.call(e.target.files || []);
+      e.target.value = "";
+      if (!files.length) return;
+      var folderId = document.getElementById("detailFolderSelect").value;
+      var accepted = [], rejected = 0;
+      files.forEach(function (f) {
+        var isImage = f.type && f.type.indexOf("image/") === 0;
+        var isPdf = f.type === "application/pdf";
+        if ((!isImage && !isPdf) || f.size > MAX_FILE_SIZE) { rejected++; return; }
+        accepted.push(f);
+      });
+      if (rejected > 0) showToast(rejected + "件のファイルは形式または容量の制限でスキップされました");
+      if (!accepted.length) return;
+      Promise.all(accepted.map(function (f) {
+        return new Promise(function (resolve) {
+          var reader = new FileReader();
+          reader.onload = function () {
+            resolve({ id: "f-" + uid(), projectId: state.detailProjectId, folderId: folderId, name: f.name, mime: f.type, sizeBytes: f.size, dataUrl: reader.result, uploadedAt: Date.now() });
+          };
+          reader.readAsDataURL(f);
+        });
+      })).then(function (newFiles) {
+        var next = newFiles.concat(state.files);
+        state.files = next;
+        storageSet(FILES_KEY, JSON.stringify(next)).then(function () {
+          showToast("アップロードしました");
+          renderDetailPanel(p);
+        });
+      });
+    });
+    panel.querySelectorAll("[data-fdel]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-fdel");
+        var next = state.files.filter(function (f) { return f.id !== id; });
+        state.files = next;
+        storageSet(FILES_KEY, JSON.stringify(next)).then(function () {
+          showToast("削除しました");
+          renderDetailPanel(p);
+        });
+      });
+    });
+  }
+
+  /* ---- 工程表タブ ---- */
+  function projectTasks(p) {
+    return state.scheduleTasks.filter(function (t) { return t.projectId === p.id && t.content; }).sort(function (a,b) { return a.date < b.date ? -1 : 1; });
+  }
+  function renderDetailSchedule(panel, p) {
+    var tasks = projectTasks(p);
+    var html =
+      '<div class="detail-summary-row">' +
+        '<div class="detail-summary-item"><div class="l">着工日</div><div class="v" style="font-size:13px;">' + fmtDate(p.startDate) + '</div></div>' +
+        '<div class="detail-summary-item"><div class="l">完工日</div><div class="v" style="font-size:13px;">' + fmtDate(p.completionDate) + '</div></div>' +
+      '</div>' +
+      '<div class="detail-section-title">日別工事内容を追加</div>' +
+      '<div class="detail-task-add">' +
+        '<input type="date" id="taskDateInput" value="' + esc(p.startDate || "") + '" />' +
+        '<textarea id="taskContentInput" rows="2" placeholder="例: 基礎配筋、型枠組立"></textarea>' +
+        '<button class="btn btn--primary btn--sm" id="taskAddBtn">追加</button>' +
+      '</div>' +
+      '<div class="detail-section-title">登録済みの日別工事内容(' + tasks.length + '件)</div>';
+    if (!tasks.length) {
+      html += '<div class="detail-empty">まだ登録されていません</div>';
+    } else {
+      html += tasks.map(function (t) {
+        return '<div class="detail-list-row"><div class="main"><div class="t1">' + fmtDateShort(t.date) + '</div><div class="t2">' + esc(t.content) + '</div></div>' +
+          '<button class="icon-btn" data-tdel="' + t.id + '" title="削除">' + ICON_TRASH + '</button></div>';
+      }).join("");
+    }
+    html += '<p style="margin-top:16px;"><a class="link-jump" href="07_工程表カレンダー.html">⑦工程表・カレンダーを開く(ガントチャート表示) ' + ICON_CHEV_R + '</a></p>';
+    panel.innerHTML = html;
+
+    document.getElementById("taskAddBtn").addEventListener("click", function () {
+      var date = document.getElementById("taskDateInput").value;
+      var content = document.getElementById("taskContentInput").value.trim();
+      if (!date) { showToast("日付を選択してください"); return; }
+      if (!content) { showToast("工事内容を入力してください"); return; }
+      var next = state.scheduleTasks.filter(function (t) { return !(t.projectId === p.id && t.date === date); });
+      next.push({ id: uid(), projectId: p.id, date: date, content: content });
+      state.scheduleTasks = next;
+      storageSet(SCHEDULE_TASKS_KEY, JSON.stringify(next)).then(function () {
+        showToast("追加しました");
+        renderDetailPanel(p);
+      });
+    });
+    panel.querySelectorAll("[data-tdel]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-tdel");
+        var next = state.scheduleTasks.filter(function (t) { return t.id !== id; });
+        state.scheduleTasks = next;
+        storageSet(SCHEDULE_TASKS_KEY, JSON.stringify(next)).then(function () {
+          showToast("削除しました");
+          renderDetailPanel(p);
+        });
+      });
+    });
+  }
+
+  /* ---- 金銭タブ ---- */
+  function renderDetailMoney(panel, p) {
+    var orders = state.orders.filter(function (o) { return o.projectId === p.id; });
+    var billings = state.billings.filter(function (b) { return b.projectId === p.id; });
+    var ordersTotal = orders.filter(function (o) { return o.status !== "cancelled"; }).reduce(function (s,o) { return s + (Number(o.orderAmount)||0); }, 0);
+    var billingsTotal = billings.reduce(function (s,b) { return s + (Number(b.totalAmount)||0); }, 0);
+    var receivedTotal = billings.reduce(function (s,b) { return s + (Number(b.receivedAmount)||0); }, 0);
+    var profit = billingsTotal - ordersTotal;
+
+    var html =
+      '<div class="detail-summary-row">' +
+        '<div class="detail-summary-item"><div class="l">請求合計</div><div class="v">' + fmtYen(billingsTotal) + '</div></div>' +
+        '<div class="detail-summary-item"><div class="l">発注合計</div><div class="v">' + fmtYen(ordersTotal) + '</div></div>' +
+        '<div class="detail-summary-item"><div class="l">粗利</div><div class="v" style="color:' + (profit<0?"var(--danger)":"var(--success)") + '">' + fmtYen(profit) + '</div></div>' +
+        '<div class="detail-summary-item"><div class="l">入金済み</div><div class="v">' + fmtYen(receivedTotal) + '</div></div>' +
+      '</div>' +
+      '<div class="detail-section-title">発注(' + orders.length + '件)</div>';
+    if (!orders.length) {
+      html += '<div class="detail-empty">発注はまだありません</div>';
+    } else {
+      html += orders.map(function (o) {
+        var st = orderStatusOf(o.status);
+        return '<div class="detail-list-row"><div class="main"><div class="t1">' + esc(o.title || "-") + '</div><div class="t2">' + esc(contractorName(o.contractorId)) + '</div></div>' +
+          '<div style="text-align:right;"><div style="font-size:11px;font-weight:700;color:' + st.color + ';">' + esc(st.label) + '</div><div class="amount-text" style="font-size:12.5px;">' + fmtYen(o.orderAmount) + '</div></div></div>';
+      }).join("");
+    }
+    html += '<div class="detail-section-title" style="margin-top:18px;">請求(' + billings.length + '件)</div>';
+    if (!billings.length) {
+      html += '<div class="detail-empty">請求はまだありません</div>';
+    } else {
+      html += billings.map(function (b) {
+        var st = billingStatusOf(b.status);
+        return '<div class="detail-list-row"><div class="main"><div class="t1">' + fmtYen(b.totalAmount) + '</div><div class="t2">次回入金予定 ' + fmtDateTime(b.nextPaymentDate) + '</div></div>' +
+          '<div style="font-size:11px;font-weight:700;color:' + st.color + ';">' + esc(st.label) + '</div></div>';
+      }).join("");
+    }
+    html += '<p style="margin-top:16px;"><a class="link-jump" href="05_金銭管理.html">⑤金銭管理を開く(発注・支払い・請求の編集) ' + ICON_CHEV_R + '</a></p>';
+    panel.innerHTML = html;
+  }
+
+  /* ---- 日報・申請タブ ---- */
+  function renderDetailWorklog(panel, p) {
+    var worklogs = state.worklogs.filter(function (w) { return w.projectId === p.id; }).sort(function (a,b) { return (a.workDate < b.workDate) ? 1 : -1; });
+    var requests = state.requests.filter(function (r) { return r.projectId === p.id; });
+
+    var html = '<div class="detail-section-title">日報(' + worklogs.length + '件)</div>';
+    if (!worklogs.length) {
+      html += '<div class="detail-empty">この案件の日報はまだありません</div>';
+    } else {
+      html += worklogs.map(function (w) {
+        return '<div class="detail-list-row"><div class="main"><div class="t1">' + esc(w.workerName) + '</div><div class="t2">' + esc(w.workContent || "-") + '</div></div>' +
+          '<div style="font-size:11.5px;color:var(--text-tertiary);">' + fmtDateShort(w.workDate) + '</div></div>';
+      }).join("");
+    }
+    html += '<div class="detail-section-title" style="margin-top:18px;">社内申請(' + requests.length + '件)</div>';
+    if (!requests.length) {
+      html += '<div class="detail-empty">この案件の申請はまだありません</div>';
+    } else {
+      html += requests.map(function (r) {
+        var st = requestStatusOf(r.status);
+        return '<div class="detail-list-row"><div class="main"><div class="t1">' + esc(r.title || "-") + '</div><div class="t2">' + esc(r.applicant||"-") + ' → ' + esc(r.approver||"-") + '</div></div>' +
+          '<div style="font-size:11px;font-weight:700;color:' + st.color + ';">' + esc(st.label) + '</div></div>';
+      }).join("");
+    }
+    html += '<p style="margin-top:16px;"><a class="link-jump" href="04_日報社内申請.html">④日報・社内申請を開く ' + ICON_CHEV_R + '</a></p>';
+    panel.innerHTML = html;
+  }
+
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
       if (modalState) closeModal();
       if (confirmDeleteId) { confirmDeleteId = null; renderConfirm(); }
+      if (state.detailProjectId) closeDetailView();
     }
   });
 
