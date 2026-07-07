@@ -231,6 +231,7 @@
     <button class="module-tab" id="tabBizInfo">事業者情報</button>
     <button class="module-tab" id="tabMembers">メンバー管理</button>
     <button class="module-tab" id="tabTypeSettings">案件/顧客/建物タイプ設定</button>
+    <button class="module-tab" id="tabBackup">データバックアップ</button>
   </div>
 
   <div class="module-tabs" id="typeSubTabs" style="display:none"></div>
@@ -518,6 +519,111 @@
     storageSet(MEMBERS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
   }
 
+  /* =====================================================================
+     データバックアップ(①〜⑦のクラウドデータをまとめてPCに保存/復元)
+     ===================================================================== */
+  var BACKUP_KEYS = [
+    { key: "taiho_projects_v2",                  label: "①案件" },
+    { key: "taiho_customers_v2",                 label: "②顧客" },
+    { key: "taiho_buildings_v2",                 label: "②建物" },
+    { key: "taiho_files_v1",                     label: "③ファイル" },
+    { key: "taiho_worklogs_v1",                  label: "④日報" },
+    { key: "taiho_requests_v1",                  label: "④社内申請" },
+    { key: "taiho_contractors_v1",               label: "⑤協力業者" },
+    { key: "taiho_orders_v1",                    label: "⑤発注" },
+    { key: "taiho_payments_v1",                  label: "⑤支払い" },
+    { key: "taiho_billings_v1",                  label: "⑤請求" },
+    { key: "taiho_price_items_v2",                label: "⑥単価表" },
+    { key: "taiho_biz_info_v1",                   label: "⑥事業者情報" },
+    { key: "taiho_members_v1",                    label: "⑥メンバー" },
+    { key: "taiho_units_v1",                      label: "⑥単位設定" },
+    { key: "taiho_settings_project_status_v1",    label: "⑥案件ステータス設定" },
+    { key: "taiho_settings_project_types_v1",     label: "⑥案件タイプ設定" },
+    { key: "taiho_schedule_tasks_v1",             label: "⑦工程表の日別工事内容" }
+  ];
+
+  function renderBackupTab(area) {
+    document.getElementById("countBadge").textContent = "";
+    area.innerHTML =
+      '<div class="data-card" style="max-width:640px;">' +
+      '<h3 style="margin:0 0 8px;font-size:15px;">📤 全データをバックアップ</h3>' +
+      '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 14px;">①案件・②顧客建物・③ファイル・④日報申請・⑤金銭・⑥設定・⑦工程表のデータをすべて1つのファイルにまとめて、パソコンに保存します。定期的に保存しておくと安心です。</p>' +
+      '<button class="btn btn--primary" id="backupBtn">📤 全データをバックアップ(PCに保存)</button>' +
+      '<div id="backupStatus" style="font-size:12px;color:var(--text-tertiary);margin-top:8px;"></div>' +
+      '<hr style="margin:24px 0;border:none;border-top:1px solid var(--border);">' +
+      '<h3 style="margin:0 0 8px;font-size:15px;">📥 バックアップから復元</h3>' +
+      '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 14px;">バックアップファイルを選ぶと、クラウド上の今のデータを全て置き換えます。<b>この操作は元に戻せません。</b>先に「全データをバックアップ」で今の状態を保存しておくことをおすすめします。</p>' +
+      '<button class="btn btn--danger-ghost" id="restoreBtn">📥 バックアップから復元</button>' +
+      '<input type="file" id="restoreFileInput" accept=".json" style="display:none">' +
+      '</div>';
+    document.getElementById("backupBtn").addEventListener("click", backupAll);
+    document.getElementById("restoreBtn").addEventListener("click", function () { document.getElementById("restoreFileInput").click(); });
+    document.getElementById("restoreFileInput").addEventListener("change", function () { restoreFromFile(this); });
+  }
+
+  function backupAll() {
+    var btn = document.getElementById("backupBtn");
+    var status = document.getElementById("backupStatus");
+    if (btn) { btn.disabled = true; btn.textContent = "書き出し中..."; }
+    if (status) status.textContent = "";
+    Promise.all(BACKUP_KEYS.map(function (k) { return storageGet(k.key); })).then(function (results) {
+      var data = {};
+      BACKUP_KEYS.forEach(function (k, i) {
+        data[k.key] = (results[i] && results[i].value) ? results[i].value : null;
+      });
+      var obj = { app: "taiho-kensetsu-app", version: 1, exportDate: new Date().toLocaleString("ja-JP"), data: data };
+      var json = JSON.stringify(obj, null, 2);
+      var blob = new Blob([json], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      var d = new Date();
+      var ds = d.getFullYear() + String(d.getMonth()+1).padStart(2,"0") + String(d.getDate()).padStart(2,"0") + "_" + String(d.getHours()).padStart(2,"0") + String(d.getMinutes()).padStart(2,"0");
+      a.download = "taiho_backup_" + ds + ".json";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("バックアップを書き出しました");
+      if (status) status.textContent = "最終書き出し: " + obj.exportDate;
+    }).catch(function () {
+      showToast("書き出しに失敗しました");
+    }).then(function () {
+      if (btn) { btn.disabled = false; btn.textContent = "📤 全データをバックアップ(PCに保存)"; }
+    });
+  }
+
+  function restoreFromFile(input) {
+    var file = input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        var obj = JSON.parse(e.target.result);
+        if (!obj || !obj.data || typeof obj.data !== "object") {
+          alert("このファイルは対応していない形式です。「全データをバックアップ」で作成したファイルを選んでください。");
+          input.value = ""; return;
+        }
+        if (!confirm("バックアップファイル「" + file.name + "」から復元します。\n現在クラウドに保存されているデータは全て上書きされます。\nこの操作は元に戻せません。よろしいですか？")) {
+          input.value = ""; return;
+        }
+        var keys = Object.keys(obj.data);
+        Promise.all(keys.map(function (k) {
+          var v = obj.data[k];
+          if (v === null || v === undefined) return Promise.resolve();
+          return storageSet(k, v);
+        })).then(function () {
+          showToast("復元しました。ページを再読み込みします...");
+          setTimeout(function () { location.reload(); }, 1200);
+        }).catch(function () {
+          alert("復元中にエラーが発生しました。");
+        });
+      } catch (ex) {
+        alert("読み込みに失敗しました。正しいバックアップファイルか確認してください。\n" + ex.message);
+      }
+      input.value = "";
+    };
+    reader.readAsText(file, "UTF-8");
+  }
+
   function setTab(tab) {
     state.tab = tab;
     bizEditing = false;
@@ -525,6 +631,7 @@
     document.getElementById("tabBizInfo").classList.toggle("is-active", tab === "bizInfo");
     document.getElementById("tabMembers").classList.toggle("is-active", tab === "members");
     document.getElementById("tabTypeSettings").classList.toggle("is-active", tab === "typeSettings");
+    document.getElementById("tabBackup").classList.toggle("is-active", tab === "backup");
     document.getElementById("searchInput").parentElement.style.display = tab === "priceList" ? "" : "none";
     document.getElementById("typeSubTabs").style.display = tab === "typeSettings" ? "flex" : "none";
     document.getElementById("btnCreate").style.display = (tab === "priceList" || tab === "members" || tab === "typeSettings") ? "inline-flex" : "none";
@@ -540,6 +647,7 @@
   document.getElementById("tabBizInfo").addEventListener("click", function () { setTab("bizInfo"); });
   document.getElementById("tabMembers").addEventListener("click", function () { setTab("members"); });
   document.getElementById("tabTypeSettings").addEventListener("click", function () { setTab("typeSettings"); });
+  document.getElementById("tabBackup").addEventListener("click", function () { setTab("backup"); });
 
   function renderTypeSubTabs() {
     var el = document.getElementById("typeSubTabs");
@@ -577,6 +685,7 @@
     if (state.tab === "bizInfo") { renderBizInfoTab(area); return; }
     if (state.tab === "members") { renderMembersTab(area); return; }
     if (state.tab === "typeSettings") { renderTypeSettingsTab(area); return; }
+    if (state.tab === "backup") { renderBackupTab(area); return; }
 
     var list = filteredItems();
     document.getElementById("countBadge").textContent = list.length + "件";
