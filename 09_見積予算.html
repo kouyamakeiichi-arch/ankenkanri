@@ -54,6 +54,13 @@
   .btn-ghost:hover{background:#eee;}
   .btn-sm{padding:4px 8px;font-size:12px;border-radius:6px;}
   .btn-danger{color:var(--red);}
+  .dropmenu{position:absolute;top:100%;left:0;margin-top:4px;z-index:500;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.2);padding:5px;min-width:230px;font-size:12.5px;display:none}
+  .dropmenu.on{display:block}
+  .dropmenu button{display:block;width:100%;text-align:left;padding:8px 10px;border:none;background:none;cursor:pointer;border-radius:5px;font-family:inherit;font-size:12.5px;color:#1f2937;white-space:nowrap}
+  .dropmenu button:hover{background:#f1f1f5}
+  .dropmenu hr{border:none;border-top:1px solid var(--border);margin:5px 2px}
+  .pick-row{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f1f1f1;font-size:13px;cursor:pointer}
+  .pick-row:last-child{border-bottom:none}
   .btn-alert{border-color:#f0c419;background:#fff8e1;color:#8a6d00;}
   .btn-alert:hover{background:#fef2c7;}
 
@@ -227,6 +234,20 @@
       <button class="btn" id="btnLoadImayo">🏠 今様邸データを読込</button>
       <button class="btn" id="btnNew">＋ 新規見積</button>
       <button class="btn" id="btnList">📁 保存済み一覧</button>
+      <div style="position:relative;display:inline-block">
+        <button class="btn" id="btnIoMenu">📤📥 書き出し・読み込み ▾</button>
+        <div class="dropmenu" id="ioMenu">
+          <button id="ioExportCur">📤 選択中の物件を書き出し</button>
+          <button id="ioExportAll">📤 全物件を書き出し</button>
+          <hr>
+          <button id="ioImportPick">📥 物件を選んで読み込み</button>
+          <button id="ioImportAdd">📥 全物件を読み込み（追加）</button>
+          <button id="ioImportOver">📥 全物件を読み込み（上書き）</button>
+        </div>
+      </div>
+      <input type="file" id="importFileAll" accept=".json" style="display:none">
+      <input type="file" id="importFileAdd" accept=".json" style="display:none">
+      <input type="file" id="importFilePick" accept=".json" style="display:none">
       <button class="btn" id="btnEstimateInfo">⚙ 見積書情報</button>
       <button class="btn" id="btnEstimateOutput">📄 見積書出力</button>
       <button class="btn" id="btnOverwrite">📝 上書き保存</button>
@@ -328,6 +349,27 @@
     <div class="modal-body" id="projList"></div>
     <div class="modal-foot">
       <button class="btn" id="closeList2">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="pickOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>読み込む物件を選択</h3>
+      <button class="icon-btn" id="closePick">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="pickFileName" style="font-size:11px;color:#888;margin-bottom:10px;"></div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button class="btn btn-sm" id="pickSelAllBtn">全て選択</button>
+        <button class="btn btn-sm" id="pickSelNoneBtn">全て解除</button>
+      </div>
+      <div id="pickList"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="closePick2">キャンセル</button>
+      <button class="btn btn-primary" id="pickConfirmBtn">選んだ物件を追加</button>
     </div>
   </div>
 </div>
@@ -1511,6 +1553,158 @@
   function saveProjects(list){
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
   }
+
+  /* =====================================================================
+     書き出し・読み込み(PCバックアップ)
+     ===================================================================== */
+  function dlJson(obj, filename){
+    var json = JSON.stringify(obj, null, 2);
+    var blob = new Blob([json], {type:"application/json"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  function dateStamp(){
+    var d = new Date();
+    return d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+  }
+
+  function exportCurrentProjectData(){
+    var projects = loadProjects();
+    var proj = projects.find(function(p){return p.id === currentProjectId;});
+    if(!proj){
+      // まだ登録(保存)されていない場合は、今編集中の内容だけを1件として書き出す
+      var snap = JSON.parse(JSON.stringify(state));
+      proj = { id: uid(), name: state.projectName, versions: [{versionId: uid(), savedAt: nowLabel(), data: snap}] };
+    }
+    var copy = JSON.parse(JSON.stringify(proj));
+    dlJson({app:"concrew-estimate", version:1, exportDate:new Date().toLocaleString("ja-JP"), projects:[copy]}, "kobetsu_"+(proj.name||"見積")+"_"+dateStamp()+".json");
+    showToast("「"+proj.name+"」を書き出しました");
+  }
+  function exportAllProjectsData(){
+    var projects = loadProjects();
+    if(!projects.length){ alert("保存されている物件がありません。"); return; }
+    dlJson({app:"concrew-estimate", version:1, exportDate:new Date().toLocaleString("ja-JP"), projects:projects}, "mitsumori_zenbutsuken_"+dateStamp()+".json");
+    showToast("全"+projects.length+"件を書き出しました");
+  }
+
+  function readJsonFile(input, cb){
+    var file = input.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        var obj = JSON.parse(e.target.result);
+        if(!obj || !Array.isArray(obj.projects) || !obj.projects.length){
+          alert("このファイルは対応していない形式です。");
+          input.value=""; return;
+        }
+        cb(obj, file.name);
+      }catch(ex){
+        alert("読み込みに失敗しました。正しいファイルか確認してください。\n"+ex.message);
+      }
+      input.value = "";
+    };
+    reader.readAsText(file, "UTF-8");
+  }
+
+  document.getElementById("importFileAdd").addEventListener("change", function(){
+    readJsonFile(this, function(obj, fname){
+      var projects = loadProjects();
+      var existIds = {}; projects.forEach(function(p){existIds[p.id]=true;});
+      var news = obj.projects.filter(function(p){return !existIds[p.id];});
+      var dups = obj.projects.filter(function(p){return !!existIds[p.id];});
+      var lines = ["読み込むファイル: "+fname, "", "追加される物件: "+news.length+"件"];
+      news.forEach(function(p){lines.push("  "+p.name);});
+      if(dups.length){
+        lines.push(""); lines.push("重複のためスキップ: "+dups.length+"件");
+        dups.forEach(function(p){lines.push("  "+p.name);});
+      }
+      lines.push(""); lines.push("追加しますか？");
+      if(!confirm(lines.join("\n"))) return;
+      if(!news.length){ alert("追加できる物件がありませんでした。"); return; }
+      news.forEach(function(p){ p.id = uid(); projects.push(p); });
+      saveProjects(projects);
+      showToast(news.length+"件の物件を追加しました！");
+    });
+  });
+
+  document.getElementById("importFileAll").addEventListener("change", function(){
+    readJsonFile(this, function(obj, fname){
+      if(!confirm("「"+fname+"」を読み込みます。\n保存されている全物件が上書きされます。\nこの操作は元に戻せません。続けますか？")) return;
+      saveProjects(obj.projects);
+      showToast("読み込みました！物件数："+obj.projects.length+"件");
+      currentProjectId = null; currentVersionIndex = 0;
+      state = sampleState();
+      state.categories = [ emptyCategory("大項目1") ];
+      state.projectName = "新規見積";
+      renderHead(); applyAllWidths(); render();
+      renderVersionSelect();
+      updateLastSaved();
+      resetHistory();
+    });
+  });
+
+  var pickParsed = null;
+  document.getElementById("importFilePick").addEventListener("change", function(){
+    readJsonFile(this, function(obj, fname){
+      pickParsed = {fileName:fname, list:obj.projects};
+      openPickModal();
+    });
+  });
+  function openPickModal(){
+    if(!pickParsed) return;
+    document.getElementById("pickFileName").textContent = "ファイル: "+pickParsed.fileName+"　（"+pickParsed.list.length+"件の物件）";
+    document.getElementById("pickList").innerHTML = pickParsed.list.map(function(p,i){
+      return '<label class="pick-row"><input type="checkbox" class="pick-chk" data-i="'+i+'" checked><span>'+(p.name||"（無題）")+'</span></label>';
+    }).join("");
+    document.getElementById("pickOverlay").classList.add("show");
+  }
+  function closePickModal(){
+    document.getElementById("pickOverlay").classList.remove("show");
+    pickParsed = null;
+  }
+  document.getElementById("closePick").addEventListener("click", closePickModal);
+  document.getElementById("closePick2").addEventListener("click", closePickModal);
+  document.getElementById("pickOverlay").addEventListener("click", function(e){ if(e.target===this) closePickModal(); });
+  document.getElementById("pickSelAllBtn").addEventListener("click", function(){
+    document.querySelectorAll(".pick-chk").forEach(function(el){el.checked=true;});
+  });
+  document.getElementById("pickSelNoneBtn").addEventListener("click", function(){
+    document.querySelectorAll(".pick-chk").forEach(function(el){el.checked=false;});
+  });
+  document.getElementById("pickConfirmBtn").addEventListener("click", function(){
+    if(!pickParsed) return;
+    var chosen = [];
+    document.querySelectorAll(".pick-chk").forEach(function(el){
+      if(el.checked) chosen.push(pickParsed.list[parseInt(el.getAttribute("data-i"))]);
+    });
+    if(!chosen.length){ alert("物件が選択されていません。"); return; }
+    var projects = loadProjects();
+    chosen.forEach(function(p){
+      var copy = JSON.parse(JSON.stringify(p));
+      copy.id = uid();
+      projects.push(copy);
+    });
+    saveProjects(projects);
+    var n = chosen.length;
+    closePickModal();
+    showToast(n+"件の物件を追加しました！");
+  });
+
+  /* 書き出し・読み込みメニューの開閉 */
+  document.getElementById("btnIoMenu").addEventListener("click", function(e){
+    e.stopPropagation();
+    document.getElementById("ioMenu").classList.toggle("on");
+  });
+  document.addEventListener("click", function(){ document.getElementById("ioMenu").classList.remove("on"); });
+  document.getElementById("ioExportCur").addEventListener("click", function(){ exportCurrentProjectData(); });
+  document.getElementById("ioExportAll").addEventListener("click", function(){ exportAllProjectsData(); });
+  document.getElementById("ioImportPick").addEventListener("click", function(){ document.getElementById("importFilePick").click(); });
+  document.getElementById("ioImportAdd").addEventListener("click", function(){ document.getElementById("importFileAdd").click(); });
+  document.getElementById("ioImportOver").addEventListener("click", function(){ document.getElementById("importFileAll").click(); });
 
   var autosaveTimer = null;
   function scheduleAutosave(){
