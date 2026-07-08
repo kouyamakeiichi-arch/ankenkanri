@@ -1008,6 +1008,8 @@ function renderDetail(){
       </table></div>
       ${cat.items.length<MAX?`<button class="add-btn" onclick="addItem()">＋ 行を追加（残${MAX-cat.items.length}行）</button>`:''}
     </div>`;
+  // Tab/矢印キーでの移動中に(値確定による)再描画が挟まった場合、移動先セルへフォーカスを復元する
+  if(pendingFocus){const pf=pendingFocus;pendingFocus=null;focusCell(pf.r,pf.c);}
 }
 
 function renderSummary(){
@@ -1176,6 +1178,7 @@ function applyCellHighlight(){
 }
 
 /* Tab / 矢印キーでのセル移動(工事名称などの明細セル間を横・縦に移動) */
+let pendingFocus=null; // Tab/矢印キーでの移動先。再描画をまたいでも移動を復元するために使う
 function focusCell(r,c){
   const cat=curData()[curCat];if(!cat)return;
   if(r<0||r>=cat.items.length)return;
@@ -1211,7 +1214,12 @@ function cellNav(e,r,c){
   }
   else return;
   e.preventDefault();
+  // 移動元セルの値が変わっていた場合、直後のchange/blurで表が再描画され
+  // せっかく移した focus が消えてしまうため、移動先を pendingFocus に控えておく。
+  // renderDetail() 側でこれを見て、再描画後にもう一度フォーカスし直す。
+  pendingFocus={r:nr,c:nc};
   focusCell(nr,nc);
+  pendingFocus=null;
 }
 
 function gridCopy(){
