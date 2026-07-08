@@ -2181,23 +2181,33 @@
 
       if(proj && proj.versions && proj.versions.length){
         state = normalizeState(JSON.parse(JSON.stringify(proj.versions[0].data)));
-        currentProjectId = proj.id;
-        currentVersionIndex = 0;
       } else {
         state = sampleState();
         state.categories = [ emptyCategory("大項目1") ];
-        state.projectName = caseName || "新規見積";
-        state.estimateInfo.clientName = customerName || "";
-        state.estimateInfo.honorific = honorific || "御中";
-        state.estimateInfo.overview = caseName || "";
-        state.estimateInfo.siteAddress = siteAddr;
-        var snap = JSON.parse(JSON.stringify(state));
+      }
+
+      // 宛先・工事件名・工事場所は、案件管理側の基本情報を常に最新の状態で反映する
+      // (明細データ(categories)は上書きしない。既存物件でも毎回同期されるので、
+      //  過去に古い仮データのまま作られてしまった物件を開き直しても正しく反映される)
+      if(caseName) state.projectName = caseName;
+      state.estimateInfo.clientName = customerName || "";
+      state.estimateInfo.honorific = honorific || "御中";
+      state.estimateInfo.overview = caseName || "";
+      state.estimateInfo.siteAddress = siteAddr;
+
+      var snap = JSON.parse(JSON.stringify(state));
+      if(proj){
+        proj.name = state.projectName;
+        proj.versions[0].data = snap;
+        saveProjects(projects);
+        currentProjectId = proj.id;
+      } else {
         var newProj = { id: uid(), name: state.projectName, caseId: caseId, versions: [{versionId: uid(), savedAt: nowLabel(), data: snap}] };
         projects.unshift(newProj);
         saveProjects(projects);
         currentProjectId = newProj.id;
-        currentVersionIndex = 0;
       }
+      currentVersionIndex = 0;
       return true;
     }catch(e){ console.warn("案件連携エラー", e); return false; }
   }

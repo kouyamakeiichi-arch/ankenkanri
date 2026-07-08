@@ -1796,24 +1796,25 @@ function applyCaseLink(){
     let proj=projects.find(p=>p.caseId===caseId);
     if(!proj){
       const id=genId();
-      const cfg=JSON.parse(JSON.stringify(DEF_CFG));
-      // サンプルデータの宛先・工事情報を、案件の情報(または空欄)で上書きする
-      cfg.client=customerName||'';
-      cfg.honorific=honorific||'御中';
-      cfg.proj=caseName||'';
-      cfg.loc=buildingAddress||buildingName||'';
-      cfg.ovr='';
       proj={
         id,name:caseName||'新規物件',
         createdAt:new Date().toLocaleDateString('ja-JP'),
         cats:JSON.parse(JSON.stringify(DEF_CATS)),
-        cfg:cfg,
+        cfg:JSON.parse(JSON.stringify(DEF_CFG)),
         discount:0,
         caseId:caseId
       };
       projects.push(proj);
-      persistAll();
     }
+    // 宛先・工事件名・工事場所は、案件管理側の基本情報を常に最新の状態で反映する
+    // (明細データ(cats)や会社の発行者情報は上書きしない。既存物件でも毎回同期されるので、
+    //  過去に古い仮データのまま作られてしまった物件を開き直しても正しく反映される)
+    if(caseName)proj.name=caseName;
+    proj.cfg.client=customerName||'';
+    proj.cfg.honorific=honorific||'御中';
+    proj.cfg.proj=caseName||'';
+    proj.cfg.loc=buildingAddress||buildingName||'';
+    persistAll();
     curProjId=proj.id;
     curCat=0;
     updateProjBtn();
