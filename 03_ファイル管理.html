@@ -121,6 +121,24 @@
     .project-select { max-width: none; flex: 1; }
   }
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyBVebyezaA9TxKBqfNjCZKhU44DtHqpG98",
+    authDomain: "ankenkanri-cfce2.firebaseapp.com",
+    projectId: "ankenkanri-cfce2",
+    storageBucket: "ankenkanri-cfce2.firebasestorage.app",
+    messagingSenderId: "1086701651367",
+    appId: "1:1086701651367:web:b59fe9f49a1e0335aba282"
+  };
+  try {
+    firebase.initializeApp(firebaseConfig);
+    window.db = firebase.firestore();
+    window.fbStorage = firebase.storage();
+  } catch (e) { window.db = null; window.fbStorage = null; }
+</script>
 </head>
 <body>
 
@@ -216,8 +234,19 @@
   /* ---------------- 保存機能 ---------------- */
   function storageGet(key) {
     return new Promise(function (resolve) {
-      if (window.storage && typeof window.storage.get === "function") {
-        window.storage.get(key, false).then(resolve).catch(function () { resolve(null); });
+      if (window.db) {
+        window.db.collection("taiho_app_data").doc(key).get().then(function (doc) {
+          if (doc.exists) { resolve({ value: doc.data().value }); return; }
+          var raw = null;
+          try { raw = window.localStorage.getItem(key); } catch (e) {}
+          if (raw) {
+            window.db.collection("taiho_app_data").doc(key).set({ value: raw, updatedAt: Date.now() }).catch(function () {});
+            resolve({ value: raw });
+          } else { resolve(null); }
+        }).catch(function () {
+          try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
+          catch (e) { resolve(null); }
+        });
       } else {
         try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
         catch (e) { resolve(null); }
@@ -226,8 +255,10 @@
   }
   function storageSet(key, value) {
     return new Promise(function (resolve, reject) {
-      if (window.storage && typeof window.storage.set === "function") {
-        window.storage.set(key, value, false).then(resolve).catch(function () {
+      if (window.db) {
+        window.db.collection("taiho_app_data").doc(key).set({ value: value, updatedAt: Date.now() }).then(function () {
+          resolve({ value: value });
+        }).catch(function () {
           try { window.localStorage.setItem(key, value); resolve({ value: value }); }
           catch (e2) { reject(e2); }
         });
@@ -241,8 +272,9 @@
   /* ---------------- 定数 ---------------- */
   var PROJECTS_KEY = "taiho_projects_v2"; // ①案件管理と共通のキー(読み取り専用で参照)
   var FILES_KEY = "taiho_files_v1";
-  var MAX_FILE_SIZE = 1.5 * 1024 * 1024;   // 1ファイルあたり上限 約1.5MB
-  var WARN_TOTAL_SIZE = 4 * 1024 * 1024;   // 合計の目安上限(保存領域の制約による)
+  var MAX_FILE_SIZE = 25 * 1024 * 1024;    // 1ファイルあたり上限 約25MB(Firebase Storage保存時)
+  var MAX_FILE_SIZE_LOCAL = 1.5 * 1024 * 1024; // Firebaseに接続できない場合のみのフォールバック上限
+  var WARN_TOTAL_SIZE = 1024 * 1024 * 1024; // 合計の目安上限(Firebase Storage利用時の目安)
 
   var FOLDERS = [
     { id: "shared",    label: "全業者共有", icon: "users" },
@@ -382,7 +414,7 @@
       area.innerHTML =
         '<div class="empty-state">' + ICON_FOLDER40 +
         '<p class="empty-state__title">「' + esc(f.label) + '」にはまだファイルがありません</p>' +
-        '<p class="empty-state__desc">画像またはPDFをアップロードしましょう(1ファイル上限 約1.5MB)。</p>' +
+        '<p class="empty-state__desc">画像またはPDFをアップロードしましょう(1ファイル上限 約' + (window.fbStorage ? '25MB' : '1.5MB') + ')。</p>' +
         '<button class="btn btn--primary" id="emptyUploadBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12 4 4m-4-4-4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg> アップロード</button></div>';
       var b = document.getElementById("emptyUploadBtn");
       if (b) b.addEventListener("click", function () { document.getElementById("fileInput").click(); });
@@ -394,7 +426,7 @@
       var isImage = file.mime && file.mime.indexOf("image/") === 0;
       html += '<div class="file-card" data-open="' + file.id + '">' +
         '<button class="file-card__del" data-del="' + file.id + '" aria-label="削除">' + ICON_TRASH + '</button>' +
-        '<div class="file-card__thumb">' + (isImage ? '<img src="' + file.dataUrl + '" alt="" />' : ICON_PDF32) + '</div>' +
+        '<div class="file-card__thumb">' + (isImage ? '<img src="' + (file.url || file.dataUrl) + '" alt="" />' : ICON_PDF32) + '</div>' +
         '<div class="file-card__meta"><div class="file-card__name">' + esc(file.name) + '</div>' +
         '<div class="file-card__sub">' + fmtSize(file.sizeBytes) + ' ・ ' + fmtDateTime(file.uploadedAt) + '</div></div></div>';
     });
@@ -430,12 +462,12 @@
           '<div class="preview-modal__header"><h2>' + esc(file.name) + '</h2>' +
           '<button class="icon-btn" id="previewCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
           '<div class="preview-modal__body">' +
-          (isImage ? '<img src="' + file.dataUrl + '" alt="" />' : '<iframe src="' + file.dataUrl + '"></iframe>') +
+          (isImage ? '<img src="' + (file.url || file.dataUrl) + '" alt="" />' : '<iframe src="' + (file.url || file.dataUrl) + '"></iframe>') +
           '</div>' +
           '<div class="preview-modal__footer">' +
           '<span>' + fmtSize(file.sizeBytes) + ' ・ ' + fmtDateTime(file.uploadedAt) + '</span>' +
           '<div style="display:flex;gap:8px;">' +
-          '<a class="btn btn--ghost btn--sm" href="' + file.dataUrl + '" download="' + esc(file.name) + '">' + ICON_DOWNLOAD + ' 保存</a>' +
+          '<a class="btn btn--ghost btn--sm" href="' + (file.url || file.dataUrl) + '" target="_blank" rel="noopener" download="' + esc(file.name) + '">' + ICON_DOWNLOAD + ' 保存</a>' +
           '<button class="btn btn--danger-ghost btn--sm" id="previewDeleteBtn">' + ICON_TRASH + ' 削除</button>' +
           '</div></div>' +
         '</div>' +
@@ -470,6 +502,10 @@
     document.getElementById("confirmCancelBtn").addEventListener("click", function () { confirmDeleteId = null; renderConfirm(); });
     document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
       var id = confirmDeleteId;
+      var target = state.files.find(function (f) { return f.id === id; });
+      if (target && target.storagePath && window.fbStorage) {
+        window.fbStorage.ref().child(target.storagePath).delete().catch(function () {});
+      }
       persistFiles(state.files.filter(function (f) { return f.id !== id; })).then(function () {
         showToast("ファイルを削除しました");
         confirmDeleteId = null;
@@ -482,44 +518,67 @@
 
   /* ---------------- アップロード ---------------- */
   document.getElementById("btnUpload").addEventListener("click", function () { document.getElementById("fileInput").click(); });
+  // 1件をFirebase Storageへアップロードし、ダウンロードURLを持つファイルレコードを作る
+  // (window.fbStorageが使えない場合は、従来通りBase64でこのブラウザだけに保存するフォールバックにする)
+  function uploadViaLocalFallback(f, id) {
+    return new Promise(function (resolve, reject) {
+      if (f.size > MAX_FILE_SIZE_LOCAL) { reject(new Error("too large for local fallback")); return; }
+      var reader = new FileReader();
+      reader.onload = function () {
+        resolve({
+          id: id, projectId: state.activeProjectId, folderId: state.activeFolder,
+          name: f.name, mime: f.type, sizeBytes: f.size,
+          dataUrl: reader.result, uploadedAt: Date.now()
+        });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(f);
+    });
+  }
+  function uploadOneFile(f, id) {
+    if (window.fbStorage) {
+      var path = "case_files/" + state.activeProjectId + "/" + id + "_" + f.name;
+      var ref = window.fbStorage.ref().child(path);
+      return ref.put(f).then(function () { return ref.getDownloadURL(); }).then(function (url) {
+        return {
+          id: id, projectId: state.activeProjectId, folderId: state.activeFolder,
+          name: f.name, mime: f.type, sizeBytes: f.size,
+          url: url, storagePath: path, uploadedAt: Date.now()
+        };
+      }).catch(function (err) {
+        // Storageが未有効化(料金プラン未アップグレード等)の場合は、このブラウザへの保存に自動で切り替える
+        console.warn("Storageアップロード失敗。ローカル保存にフォールバックします", err);
+        return uploadViaLocalFallback(f, id);
+      });
+    }
+    return uploadViaLocalFallback(f, id);
+  }
+
   document.getElementById("fileInput").addEventListener("change", function (e) {
     var files = Array.prototype.slice.call(e.target.files || []);
     e.target.value = "";
     if (files.length === 0) return;
     if (!state.activeProjectId) { showToast("先に案件を選択してください"); return; }
 
+    var sizeLimit = window.fbStorage ? MAX_FILE_SIZE : MAX_FILE_SIZE_LOCAL;
     var accepted = [];
     var rejected = 0;
     files.forEach(function (f) {
       var isImage = f.type && f.type.indexOf("image/") === 0;
       var isPdf = f.type === "application/pdf";
       if (!isImage && !isPdf) { rejected++; return; }
-      if (f.size > MAX_FILE_SIZE) { rejected++; return; }
+      if (f.size > sizeLimit) { rejected++; return; }
       accepted.push(f);
     });
-    if (rejected > 0) showToast(rejected + "件のファイルは形式または容量(1.5MB超)の制限でスキップされました");
+    if (rejected > 0) showToast(rejected + "件のファイルは形式または容量(" + fmtSize(sizeLimit) + "超)の制限でスキップされました");
     if (accepted.length === 0) return;
 
-    var readers = accepted.map(function (f) {
-      return new Promise(function (resolve) {
-        var reader = new FileReader();
-        reader.onload = function () {
-          resolve({
-            id: "f-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
-            projectId: state.activeProjectId,
-            folderId: state.activeFolder,
-            name: f.name,
-            mime: f.type,
-            sizeBytes: f.size,
-            dataUrl: reader.result,
-            uploadedAt: Date.now()
-          });
-        };
-        reader.readAsDataURL(f);
-      });
+    showToast(accepted.length + "件アップロード中...");
+    var uploads = accepted.map(function (f) {
+      return uploadOneFile(f, "f-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7));
     });
 
-    Promise.all(readers).then(function (newFiles) {
+    Promise.all(uploads).then(function (newFiles) {
       var next = newFiles.concat(state.files);
       persistFiles(next).then(function () {
         showToast(newFiles.length + "件アップロードしました");
@@ -528,6 +587,9 @@
       }).catch(function () {
         showToast("保存容量の上限を超えた可能性があります。ファイルサイズを小さくしてお試しください");
       });
+    }).catch(function (err) {
+      console.warn("アップロード失敗", err);
+      showToast("アップロードに失敗しました。通信状況を確認してもう一度お試しください");
     });
   });
 
