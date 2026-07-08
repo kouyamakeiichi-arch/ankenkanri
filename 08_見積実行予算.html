@@ -1780,8 +1780,38 @@ function renderAll(){
   else renderQuote();
 }
 
+// ①案件管理から「?caseId=...&caseName=...」付きで開かれた場合、
+// その案件専用の物件を自動選択(無ければ案件名で新規作成)し、
+// 「物件を選択」の手動操作なしにすぐ明細入力へ入れるようにする
+function applyCaseLink(){
+  try{
+    const params=new URLSearchParams(window.location.search);
+    const caseId=params.get('caseId');
+    if(!caseId)return;
+    const caseName=params.get('caseName')||'';
+    let proj=projects.find(p=>p.caseId===caseId);
+    if(!proj){
+      const id=genId();
+      proj={
+        id,name:caseName||'新規物件',
+        createdAt:new Date().toLocaleDateString('ja-JP'),
+        cats:JSON.parse(JSON.stringify(DEF_CATS)),
+        cfg:JSON.parse(JSON.stringify(DEF_CFG)),
+        discount:0,
+        caseId:caseId
+      };
+      projects.push(proj);
+      persistAll();
+    }
+    curProjId=proj.id;
+    curCat=0;
+    updateProjBtn();
+    const sub=document.getElementById('co-sub');
+    if(sub)sub.textContent=curCfg().co1||'';
+  }catch(e){console.warn('案件連携エラー',e);}
+}
 function bootApp(){
-  loadAll();loadAppTitle();loadTheme();updateUndoRedoBtns();renderAll();
+  loadAll();loadAppTitle();loadTheme();applyCaseLink();updateUndoRedoBtns();renderAll();
 }
 Promise.all([
   fsPullToLocal(PROJ_LIST_KEY),

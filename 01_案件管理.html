@@ -102,7 +102,7 @@
   .empty-state__title { font-weight: 700; color: var(--text); font-size: 15px; margin-top: 6px; }
   .empty-state__desc { font-size: 13px; margin-bottom: 10px; }
 
-  .modal-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 100; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 300; }
   .modal { background: var(--surface); border-radius: 16px; width: 100%; max-width: 480px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--shadow-md); }
   .modal__header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); }
   .modal__header h2 { font-size: 17px; font-weight: 700; margin: 0; }
@@ -751,7 +751,7 @@
               '<div class="field"><label>作成者</label><input type="text" id="f_creator" list="managerSuggestions" placeholder="作成者名" value="' + esc(d.creator) + '" /></div>' +
             '</div>' +
             '<datalist id="managerSuggestions">' + managerOptions + '</datalist>' +
-            '<div class="field"><label>契約金額</label><input type="number" id="f_contractAmount" placeholder="例: 1250000" value="' + esc(d.contractAmount) + '" /></div>' +
+            '<div class="field"><label>契約金額</label><input type="text" inputmode="numeric" id="f_contractAmount" placeholder="例: 1,250,000" value="' + (d.contractAmount ? Number(d.contractAmount).toLocaleString("ja-JP") : "") + '" /></div>' +
           '</div>' +
           '<div class="modal__footer">' +
             (isEdit ? '<button class="btn btn--danger-ghost" id="modalDeleteBtn">' + ICON_TRASH + ' 削除</button>' : '<span></span>') +
@@ -767,6 +767,14 @@
     document.getElementById("f_typeId").focus();
     document.getElementById("f_customerId").addEventListener("change", function (e) {
       document.getElementById("f_buildingId").innerHTML = buildingOptionsHtml(e.target.value, "");
+    });
+    // 契約金額: 入力中はカンマなしの数字、確定するとカンマ区切りで表示する
+    document.getElementById("f_contractAmount").addEventListener("focus", function () {
+      this.value = this.value.replace(/,/g, "");
+    });
+    document.getElementById("f_contractAmount").addEventListener("blur", function () {
+      var n = parseFloat(this.value.replace(/,/g, ""));
+      this.value = (!isNaN(n) && n !== 0) ? n.toLocaleString("ja-JP") : "";
     });
 
     if (isEdit) {
@@ -788,7 +796,7 @@
         completionDate: document.getElementById("f_completionDate").value,
         manager: document.getElementById("f_manager").value.trim(),
         creator: document.getElementById("f_creator").value.trim(),
-        contractAmount: document.getElementById("f_contractAmount").value,
+        contractAmount: document.getElementById("f_contractAmount").value.replace(/,/g, ""),
         status: d.status || "inquiry"
       };
       var ok = true;
@@ -943,9 +951,9 @@
       '<div class="detail-section-title">見積・実行予算</div>' +
       '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 10px;">' +
       '工事種別ごとの明細入力、実行金額・見積金額・粗利の自動計算、印刷用の御見積書作成ができるツールです。' +
-      '「' + esc(p.name) + '」の見積を作るときは、下のボタンから開いて、ツール内の「📁 物件を選択」でこの案件用の物件を選ぶ(または新規作成する)形で使ってください。' +
+      '下のボタンから開くと、「' + esc(p.name) + '」専用の物件が自動で選択された状態で開き、そのまま明細入力を始められます。' +
       '</p>' +
-      '<p style="margin-bottom:20px;"><a class="link-jump" href="08_見積実行予算.html" target="_blank" rel="noopener">⑧見積・実行予算アプリを開く ' + ICON_CHEV_R + '</a></p>' +
+      '<p style="margin-bottom:20px;"><a class="link-jump" href="08_見積実行予算.html?caseId=' + encodeURIComponent(p.id) + '&caseName=' + encodeURIComponent(p.name) + '" target="_blank" rel="noopener">⑧見積・実行予算アプリを開く ' + ICON_CHEV_R + '</a></p>' +
       '<div class="detail-section-title">見積・予算(表計算式)</div>' +
       '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 10px;">' +
       'Excel感覚でセル選択・コピペ・列幅調整ができる、表計算タイプの見積ツールです。バージョン管理もできます。この書式に慣れている方はこちらをお使いください。' +
@@ -970,7 +978,8 @@
         infoItem("担当", c.manager || "-") +
         infoItem("電話番号", c.phone || "-") +
         infoItem("住所", (c.zip ? "〒" + c.zip + " " : "") + (c.address || "-")) +
-        '</div>';
+        '</div>' +
+        '<p style="margin-top:10px;"><a class="link-jump" href="02_顧客建物管理.html?editCustomerId=' + encodeURIComponent(c.id) + '">この顧客の情報を編集する ' + ICON_CHEV_R + '</a></p>';
     } else {
       html += '<div class="detail-empty">この案件には顧客が紐付けられていません</div>';
     }
@@ -979,7 +988,8 @@
       html += '<div class="detail-info-grid">' +
         infoItem("建物名", b.name) +
         infoItem("住所", (b.zip ? "〒" + b.zip + " " : "") + (b.address || "-")) +
-        '</div>';
+        '</div>' +
+        '<p style="margin-top:10px;"><a class="link-jump" href="02_顧客建物管理.html?editBuildingId=' + encodeURIComponent(b.id) + '">この建物の情報を編集する ' + ICON_CHEV_R + '</a></p>';
     } else {
       html += '<div class="detail-empty">この案件には建物が紐付けられていません</div>';
     }

@@ -742,8 +742,24 @@
       }
 
       state.loading = false;
-      renderTypeTabs();
-      renderResults();
+
+      // 案件詳細(①案件管理)から「この顧客/建物の情報を編集する」で来た場合、
+      // 該当タブに切り替えて編集モーダルを自動で開く
+      var params = new URLSearchParams(window.location.search);
+      var editCustId = params.get("editCustomerId");
+      var editBldId = params.get("editBuildingId");
+      if (editCustId) {
+        var cust = state.customers.find(function (x) { return x.id === editCustId; });
+        setTab("customers");
+        if (cust) openCustomerModal(true, cust);
+      } else if (editBldId) {
+        var bld = state.buildings.find(function (x) { return x.id === editBldId; });
+        setTab("buildings");
+        if (bld) openBuildingModal(true, bld);
+      } else {
+        renderTypeTabs();
+        renderResults();
+      }
     }).catch(function () {
       state.customers = seedCustomers();
       state.buildings = seedBuildings();
