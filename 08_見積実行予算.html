@@ -978,7 +978,10 @@ function renderDetail(){
         onblur="updItem(${idx},'rate',parseFloat(this.value.replace(/,/g,''))||1)"
         onkeydown="cellNav(event,${idx},5)"
         style="text-align:right;width:50px"></td>
-      <td class="gr">${it.price?fmt(Math.round(it.price*it.rate)):''}</td>
+      <td class="gr"><input type="text" value="${it.price?fmt(Math.round(it.price*it.rate)):''}"
+        onfocus="this.value=this.value.replace(/,/g,'')"
+        onblur="this.value=formatNum(this.value);updDecUnit(${idx},this.value)"
+        style="text-align:right;color:inherit;font-size:13px;width:100%" title="通常は単価(実行)×掛率で自動計算されますが、ここに直接金額を入力すると掛率が逆算されます"></td>
       <td style="font-weight:600;color:var(--accent)">${hv?fmt(c.dec):''}</td>
       <td style="color:var(--green)">${hv?fmt(c.margin):''}</td>
       <td><button class="ins-btn" onclick="insItemAfter(${idx})" title="この下に行を挿入">➕</button><button class="del-btn" onclick="delItem(${idx})" title="この行を削除">✕</button></td>
@@ -1140,6 +1143,24 @@ function delItem(idx){
   snapshot();
   curData()[curCat].items.splice(idx,1);
   renumberItems(curData()[curCat].items);
+  sched();renderAll();
+}
+function updDecUnit(idx,v){
+  const it=curData()[curCat].items[idx];if(!it)return;
+  const val=parseFloat(String(v).replace(/,/g,''))||0;
+  snapshot();
+  if(val<=0){
+    // 空欄に戻した場合は掛率をリセットせず、単価(実行)×掛率の自動計算に任せる
+    sched();renderAll();return;
+  }
+  if(it.price>0){
+    // 単価(実行)は変えず、決定単価に合うよう掛率を逆算する
+    it.rate=Math.round((val/it.price)*10000)/10000;
+  }else{
+    // 単価(実行)が未入力の場合は、決定単価をそのまま単価(実行)として使う(掛率1.0)
+    it.price=val;
+    it.rate=1;
+  }
   sched();renderAll();
 }
 function selCat(i){curCat=i;renderAll();}
