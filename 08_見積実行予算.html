@@ -206,6 +206,22 @@ input:focus{outline:1px solid var(--accent);border-radius:2px;background:var(--m
 }
 #print-area{display:none}
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyBVebyezaA9TxKBqfNjCZKhU44DtHqpG98",
+    authDomain: "ankenkanri-cfce2.firebaseapp.com",
+    projectId: "ankenkanri-cfce2",
+    storageBucket: "ankenkanri-cfce2.firebasestorage.app",
+    messagingSenderId: "1086701651367",
+    appId: "1:1086701651367:web:b59fe9f49a1e0335aba282"
+  };
+  try {
+    firebase.initializeApp(firebaseConfig);
+    window.db = firebase.firestore();
+  } catch (e) { window.db = null; }
+</script>
 </head>
 <body>
 <style>body{padding-top:46px;}</style>
@@ -584,6 +600,33 @@ const DEF_CFG={
   loc:"苫小牧市新開町4丁目4番3号",ovr:"事務所増築工事",period:"打ち合わせ",honorific:"御中",remarks:""
 };
 
+// ===== Firebase 保存(クラウド同期) =====
+// taiho_app_data コレクションに他ページと同じ形式(doc id=キー名, value フィールド)で保存する
+function fsSet(key,value){
+  if(!window.db)return;
+  window.db.collection("taiho_app_data").doc(key).set({value:value,updatedAt:Date.now()}).catch(function(e){console.warn('クラウド保存失敗',key,e);});
+}
+function fsGet(key){
+  return new Promise(function(resolve){
+    if(!window.db){resolve(null);return;}
+    window.db.collection("taiho_app_data").doc(key).get().then(function(doc){
+      resolve(doc.exists?doc.data().value:null);
+    }).catch(function(){resolve(null);});
+  });
+}
+// 起動時にクラウドの値をこのブラウザのlocalStorageへ反映する(クラウドに無ければローカルの値をクラウドへ移行)
+function fsPullToLocal(key){
+  return fsGet(key).then(function(remote){
+    if(remote!==null&&remote!==undefined){
+      try{localStorage.setItem(key,remote);}catch(e){}
+    }else{
+      var local=null;
+      try{local=localStorage.getItem(key);}catch(e){}
+      if(local)fsSet(key,local);
+    }
+  });
+}
+
 // ===== 物件管理 =====
 // projects: [{id, name, createdAt, cats, cfg, discount}]
 const PROJ_LIST_KEY='cep9_projects';
@@ -674,6 +717,7 @@ function editAppTitle(){
   if(nv&&nv.trim()){
     el.textContent=nv.trim();
     try{localStorage.setItem('cep9_apptitle',nv.trim());}catch(e){}
+    fsSet('cep9_apptitle',nv.trim());
   }
 }
 function loadAppTitle(){
@@ -714,8 +758,11 @@ function loadAll(){
 
 function persistAll(){
   try{
-    localStorage.setItem(PROJ_LIST_KEY,JSON.stringify(projects));
+    const projJson=JSON.stringify(projects);
+    localStorage.setItem(PROJ_LIST_KEY,projJson);
     localStorage.setItem(PROJ_CUR_KEY,curProjId);
+    fsSet(PROJ_LIST_KEY,projJson);
+    fsSet(PROJ_CUR_KEY,curProjId);
   }catch(e){console.warn('保存失敗',e);}
 }
 
@@ -833,22 +880,10 @@ function formatNum(v){
 }
 
 // ===== THEME =====
-const THEME_KEY='cep9_theme';
-const THEME_CLS={white:'tw',gray:'tg',dark:'td',cad:'tc',navy:'tn'};
 function setTheme(t,el){
   document.body.className=t==='white'?'':t;
   document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
   if(el)el.classList.add('on');
-  try{localStorage.setItem(THEME_KEY,t);}catch(e){}
-}
-function loadTheme(){
-  let t='white';
-  try{t=localStorage.getItem(THEME_KEY)||'white';}catch(e){}
-  document.body.className=t==='white'?'':t;
-  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
-  const cls=THEME_CLS[t]||'tw';
-  const btn=document.querySelector('.tb.'+cls);
-  if(btn)btn.classList.add('on');
 }
 
 // ===== VIEW =====
@@ -940,7 +975,7 @@ function renderDetail(){
   document.getElementById('det-sec').innerHTML=`
     <div class="sec">
       <div class="sec-hd">
-        <div class="sec-ttl"><input type="text" value="${cat.id}" onchange="updCatId(this.value)" onclick="event.stopPropagation()" style="width:30px;display:inline-block;border:none;background:transparent;font-size:14px;font-weight:600;color:inherit;text-align:right;padding:0;font-family:inherit">. ${cat.name}　<span style="font-size:11px;color:var(--text3);font-weight:400">${cat.items.length}/${MAX}行</span></div>
+        <div class="sec-ttl">${cat.id}. ${cat.name}　<span style="font-size:11px;color:var(--text3);font-weight:400">${cat.items.length}/${MAX}行</span></div>
         <span class="badge ${pr>=20?'good':'bad'}">利益率 ${pr}%</span>
       </div>
       <div class="tw-wrap"><table>
@@ -1084,16 +1119,6 @@ function delItem(idx){
 }
 function selCat(i){curCat=i;renderAll();}
 
-function updCatId(v){
-  // 工事番号（表示用の「1.」「19.」など）を手動で編集できるようにする
-  const cat=curData()[curCat];if(!cat)return;
-  const n=parseInt(String(v).replace(/[^0-9\-]/g,''),10);
-  if(isNaN(n)||n===cat.id)return;
-  snapshot();
-  cat.id=n;
-  sched();renderAll();
-}
-
 /* =====================================================================
    セル選択・コピー&ペースト(Excelライク)
    論理列: 0=工事名称 1=形状寸法等 2=数量 3=単位 4=単価(実行) 5=掛率
@@ -1208,61 +1233,6 @@ document.addEventListener('keydown',function(e){
     e.preventDefault();
     gridPaste();
   }
-});
-
-/* ---------------- キーボードでセル移動(Excelライク) ----------------
-   ・矢印キー(↑↓←→) でセル間移動
-   ・Tab / Shift+Tab で左右に移動（行末・行頭で次/前の行へ）
-   ・Enter / Shift+Enter で下/上に移動
-   左右矢印はカーソルがテキストの先頭・末尾（または全選択状態）のときだけセル移動する
-   ------------------------------------------------------------------- */
-function focusCell(r,c){
-  const td=document.querySelector('td.cell-x[data-r="'+r+'"][data-c="'+c+'"]');
-  if(!td)return false;
-  const inp=td.querySelector('input');
-  if(!inp)return false;
-  cellSel={r1:r,c1:c,r2:r,c2:c};
-  applyCellHighlight();
-  inp.focus();
-  inp.select();
-  return true;
-}
-document.addEventListener('keydown',function(e){
-  const ae=document.activeElement;
-  if(!ae||ae.tagName!=='INPUT')return;
-  const td=ae.closest('td.cell-x');
-  if(!td)return;
-  const cat=curData()[curCat];if(!cat)return;
-  const r=parseInt(td.dataset.r,10),c=parseInt(td.dataset.c,10);
-  const maxR=cat.items.length-1,maxC=5;
-  let nr=r,nc=c,move=false;
-  const len=ae.value.length;
-  const fullSel=ae.selectionStart===0&&ae.selectionEnd===len&&len>0;
-  if(e.key==='Tab'){
-    if(e.shiftKey){nc--;if(nc<0){nc=maxC;nr--;}}
-    else{nc++;if(nc>maxC){nc=0;nr++;}}
-    move=true;
-  }else if(e.key==='Enter'){
-    nr+=e.shiftKey?-1:1;move=true;
-  }else if(e.key==='ArrowUp'){
-    nr--;move=true;
-  }else if(e.key==='ArrowDown'){
-    nr++;move=true;
-  }else if(e.key==='ArrowLeft'){
-    if(fullSel||(ae.selectionStart===0&&ae.selectionEnd===0)){nc--;move=true;}
-  }else if(e.key==='ArrowRight'){
-    if(fullSel||(ae.selectionStart===len&&ae.selectionEnd===len)){nc++;move=true;}
-  }
-  if(!move)return;
-  nr=Math.max(0,Math.min(maxR,nr));
-  nc=Math.max(0,Math.min(maxC,nc));
-  if(nr===r&&nc===c)return;
-  e.preventDefault();
-  // 数量・単価・掛率のセルはblur時にupdItem()→renderAll()が走り、
-  // 表全体のDOMが作り直されてしまう。先にblurを確定させてから
-  // （＝再描画を先に済ませてから）、移動先セルを最新のDOMで探してフォーカスする。
-  ae.blur();
-  focusCell(nr,nc);
 });
 
 /* ---------------- 右クリックメニュー(Excelライク) ---------------- */
@@ -1627,7 +1597,7 @@ function buildPrint(){
 
   const mRows=curData().map(cat=>{
     const t=cc(cat);
-    const note=cat.name==='電気工事'?'別途予算取して下さい':'';
+    const note=cat.id===15?'別途予算取して下さい':'';
     return `<tr>
       <td style="text-align:center;border-left:1px solid #888">${cat.id}</td>
       <td style="text-align:left">${cat.name}</td>
@@ -1719,7 +1689,14 @@ function renderAll(){
   else renderQuote();
 }
 
-loadAll();loadAppTitle();loadTheme();updateUndoRedoBtns();renderAll();
+function bootApp(){
+  loadAll();loadAppTitle();updateUndoRedoBtns();renderAll();
+}
+Promise.all([
+  fsPullToLocal(PROJ_LIST_KEY),
+  fsPullToLocal(PROJ_CUR_KEY),
+  fsPullToLocal('cep9_apptitle')
+]).then(bootApp).catch(bootApp);
 </script>
 </body>
 </html>

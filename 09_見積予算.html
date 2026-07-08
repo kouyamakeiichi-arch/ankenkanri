@@ -211,6 +211,22 @@
   }
   .toast.show{opacity:1;}
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyBVebyezaA9TxKBqfNjCZKhU44DtHqpG98",
+    authDomain: "ankenkanri-cfce2.firebaseapp.com",
+    projectId: "ankenkanri-cfce2",
+    storageBucket: "ankenkanri-cfce2.firebasestorage.app",
+    messagingSenderId: "1086701651367",
+    appId: "1:1086701651367:web:b59fe9f49a1e0335aba282"
+  };
+  try {
+    firebase.initializeApp(firebaseConfig);
+    window.db = firebase.firestore();
+  } catch (e) { window.db = null; }
+</script>
 </head>
 <body>
 <style>body{padding-top:46px;}</style>
@@ -382,7 +398,35 @@
 
   var STORAGE_KEY = "concrewEstimateProjects_v1";
   var COLW_KEY = "concrewEstimateColWidths_v1";
+  var DRAFT_KEY = "concrewEstimateDraft_v1";
   var TAX_RATE = 0.10;
+
+  // ===== Firebase 保存(クラウド同期) =====
+  // taiho_app_data コレクションに他ページと同じ形式(doc id=キー名, value フィールド)で保存する
+  function fsSet(key, value){
+    if(!window.db) return;
+    window.db.collection("taiho_app_data").doc(key).set({value:value, updatedAt:Date.now()}).catch(function(e){ console.warn('クラウド保存失敗', key, e); });
+  }
+  function fsGet(key){
+    return new Promise(function(resolve){
+      if(!window.db){ resolve(null); return; }
+      window.db.collection("taiho_app_data").doc(key).get().then(function(doc){
+        resolve(doc.exists ? doc.data().value : null);
+      }).catch(function(){ resolve(null); });
+    });
+  }
+  // 起動時にクラウドの値をこのブラウザのlocalStorageへ反映する(クラウドに無ければローカルの値をクラウドへ移行)
+  function fsPullToLocal(key){
+    return fsGet(key).then(function(remote){
+      if(remote !== null && remote !== undefined){
+        try{ localStorage.setItem(key, remote); }catch(e){}
+      }else{
+        var local = null;
+        try{ local = localStorage.getItem(key); }catch(e){}
+        if(local) fsSet(key, local);
+      }
+    });
+  }
 
   // ---------- column definitions ----------
   var CORE_DEFS = {
@@ -424,7 +468,9 @@
     }catch(e){ colWidths = {}; }
   }
   function saveColWidths(){
-    localStorage.setItem(COLW_KEY, JSON.stringify(colWidths));
+    var json = JSON.stringify(colWidths);
+    localStorage.setItem(COLW_KEY, json);
+    fsSet(COLW_KEY, json);
   }
   function widthOf(key){
     if(colWidths[key] && colWidths[key] >= 30) return colWidths[key];
@@ -1551,7 +1597,9 @@
     }catch(e){ return []; }
   }
   function saveProjects(list){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    var json = JSON.stringify(list);
+    localStorage.setItem(STORAGE_KEY, json);
+    fsSet(STORAGE_KEY, json);
   }
 
   /* =====================================================================
@@ -1710,7 +1758,9 @@
   function scheduleAutosave(){
     clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(function(){
-      localStorage.setItem("concrewEstimateDraft_v1", JSON.stringify({state:state, currentProjectId:currentProjectId, currentVersionIndex:currentVersionIndex}));
+      var json = JSON.stringify({state:state, currentProjectId:currentProjectId, currentVersionIndex:currentVersionIndex});
+      localStorage.setItem(DRAFT_KEY, json);
+      fsSet(DRAFT_KEY, json);
     }, 400);
   }
 
@@ -2113,7 +2163,7 @@
 
   // ---------- init ----------
   function init(){
-    var draftRaw = localStorage.getItem("concrewEstimateDraft_v1");
+    var draftRaw = localStorage.getItem(DRAFT_KEY);
     if(draftRaw){
       try{
         var draft = JSON.parse(draftRaw);
@@ -2134,7 +2184,11 @@
     updateLastSaved();
     resetHistory();
   }
-  init();
+  Promise.all([
+    fsPullToLocal(STORAGE_KEY),
+    fsPullToLocal(COLW_KEY),
+    fsPullToLocal(DRAFT_KEY)
+  ]).then(init).catch(init);
 })();
 </script>
 </body>
