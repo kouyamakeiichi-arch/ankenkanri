@@ -390,7 +390,9 @@
     { id: "super",    label: "スーパーハウス", color: "#F472B6" },
     { id: "demo",     label: "解体", color: "#94A3B8" },
     { id: "factory",  label: "工場", color: "#22D3EE" },
-    { id: "office",   label: "事務所、テナント", color: "#FB923C" }
+    { id: "office",   label: "事務所、テナント", color: "#FB923C" },
+    { id: "other",    label: "その他工事", color: "#EAB308" },
+    { id: "internal", label: "社内頼まれ事", color: "#14B8A6" }
   ];
   var MANAGER_SUGGESTIONS = ["遠藤了介", "kouyama", "soumu", "jimu", "k.aotsuka"];
 
@@ -505,7 +507,7 @@
   }
 
   var state = {
-    projects: [], customers: [], buildings: [], loading: true, search: "", activeType: "all", activeStatus: null, hideDone: false,
+    projects: [], customers: [], buildings: [], loading: true, search: "", activeType: "all", activeStatus: [], hideDone: false,
     /* 案件詳細ハブ用 */
     files: [], scheduleTasks: [], contractors: [], orders: [], billings: [], worklogs: [], requests: [],
     secondaryLoaded: false, detailProjectId: null, detailTab: "info"
@@ -551,7 +553,7 @@
     var q = state.search.trim().toLowerCase();
     return state.projects
       .filter(function (p) { return state.activeType === "all" ? true : p.typeId === state.activeType; })
-      .filter(function (p) { return state.activeStatus ? p.status === state.activeStatus : true; })
+      .filter(function (p) { return state.activeStatus.length ? state.activeStatus.indexOf(p.status) !== -1 : true; })
       .filter(function (p) { return state.hideDone ? !statusOf(p.status).done : true; })
       .filter(function (p) {
         if (!q) return true;
@@ -584,13 +586,15 @@
     var el = document.getElementById("statusChips");
     var html = "";
     STATUS_LIST.forEach(function (s) {
-      html += '<button class="status-chip' + (state.activeStatus===s.id?" is-active":"") + '" style="--chip-color:' + s.color + '" data-status="' + s.id + '">' + esc(s.label) + '</button>';
+      html += '<button class="status-chip' + (state.activeStatus.indexOf(s.id)!==-1?" is-active":"") + '" style="--chip-color:' + s.color + '" data-status="' + s.id + '">' + esc(s.label) + '</button>';
     });
     el.innerHTML = html;
     el.querySelectorAll(".status-chip").forEach(function (btn) {
       btn.addEventListener("click", function () {
+        // 複数選択: クリックしたステータスを選択中リストに追加/削除する(Excelのフィルタと同じ考え方)
         var id = btn.getAttribute("data-status");
-        state.activeStatus = (state.activeStatus === id) ? null : id;
+        var idx = state.activeStatus.indexOf(id);
+        if (idx === -1) { state.activeStatus.push(id); } else { state.activeStatus.splice(idx, 1); }
         renderStatusChips();
         renderResults();
         syncResetVisibility();
@@ -599,7 +603,7 @@
   }
 
   function syncResetVisibility() {
-    var has = state.search || state.activeType !== "all" || state.activeStatus || state.hideDone;
+    var has = state.search || state.activeType !== "all" || state.activeStatus.length || state.hideDone;
     document.getElementById("btnReset").style.display = has ? "inline-flex" : "none";
   }
 
@@ -1216,7 +1220,7 @@
   });
   document.getElementById("btnCreate").addEventListener("click", function () { openModal(false, null); });
   document.getElementById("btnReset").addEventListener("click", function () {
-    state.search = ""; state.activeType = "all"; state.activeStatus = null; state.hideDone = false;
+    state.search = ""; state.activeType = "all"; state.activeStatus = []; state.hideDone = false;
     document.getElementById("searchInput").value = "";
     document.getElementById("hideDoneCheckbox").checked = false;
     renderTypeTabs(); renderStatusChips(); renderResults(); syncResetVisibility();
