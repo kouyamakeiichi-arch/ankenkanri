@@ -245,11 +245,11 @@ input:focus{outline:1px solid var(--accent);border-radius:2px;background:var(--m
     </button>
     <div class="theme-btns">
       <span style="font-size:11px;color:var(--text3)">背景:</span>
-      <div class="tb tw on" onclick="setTheme('white',this)"></div>
-      <div class="tb tg" onclick="setTheme('gray',this)"></div>
-      <div class="tb td" onclick="setTheme('dark',this)"></div>
-      <div class="tb tc" onclick="setTheme('cad',this)"></div>
-      <div class="tb tn" onclick="setTheme('navy',this)"></div>
+      <div class="tb tw on" data-theme="white" onclick="setTheme('white',this)"></div>
+      <div class="tb tg" data-theme="gray" onclick="setTheme('gray',this)"></div>
+      <div class="tb td" data-theme="dark" onclick="setTheme('dark',this)"></div>
+      <div class="tb tc" data-theme="cad" onclick="setTheme('cad',this)"></div>
+      <div class="tb tn" data-theme="navy" onclick="setTheme('navy',this)"></div>
     </div>
     <div style="display:flex;gap:4px">
       <button class="btn on" id="btn-detail" onclick="switchView('detail')">明細入力</button>
@@ -880,10 +880,19 @@ function formatNum(v){
 }
 
 // ===== THEME =====
+const THEME_KEY='cep9_theme';
 function setTheme(t,el){
   document.body.className=t==='white'?'':t;
   document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
+  if(!el)el=document.querySelector('.tb[data-theme="'+t+'"]');
   if(el)el.classList.add('on');
+  try{localStorage.setItem(THEME_KEY,t);}catch(e){}
+  // 背景色は個人の好みのため、このPC/ブラウザだけに保存する(Firebase同期はしない)
+}
+function loadTheme(){
+  let t=null;
+  try{t=localStorage.getItem(THEME_KEY);}catch(e){}
+  if(t)setTheme(t,null);
 }
 
 // ===== VIEW =====
@@ -948,23 +957,26 @@ function renderDetail(){
     const c=ci(it);const hv=it.qty>0&&it.price>0;
     return `<tr>
       <td class="C">${it.no}</td>
-      <td class="L cell-x" data-r="${idx}" data-c="0" onmousedown="cellDown(${idx},0)" onmouseenter="cellEnter(${idx},0)" oncontextmenu="openCtxMenu(event,${idx},0)"><input type="text" value="${it.name}" onchange="updItem(${idx},'name',this.value)"></td>
-      <td class="L cell-x" data-r="${idx}" data-c="1" onmousedown="cellDown(${idx},1)" onmouseenter="cellEnter(${idx},1)" oncontextmenu="openCtxMenu(event,${idx},1)"><input type="text" value="${it.kei}" onchange="updItem(${idx},'kei',this.value)" style="font-size:11px;color:var(--text3)"></td>
+      <td class="L cell-x" data-r="${idx}" data-c="0" onmousedown="cellDown(${idx},0)" onmouseenter="cellEnter(${idx},0)" oncontextmenu="openCtxMenu(event,${idx},0)"><input type="text" value="${it.name}" onchange="updItem(${idx},'name',this.value)" onkeydown="cellNav(event,${idx},0)"></td>
+      <td class="L cell-x" data-r="${idx}" data-c="1" onmousedown="cellDown(${idx},1)" onmouseenter="cellEnter(${idx},1)" oncontextmenu="openCtxMenu(event,${idx},1)"><input type="text" value="${it.kei}" onchange="updItem(${idx},'kei',this.value)" onkeydown="cellNav(event,${idx},1)" style="font-size:11px;color:var(--text3)"></td>
       <td class="cell-x" data-r="${idx}" data-c="2" onmousedown="cellDown(${idx},2)" onmouseenter="cellEnter(${idx},2)" oncontextmenu="openCtxMenu(event,${idx},2)"><input type="text" class="C" value="${it.qty||''}"
         onfocus="this.value=this.value.replace(/,/g,'')"
         onblur="this.value=formatNum(this.value);updItem(${idx},'qty',parseFloat(this.value.replace(/,/g,''))||0)"
         onchange="updItem(${idx},'qty',parseFloat(this.value.replace(/,/g,''))||0)"
+        onkeydown="cellNav(event,${idx},2)"
         style="text-align:right"></td>
-      <td class="cell-x" data-r="${idx}" data-c="3" onmousedown="cellDown(${idx},3)" onmouseenter="cellEnter(${idx},3)" oncontextmenu="openCtxMenu(event,${idx},3)"><input type="text" class="C" value="${it.unit}" onchange="updItem(${idx},'unit',this.value)"></td>
+      <td class="cell-x" data-r="${idx}" data-c="3" onmousedown="cellDown(${idx},3)" onmouseenter="cellEnter(${idx},3)" oncontextmenu="openCtxMenu(event,${idx},3)"><input type="text" class="C" value="${it.unit}" onchange="updItem(${idx},'unit',this.value)" onkeydown="cellNav(event,${idx},3)"></td>
       <td class="cell-x" data-r="${idx}" data-c="4" onmousedown="cellDown(${idx},4)" onmouseenter="cellEnter(${idx},4)" oncontextmenu="openCtxMenu(event,${idx},4)"><input type="text" value="${it.price?fmt(it.price):''}"
         onfocus="this.value=this.value.replace(/,/g,'')"
         onblur="this.value=formatNum(this.value);updItem(${idx},'price',parseFloat(this.value.replace(/,/g,''))||0)"
         onchange="updItem(${idx},'price',parseFloat(this.value.replace(/,/g,''))||0)"
+        onkeydown="cellNav(event,${idx},4)"
         style="text-align:right"></td>
       <td style="font-weight:600">${hv?fmt(c.exec):''}</td>
       <td class="cell-x" data-r="${idx}" data-c="5" onmousedown="cellDown(${idx},5)" onmouseenter="cellEnter(${idx},5)" oncontextmenu="openCtxMenu(event,${idx},5)"><input type="text" value="${it.rate}"
         onfocus="this.value=this.value.replace(/,/g,'')"
         onblur="updItem(${idx},'rate',parseFloat(this.value.replace(/,/g,''))||1)"
+        onkeydown="cellNav(event,${idx},5)"
         style="text-align:right;width:50px"></td>
       <td class="gr">${it.price?fmt(Math.round(it.price*it.rate)):''}</td>
       <td style="font-weight:600;color:var(--accent)">${hv?fmt(c.dec):''}</td>
@@ -975,7 +987,7 @@ function renderDetail(){
   document.getElementById('det-sec').innerHTML=`
     <div class="sec">
       <div class="sec-hd">
-        <div class="sec-ttl">${cat.id}. ${cat.name}　<span style="font-size:11px;color:var(--text3);font-weight:400">${cat.items.length}/${MAX}行</span></div>
+        <div class="sec-ttl"><span onclick="editCatId()" title="クリックで工事番号を変更" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px">${cat.id}</span>. ${cat.name}　<span style="font-size:11px;color:var(--text3);font-weight:400">${cat.items.length}/${MAX}行</span></div>
         <span class="badge ${pr>=20?'good':'bad'}">利益率 ${pr}%</span>
       </div>
       <div class="tw-wrap"><table>
@@ -1076,6 +1088,17 @@ function addCategory(){
   sched();renderAll();
 }
 
+function editCatId(){
+  const cat=curData()[curCat];if(!cat)return;
+  const v=prompt('工事番号を変更してください(例: 1)：',cat.id);
+  if(v===null)return;
+  const n=parseInt(v,10);
+  if(!n||n<1){alert('1以上の数字を入力してください。');return;}
+  snapshot();
+  cat.id=n;
+  sched();renderAll();
+}
+
 function deleteCategory(){
   const data=curData();
   if(data.length<=1){alert('最後の工事は削除できません。');return;}
@@ -1150,6 +1173,45 @@ function applyCellHighlight(){
     const td=document.querySelector('td.cell-x[data-r="'+r+'"][data-c="'+c+'"]');
     if(td)td.classList.add('cell-selected');
   }
+}
+
+/* Tab / 矢印キーでのセル移動(工事名称などの明細セル間を横・縦に移動) */
+function focusCell(r,c){
+  const cat=curData()[curCat];if(!cat)return;
+  if(r<0||r>=cat.items.length)return;
+  if(c<0||c>5)return;
+  const td=document.querySelector('td.cell-x[data-r="'+r+'"][data-c="'+c+'"]');
+  if(!td)return;
+  const inp=td.querySelector('input');
+  if(!inp)return;
+  inp.focus();
+  inp.select();
+  cellSel={r1:r,c1:c,r2:r,c2:c};
+  applyCellHighlight();
+}
+function cellNav(e,r,c){
+  const key=e.key;
+  const inp=e.target;
+  let nr=r,nc=c;
+  if(key==='ArrowUp'){nr=r-1;}
+  else if(key==='ArrowDown'){nr=r+1;}
+  else if(key==='ArrowLeft'){
+    // テキスト編集中(カーソルが先頭以外)は通常のカーソル移動を優先する
+    if(inp.selectionStart!==0||inp.selectionEnd!==0)return;
+    nc=c-1;
+  }
+  else if(key==='ArrowRight'){
+    const len=inp.value.length;
+    if(inp.selectionStart!==len||inp.selectionEnd!==len)return;
+    nc=c+1;
+  }
+  else if(key==='Tab'){
+    if(e.shiftKey){nc=c-1;if(nc<0){nc=5;nr=r-1;}}
+    else{nc=c+1;if(nc>5){nc=0;nr=r+1;}}
+  }
+  else return;
+  e.preventDefault();
+  focusCell(nr,nc);
 }
 
 function gridCopy(){
@@ -1690,12 +1752,13 @@ function renderAll(){
 }
 
 function bootApp(){
-  loadAll();loadAppTitle();updateUndoRedoBtns();renderAll();
+  loadAll();loadAppTitle();loadTheme();updateUndoRedoBtns();renderAll();
 }
 Promise.all([
   fsPullToLocal(PROJ_LIST_KEY),
   fsPullToLocal(PROJ_CUR_KEY),
   fsPullToLocal('cep9_apptitle')
+  // THEME_KEYはこのPC/ブラウザ固有の設定のためクラウド同期しない
 ]).then(bootApp).catch(bootApp);
 </script>
 </body>
