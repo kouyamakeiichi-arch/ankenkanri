@@ -979,8 +979,31 @@
   }
 
   /* ---------------- 初期化 ---------------- */
+  // ①案件管理から「?caseId=...」付きで開かれた場合、案件名・宛先などを反映した状態で開く
+  function applyCaseLink(){
+    try{
+      var params = new URLSearchParams(window.location.search);
+      var caseId = params.get("caseId");
+      if(!caseId) return false;
+      var caseName = params.get("caseName") || "";
+      var customerName = params.get("customerName") || "";
+      var honorific = params.get("honorific") || "";
+      var buildingName = params.get("buildingName") || "";
+      var buildingAddress = params.get("buildingAddress") || "";
+      var d = emptyData();
+      d.client = customerName || "";
+      d.honorific = honorific || "御中";
+      d.kojimei = caseName || "";
+      d.place = buildingAddress || buildingName || "";
+      loadIntoForm(d, caseName || "無題の見積");
+      return true;
+    }catch(e){ console.warn("案件連携エラー", e); return false; }
+  }
+
   bindHeaderEvents();
-  loadIntoForm(emptyData(), "無題の見積");
+  if(!applyCaseLink()){
+    loadIntoForm(emptyData(), "無題の見積");
+  }
 })();
 </script>
 </body>

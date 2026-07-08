@@ -951,24 +951,34 @@
 
   /* ---- 見積タブ(独立ツールへのリンク) ---- */
   function renderDetailQuote(panel, p) {
+    var c = state.customers.find(function (x) { return x.id === p.customerId; });
+    var b = state.buildings.find(function (x) { return x.id === p.buildingId; });
+    var qp = "caseId=" + encodeURIComponent(p.id) +
+      "&caseName=" + encodeURIComponent(p.name) +
+      "&customerName=" + encodeURIComponent((c && c.name) || p.customerName || "") +
+      "&honorific=" + encodeURIComponent((c && c.honorific) || "") +
+      "&buildingName=" + encodeURIComponent((b && b.name) || p.buildingName || "") +
+      "&buildingAddress=" + encodeURIComponent((b && b.address) || "");
     panel.innerHTML =
       '<div class="detail-section-title">見積・実行予算</div>' +
       '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 10px;">' +
       '工事種別ごとの明細入力、実行金額・見積金額・粗利の自動計算、印刷用の御見積書作成ができるツールです。' +
-      '下のボタンから開くと、「' + esc(p.name) + '」専用の物件が自動で選択された状態で開き、そのまま明細入力を始められます。' +
+      '下のボタンから開くと、「' + esc(p.name) + '」専用の物件が自動で選択され、宛先・工事件名なども基本情報から反映された状態で開きます。' +
       '</p>' +
-      '<p style="margin-bottom:20px;"><a class="link-jump" href="08_見積実行予算.html?caseId=' + encodeURIComponent(p.id) + '&caseName=' + encodeURIComponent(p.name) + '" target="_blank" rel="noopener">⑧見積・実行予算アプリを開く ' + ICON_CHEV_R + '</a></p>' +
+      '<p style="margin-bottom:20px;"><a class="link-jump" href="08_見積実行予算.html?' + qp + '" target="_blank" rel="noopener">⑧見積・実行予算アプリを開く ' + ICON_CHEV_R + '</a></p>' +
       '<div class="detail-section-title">見積・予算(表計算式)</div>' +
       '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 10px;">' +
       'Excel感覚でセル選択・コピペ・列幅調整ができる、表計算タイプの見積ツールです。バージョン管理もできます。この書式に慣れている方はこちらをお使いください。' +
+      '下のボタンから開くと、こちらも同様に案件専用の物件が自動選択され、宛先などが反映されます。' +
       '</p>' +
-      '<p style="margin-bottom:20px;"><a class="link-jump" href="09_見積予算.html" target="_blank" rel="noopener">⑨見積・予算(表計算式)アプリを開く ' + ICON_CHEV_R + '</a></p>' +
+      '<p style="margin-bottom:20px;"><a class="link-jump" href="09_見積予算.html?' + qp + '" target="_blank" rel="noopener">⑨見積・予算(表計算式)アプリを開く ' + ICON_CHEV_R + '</a></p>' +
       '<div class="detail-section-title">簡易見積書(1枚)</div>' +
       '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 10px;">' +
       '種別・規格寸法・数量・単位・単価・金額・備考だけのシンプルな明細で、A4一枚に収まる見積書をサッと作れるツールです。役所向けなど、シンプルな見積書1枚で済む案件におすすめです。' +
+      '下のボタンから開くと、宛先・工事件名が反映された状態の白紙シートで始められます(このツールは案件との自動連携はまだ無く、都度「保存」が必要です)。' +
       '</p>' +
-      '<p><a class="link-jump" href="10_簡易見積書.html" target="_blank" rel="noopener">⑩簡易見積書アプリを開く ' + ICON_CHEV_R + '</a></p>' +
-      '<p style="font-size:11.5px;color:var(--text-tertiary);margin-top:16px;">※いずれも今のところ独立して動作しており、データはブラウザ内に保存されます。①〜⑦のように案件へ自動で紐付ける形にしたくなったら、いつでも変更できます。</p>';
+      '<p><a class="link-jump" href="10_簡易見積書.html?' + qp + '" target="_blank" rel="noopener">⑩簡易見積書アプリを開く ' + ICON_CHEV_R + '</a></p>' +
+      '<p style="font-size:11.5px;color:var(--text-tertiary);margin-top:16px;">※⑧⑨はクラウド(Firebase)に保存され、この案件と紐付きます。⑩は今のところブラウザ内保存のみです。</p>';
   }
 
   /* ---- 顧客・建物タブ ---- */

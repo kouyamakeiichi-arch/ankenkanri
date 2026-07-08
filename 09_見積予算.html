@@ -2162,17 +2162,61 @@
   }
 
   // ---------- init ----------
+  // ①案件管理から「?caseId=...」付きで開かれた場合、その案件専用の物件を自動選択する
+  // (無ければ案件名・宛先などを反映した新規物件を作って保存し、次回も同じ物件を開けるようにする)
+  function applyCaseLink(){
+    try{
+      var params = new URLSearchParams(window.location.search);
+      var caseId = params.get("caseId");
+      if(!caseId) return false;
+      var caseName = params.get("caseName") || "";
+      var customerName = params.get("customerName") || "";
+      var honorific = params.get("honorific") || "";
+      var buildingName = params.get("buildingName") || "";
+      var buildingAddress = params.get("buildingAddress") || "";
+      var siteAddr = buildingAddress || buildingName || "";
+
+      var projects = loadProjects();
+      var proj = projects.find(function(p){ return p.caseId === caseId; });
+
+      if(proj && proj.versions && proj.versions.length){
+        state = normalizeState(JSON.parse(JSON.stringify(proj.versions[0].data)));
+        currentProjectId = proj.id;
+        currentVersionIndex = 0;
+      } else {
+        state = sampleState();
+        state.categories = [ emptyCategory("大項目1") ];
+        state.projectName = caseName || "新規見積";
+        state.estimateInfo.clientName = customerName || "";
+        state.estimateInfo.honorific = honorific || "御中";
+        state.estimateInfo.overview = caseName || "";
+        state.estimateInfo.siteAddress = siteAddr;
+        var snap = JSON.parse(JSON.stringify(state));
+        var newProj = { id: uid(), name: state.projectName, caseId: caseId, versions: [{versionId: uid(), savedAt: nowLabel(), data: snap}] };
+        projects.unshift(newProj);
+        saveProjects(projects);
+        currentProjectId = newProj.id;
+        currentVersionIndex = 0;
+      }
+      return true;
+    }catch(e){ console.warn("案件連携エラー", e); return false; }
+  }
+
   function init(){
-    var draftRaw = localStorage.getItem(DRAFT_KEY);
-    if(draftRaw){
-      try{
-        var draft = JSON.parse(draftRaw);
-        state = normalizeState(draft.state);
-        currentProjectId = draft.currentProjectId;
-        currentVersionIndex = draft.currentVersionIndex || 0;
-      }catch(e){ state = sampleState(); }
+    if(applyCaseLink()){
+      // 案件連携で読み込み済みなのでドラフト(前回の編集途中データ)は無視する
     } else {
-      state = sampleState();
+      var draftRaw = localStorage.getItem(DRAFT_KEY);
+      if(draftRaw){
+        try{
+          var draft = JSON.parse(draftRaw);
+          state = normalizeState(draft.state);
+          currentProjectId = draft.currentProjectId;
+          currentVersionIndex = draft.currentVersionIndex || 0;
+        }catch(e){ state = sampleState(); }
+      } else {
+        state = sampleState();
+      }
     }
     loadColWidths();
     renderHead();

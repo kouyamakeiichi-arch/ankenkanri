@@ -1789,14 +1789,25 @@ function applyCaseLink(){
     const caseId=params.get('caseId');
     if(!caseId)return;
     const caseName=params.get('caseName')||'';
+    const customerName=params.get('customerName')||'';
+    const honorific=params.get('honorific')||'';
+    const buildingName=params.get('buildingName')||'';
+    const buildingAddress=params.get('buildingAddress')||'';
     let proj=projects.find(p=>p.caseId===caseId);
     if(!proj){
       const id=genId();
+      const cfg=JSON.parse(JSON.stringify(DEF_CFG));
+      // サンプルデータの宛先・工事情報を、案件の情報(または空欄)で上書きする
+      cfg.client=customerName||'';
+      cfg.honorific=honorific||'御中';
+      cfg.proj=caseName||'';
+      cfg.loc=buildingAddress||buildingName||'';
+      cfg.ovr='';
       proj={
         id,name:caseName||'新規物件',
         createdAt:new Date().toLocaleDateString('ja-JP'),
         cats:JSON.parse(JSON.stringify(DEF_CATS)),
-        cfg:JSON.parse(JSON.stringify(DEF_CFG)),
+        cfg:cfg,
         discount:0,
         caseId:caseId
       };
