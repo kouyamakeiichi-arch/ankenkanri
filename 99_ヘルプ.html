@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
+<meta name="app-build" content="2026-07-10-1" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ヘルプ | 太豊建設アプリ</title>
 <style>
@@ -123,17 +124,18 @@
   </a>
   <span class="sidebar__link is-disabled">設定<span class="soon">近日</span></span>
   <span class="sidebar__link is-disabled">工程表<span class="soon">近日</span></span>
-  <a class="sidebar__link" href="08_見積実行予算.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 13h6M9 17h4"/></svg>
+  <div class="sidebar__section">見積ツール</div>
+  <a class="sidebar__link" href="08_見積実行予算.html" data-pref-key="sidebar_estimate_exec">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg>
     見積・実行予算
   </a>
-  <a class="sidebar__link" href="09_見積予算.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-    見積・予算(表計算式)
+  <a class="sidebar__link" href="09_見積予算.html" data-pref-key="sidebar_estimate_budget">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>
+    見積・予算
   </a>
-  <a class="sidebar__link" href="10_簡易見積書.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M9 13h6M9 17h4"/></svg>
-    簡易見積書(1枚)
+  <a class="sidebar__link" href="10_簡易見積書.html" data-pref-key="sidebar_quick_estimate">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h4"/></svg>
+    簡易見積書
   </a>
   <div class="sidebar__section">サポート</div>
   <a class="sidebar__link is-active" href="99_ヘルプ.html">
@@ -229,22 +231,6 @@
     </table>
   </div>
 
-  <div class="card" id="quote-io">
-    <h2>📤📥 ⑧見積・実行予算：書き出し・読み込み</h2>
-    <p class="lead">⑧見積・実行予算アプリの右上「📤📥 書き出し・読み込み」ボタンから、以下の5つの操作ができます。データは他の画面(①〜⑦)とは違い、そのパソコン・ブラウザの中だけに保存されているので、他のパソコンで使いたいときや、バックアップを取っておきたいときにこの機能を使います。</p>
-    <table class="field-table">
-      <tr><th style="width:110px;">分類</th><th style="width:210px;">メニュー</th><th>内容</th></tr>
-      <tr><td rowspan="2"><b>書き出し</b></td><td>📤 選択中の物件を書き出し</td><td>今開いている物件1件だけをJSONファイルとして保存します。特定の1件だけ他のパソコンに渡したいときに使います。</td></tr>
-      <tr><td>📤 全物件を書き出し</td><td>保存されている物件をすべてまとめて1つのJSONファイルとして保存します。全体のバックアップに使います。</td></tr>
-      <tr><td rowspan="3"><b>読み込み</b></td><td>📥 物件を選んで読み込み</td><td>JSONファイルを選ぶと、中に入っている物件の一覧がチェックボックスで表示されます。必要な物件だけチェックして追加できます(1件だけのファイルでも複数件入りのファイルでもOK)。</td></tr>
-      <tr><td>📥 全物件を読み込み（追加）</td><td>ファイルの中の物件を全部、今のデータに追加します。既存のデータは消えません。</td></tr>
-      <tr><td>📥 全物件を読み込み（上書き）</td><td>今のデータを全部消して、ファイルの内容に置き換えます。元に戻せないので、実行前に確認メッセージが出ます。</td></tr>
-    </table>
-    <div class="note">
-      💡 「物件を選んで読み込み」「全物件を読み込み（追加）」で読み込んだ物件は、既存の物件とは別の新しい物件として追加されます(名前が同じでも上書きはされません)。同じ物件を間違って何度も追加しないよう、読み込み前に物件名を確認してください。
-    </div>
-  </div>
-
   <div class="card" id="modules">
     <h2>🧭 画面ごとの使い方</h2>
     <p class="lead">各画面の役割です。クリックすると開きます。</p>
@@ -254,10 +240,6 @@
       <a class="module-item" href="03_ファイル管理.html"><span class="module-item__dot" style="background:#34D399;"></span>ファイル管理</a>
       <a class="module-item" href="04_日報社内申請.html"><span class="module-item__dot" style="background:#F59E0B;"></span>日報・社内申請</a>
       <a class="module-item" href="05_金銭管理.html"><span class="module-item__dot" style="background:#F472B6;"></span>金銭管理</a>
-      <a class="module-item" href="06_設定.html"><span class="module-item__dot" style="background:#94A3B8;"></span>設定</a>
-      <a class="module-item" href="07_工程表カレンダー.html"><span class="module-item__dot" style="background:#22D3EE;"></span>工程表・カレンダー</a>
-      <a class="module-item" href="08_見積実行予算.html"><span class="module-item__dot" style="background:#DC2626;"></span>見積・実行予算</a>
-      <a class="module-item" href="09_見積予算.html"><span class="module-item__dot" style="background:#7C3AED;"></span>見積・予算(表計算式)</a>
     </div>
   </div>
 </div>
@@ -276,6 +258,16 @@
   });
   document.getElementById("sidebarOverlay").addEventListener("click", function () { setSidebar(false); });
   setSidebar(window.innerWidth > 960);
+
+  /* ---------------- 表示/非表示設定(各PCでlocalStorage保存) ---------------- */
+  (function applyUiPrefs() {
+    var prefs = {};
+    try { prefs = JSON.parse(window.localStorage.getItem("taiho_ui_prefs_v1") || "{}"); } catch (e) { prefs = {}; }
+    document.querySelectorAll("[data-pref-key]").forEach(function (el) {
+      var key = el.getAttribute("data-pref-key");
+      if (prefs[key] === false) el.style.display = "none";
+    });
+  })();
 })();
 </script>
 </body>

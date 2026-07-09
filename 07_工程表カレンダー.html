@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
+<meta name="app-build" content="2026-07-10-1" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>工程表・カレンダー | 太豊建設アプリ</title>
 <style>
@@ -191,15 +192,15 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
     工程表・カレンダー
   </a>
-  <a class="sidebar__link" href="08_見積実行予算.html">
+  <a class="sidebar__link" href="08_見積実行予算.html" data-pref-key="sidebar_estimate_exec">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 13h6M9 17h4"/></svg>
     見積・実行予算
   </a>
-  <a class="sidebar__link" href="09_見積予算.html">
+  <a class="sidebar__link" href="09_見積予算.html" data-pref-key="sidebar_estimate_budget">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
     見積・予算(表計算式)
   </a>
-  <a class="sidebar__link" href="10_簡易見積書.html">
+  <a class="sidebar__link" href="10_簡易見積書.html" data-pref-key="sidebar_quick_estimate">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M9 13h6M9 17h4"/></svg>
     簡易見積書(1枚)
   </a>
@@ -383,6 +384,16 @@
   document.getElementById("hamburgerBtn").addEventListener("click", function () { setSidebar(!document.getElementById("sidebar").classList.contains("is-open")); });
   document.getElementById("sidebarOverlay").addEventListener("click", function () { setSidebar(false); });
   setSidebar(window.innerWidth > 960);
+
+  /* ---------------- 表示/非表示設定(各PCでlocalStorage保存) ---------------- */
+  (function applyUiPrefs() {
+    var prefs = {};
+    try { prefs = JSON.parse(window.localStorage.getItem("taiho_ui_prefs_v1") || "{}"); } catch (e) { prefs = {}; }
+    document.querySelectorAll("[data-pref-key]").forEach(function (el) {
+      var key = el.getAttribute("data-pref-key");
+      if (prefs[key] === false) el.style.display = "none";
+    });
+  })();
 
   /* ---------------- モジュールタブ(工程表/カレンダー) ---------------- */
   var moduleTab = "schedule";

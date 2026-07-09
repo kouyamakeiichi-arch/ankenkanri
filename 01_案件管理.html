@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
+<meta name="app-build" content="2026-07-10-3" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -57,9 +58,9 @@
   .link-reset { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 700; color: var(--primary); background: none; border: none; cursor: pointer; }
   .link-reset:hover { text-decoration: underline; }
 
-  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; overflow-x: auto; }
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
   table.projects-table { width: 100%; border-collapse: collapse; }
-  .projects-table thead th { text-align: left; font-size: 12px; font-weight: 700; color: var(--text-tertiary); padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .projects-table thead th { position: sticky; top: 0; z-index: 5; background: var(--surface); text-align: left; font-size: 12px; font-weight: 700; color: var(--text-tertiary); padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
   .projects-table tbody tr { border-bottom: 1px solid var(--border); transition: background .12s; }
   .projects-table tbody tr:last-child { border-bottom: none; }
   .projects-table tbody tr:hover { background: #FBFAFF; }
@@ -114,6 +115,8 @@
   .field label { font-size: 12.5px; font-weight: 700; color: var(--text-secondary); }
   .field .req { color: var(--danger); }
   .field input, .field select { font-family: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; outline: none; color: var(--text); background: var(--surface); width: 100%; }
+  .field textarea { font-family: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; outline: none; color: var(--text); background: var(--surface); width: 100%; resize: vertical; min-height: 70px; }
+  .field textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
   .field input:focus, .field select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
   .field input.is-error, .field select.is-error { border-color: var(--danger); }
   .field__error { color: var(--danger); font-size: 11.5px; margin: 0; }
@@ -252,15 +255,15 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
     工程表・カレンダー
   </a>
-  <a class="sidebar__link" href="08_見積実行予算.html">
+  <a class="sidebar__link" href="08_見積実行予算.html" data-pref-key="sidebar_estimate_exec">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 13h6M9 17h4"/></svg>
     見積・実行予算
   </a>
-  <a class="sidebar__link" href="09_見積予算.html">
+  <a class="sidebar__link" href="09_見積予算.html" data-pref-key="sidebar_estimate_budget">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
     見積・予算(表計算式)
   </a>
-  <a class="sidebar__link" href="10_簡易見積書.html">
+  <a class="sidebar__link" href="10_簡易見積書.html" data-pref-key="sidebar_quick_estimate">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M9 13h6M9 17h4"/></svg>
     簡易見積書(1枚)
   </a>
@@ -641,13 +644,6 @@
           '<td><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span></td>' +
           '<td>' + statusPillHtml(p.id, p.status, "") + '</td>' +
           '<td>' + esc(p.customerName || "-") + '</td>' +
-          '<td>' + esc(p.buildingName || "-") + '</td>' +
-          '<td>' + esc(p.manager || "-") + '</td>' +
-          '<td>' + fmtDate(p.contractDate) + '</td>' +
-          '<td>' + fmtDate(p.startDate) + '</td>' +
-          '<td>' + fmtDate(p.completionDate) + '</td>' +
-          '<td>' + fmtYen(p.contractAmount) + '</td>' +
-          '<td>' + esc(p.creator || "-") + '</td>' +
           '<td class="cell-actions"><button class="icon-btn" data-edit="' + p.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td>' +
         '</tr>';
 
@@ -657,19 +653,14 @@
           '<button class="cell-name project-card__name" data-detail="' + p.id + '" style="display:block;">' + esc(p.name) + '</button></div>' +
           '<button class="icon-btn" data-edit="' + p.id + '" aria-label="編集">' + ICON_PENCIL + '</button></div>' +
           '<div class="project-card__meta"><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span>' +
-          (p.customerName ? '<span>' + ICON_USER + esc(p.customerName) + '</span>' : '') +
-          (p.manager ? '<span>' + esc(p.manager) + '</span>' : '') + '</div>' +
-          (p.buildingName ? '<div class="project-card__meta"><span>' + ICON_BUILDING + esc(p.buildingName) + '</span></div>' : '') +
-          '<div class="project-card__meta"><span>' + ICON_CAL + '着工 ' + fmtDate(p.startDate) + '</span>' +
-          '<span>' + ICON_CAL + '完工 ' + fmtDate(p.completionDate) + '</span></div>' +
-          (fmtYen(p.contractAmount) !== "-" ? '<div class="project-card__meta"><span class="amount-text">' + fmtYen(p.contractAmount) + '</span></div>' : '') +
+          (p.customerName ? '<span>' + ICON_USER + esc(p.customerName) + '</span>' : '') + '</div>' +
           '<div class="project-card__footer">' + statusPillHtml(p.id, p.status, "sm") + '</div>' +
         '</div>';
     });
 
     area.innerHTML =
       '<div class="table-wrap"><table class="projects-table"><thead><tr>' +
-      '<th>No</th><th>案件名</th><th>案件タイプ</th><th>ステータス</th><th>顧客</th><th>建物</th><th>担当者</th><th>契約日</th><th>着工日</th><th>完工日</th><th>契約金額</th><th>作成者</th><th></th>' +
+      '<th>No</th><th>案件名</th><th>案件タイプ</th><th>ステータス</th><th>顧客</th><th></th>' +
       '</tr></thead><tbody>' + tableRows + '</tbody></table></div>' +
       '<div class="card-list">' + cardItems + '</div>';
 
@@ -712,10 +703,15 @@
   }
 
   function openModal(isEdit, data) {
-    modalState = { isEdit: isEdit, data: data ? Object.assign({}, data) : { typeId: "", name: "", customerName: "", buildingName: "", contractDate: "", startDate: "", completionDate: "", manager: "", creator: "", contractAmount: "", status: "inquiry" } };
+    modalState = { isEdit: isEdit, data: data ? Object.assign({}, data) : { typeId: "", name: "", customerName: "", buildingName: "", contractDate: "", startDate: "", completionDate: "", manager: "", creator: "", contractAmount: "", note: "", status: "inquiry" } };
     renderModal();
   }
   function closeModal() { modalState = null; document.getElementById("modalRoot").innerHTML = ""; }
+
+  function isTaskType(typeId) {
+    var t = typeOf(typeId);
+    return !!(t && t.label === "社内頼まれ事");
+  }
 
   function renderModal() {
     var root = document.getElementById("modalRoot");
@@ -729,6 +725,7 @@
     var managerOptions = MANAGER_SUGGESTIONS.map(function (m) { return '<option value="' + esc(m) + '"></option>'; }).join("");
     var selectedCustomerId = d.customerId || findCustomerIdByName(d.customerName);
     var selectedBuildingId = d.buildingId || findBuildingIdByName(d.buildingName);
+    var taskMode = isTaskType(d.typeId);
 
     root.innerHTML =
       '<div class="modal-overlay" id="modalOverlay">' +
@@ -742,20 +739,33 @@
             '<input type="text" id="f_name" placeholder="例: 山田邸外構工事" value="' + esc(d.name) + '" />' +
             '<p class="field__error" id="err_name" style="display:none"></p></div>' +
             '<div class="field-row">' +
-              '<div class="field"><label>顧客 <span class="hint" style="font-size:11px;color:var(--text-tertiary);font-weight:400;">②顧客管理から選択</span></label><select id="f_customerId">' + customerOptionsHtml(selectedCustomerId) + '</select></div>' +
-              '<div class="field"><label>建物</label><select id="f_buildingId">' + buildingOptionsHtml(selectedCustomerId, selectedBuildingId) + '</select></div>' +
+              '<div class="field">' +
+                '<label id="lbl_customer">' + (taskMode ? "依頼先" : "顧客") + ' <span class="hint" style="font-size:11px;color:var(--text-tertiary);font-weight:400;" id="hint_customer">' + (taskMode ? "" : "②顧客管理から選択") + '</span></label>' +
+                '<select id="f_customerId" style="display:' + (taskMode ? "none" : "block") + '">' + customerOptionsHtml(selectedCustomerId) + '</select>' +
+                '<input type="text" id="f_customerFreeText" placeholder="依頼してきた人・部署など" value="' + esc(d.customerName) + '" style="display:' + (taskMode ? "block" : "none") + '" />' +
+              '</div>' +
+              '<div class="field" id="buildingFieldWrap" style="display:' + (taskMode ? "none" : "block") + '"><label>建物</label><select id="f_buildingId">' + buildingOptionsHtml(selectedCustomerId, selectedBuildingId) + '</select></div>' +
             '</div>' +
             '<div class="field-row">' +
-              '<div class="field"><label>契約日</label><input type="date" id="f_contractDate" value="' + esc(d.contractDate) + '" /></div>' +
-              '<div class="field"><label>着工日</label><input type="date" id="f_startDate" value="' + esc(d.startDate) + '" /></div>' +
-              '<div class="field"><label>完工日</label><input type="date" id="f_completionDate" value="' + esc(d.completionDate) + '" /></div>' +
+              '<div class="field"><label id="lbl_contractDate">' + (taskMode ? "依頼を受けた日" : "契約日") + '</label><input type="date" id="f_contractDate" value="' + esc(d.contractDate) + '" /></div>' +
+              '<div class="field">' +
+                '<label id="lbl_startDate">' + (taskMode ? "進捗(いつ・何が進んだか)" : "着工日") + '</label>' +
+                '<input type="date" id="f_startDate" value="' + esc(d.startDate) + '" style="display:' + (taskMode ? "none" : "block") + '" />' +
+                '<input type="text" id="f_startDateText" placeholder="例: 7/10 資料を送付済み" value="' + esc(d.startDate) + '" style="display:' + (taskMode ? "block" : "none") + '" />' +
+              '</div>' +
+              '<div class="field">' +
+                '<label id="lbl_completionDate">' + (taskMode ? "完了日" : "完工日") + '</label>' +
+                '<input type="date" id="f_completionDate" value="' + esc(d.completionDate) + '" style="display:' + (taskMode ? "none" : "block") + '" />' +
+                '<input type="text" id="f_completionDateText" placeholder="例: 7/15 完了" value="' + esc(d.completionDate) + '" style="display:' + (taskMode ? "block" : "none") + '" />' +
+              '</div>' +
             '</div>' +
             '<div class="field-row">' +
               '<div class="field"><label>担当者</label><input type="text" id="f_manager" list="managerSuggestions" placeholder="担当者名" value="' + esc(d.manager) + '" /></div>' +
               '<div class="field"><label>作成者</label><input type="text" id="f_creator" list="managerSuggestions" placeholder="作成者名" value="' + esc(d.creator) + '" /></div>' +
             '</div>' +
             '<datalist id="managerSuggestions">' + managerOptions + '</datalist>' +
-            '<div class="field"><label>契約金額</label><input type="text" inputmode="numeric" id="f_contractAmount" placeholder="例: 1,250,000" value="' + (d.contractAmount ? Number(d.contractAmount).toLocaleString("ja-JP") : "") + '" /></div>' +
+            '<div class="field" id="amountFieldWrap" style="display:' + (taskMode ? "none" : "block") + '"><label>契約金額</label><input type="text" inputmode="numeric" id="f_contractAmount" placeholder="例: 1,250,000" value="' + (d.contractAmount ? Number(d.contractAmount).toLocaleString("ja-JP") : "") + '" /></div>' +
+            '<div class="field"><label>備考・メモ</label><textarea id="f_note" placeholder="自由にメモを入力できます(枠の右下をドラッグすると広げられます)">' + esc(d.note) + '</textarea></div>' +
           '</div>' +
           '<div class="modal__footer">' +
             (isEdit ? '<button class="btn btn--danger-ghost" id="modalDeleteBtn">' + ICON_TRASH + ' 削除</button>' : '<span></span>') +
@@ -772,6 +782,22 @@
     document.getElementById("f_customerId").addEventListener("change", function (e) {
       document.getElementById("f_buildingId").innerHTML = buildingOptionsHtml(e.target.value, "");
     });
+    document.getElementById("f_typeId").addEventListener("change", function (e) {
+      var nowTask = isTaskType(e.target.value);
+      document.getElementById("lbl_customer").firstChild.textContent = (nowTask ? "依頼先" : "顧客") + " ";
+      document.getElementById("hint_customer").textContent = nowTask ? "" : "②顧客管理から選択";
+      document.getElementById("f_customerId").style.display = nowTask ? "none" : "block";
+      document.getElementById("f_customerFreeText").style.display = nowTask ? "block" : "none";
+      document.getElementById("buildingFieldWrap").style.display = nowTask ? "none" : "block";
+      document.getElementById("lbl_contractDate").textContent = nowTask ? "依頼を受けた日" : "契約日";
+      document.getElementById("lbl_startDate").textContent = nowTask ? "進捗(いつ・何が進んだか)" : "着工日";
+      document.getElementById("lbl_completionDate").textContent = nowTask ? "完了日" : "完工日";
+      document.getElementById("f_startDate").style.display = nowTask ? "none" : "block";
+      document.getElementById("f_startDateText").style.display = nowTask ? "block" : "none";
+      document.getElementById("f_completionDate").style.display = nowTask ? "none" : "block";
+      document.getElementById("f_completionDateText").style.display = nowTask ? "block" : "none";
+      document.getElementById("amountFieldWrap").style.display = nowTask ? "none" : "block";
+    });
     // 契約金額: 入力中はカンマなしの数字、確定するとカンマ区切りで表示する
     document.getElementById("f_contractAmount").addEventListener("focus", function () {
       this.value = this.value.replace(/,/g, "");
@@ -785,22 +811,31 @@
       document.getElementById("modalDeleteBtn").addEventListener("click", function () { confirmDeleteId = d.id; closeModal(); renderConfirm(); });
     }
     document.getElementById("modalSaveBtn").addEventListener("click", function () {
-      var custId = document.getElementById("f_customerId").value;
-      var bldId = document.getElementById("f_buildingId").value;
-      var cust = state.customers.find(function (c) { return c.id === custId; });
+      var typeId = document.getElementById("f_typeId").value;
+      var taskModeNow = isTaskType(typeId);
+      var custId = "", custName = "";
+      if (taskModeNow) {
+        custName = document.getElementById("f_customerFreeText").value.trim();
+      } else {
+        custId = document.getElementById("f_customerId").value;
+        var cust = state.customers.find(function (c) { return c.id === custId; });
+        custName = cust ? cust.name : "";
+      }
+      var bldId = taskModeNow ? "" : document.getElementById("f_buildingId").value;
       var bld = state.buildings.find(function (b) { return b.id === bldId; });
       var form = {
         id: d.id,
-        typeId: document.getElementById("f_typeId").value,
+        typeId: typeId,
         name: document.getElementById("f_name").value.trim(),
-        customerId: custId, customerName: cust ? cust.name : "",
+        customerId: custId, customerName: custName,
         buildingId: bldId, buildingName: bld ? bld.name : "",
         contractDate: document.getElementById("f_contractDate").value,
-        startDate: document.getElementById("f_startDate").value,
-        completionDate: document.getElementById("f_completionDate").value,
+        startDate: taskModeNow ? document.getElementById("f_startDateText").value.trim() : document.getElementById("f_startDate").value,
+        completionDate: taskModeNow ? document.getElementById("f_completionDateText").value.trim() : document.getElementById("f_completionDate").value,
         manager: document.getElementById("f_manager").value.trim(),
         creator: document.getElementById("f_creator").value.trim(),
-        contractAmount: document.getElementById("f_contractAmount").value.replace(/,/g, ""),
+        contractAmount: taskModeNow ? "" : document.getElementById("f_contractAmount").value.replace(/,/g, ""),
+        note: document.getElementById("f_note").value,
         status: d.status || "inquiry"
       };
       var ok = true;
@@ -943,7 +978,8 @@
       infoItem("担当者", p.manager || "-") +
       infoItem("作成者", p.creator || "-") +
       '</div>' +
-      '<p style="font-size:12.5px;color:var(--text-tertiary);margin:0;">右上の「基本情報を編集」からタイプ・名前・日付・金額などを編集できます。</p>';
+      (p.note ? '<div class="detail-section-title" style="margin-top:16px;">備考・メモ</div><p style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap;margin:0 0 12px;">' + esc(p.note) + '</p>' : '') +
+      '<p style="font-size:12.5px;color:var(--text-tertiary);margin:0;">右上の「基本情報を編集」からタイプ・名前・日付・金額・備考などを編集できます。</p>';
   }
   function infoItem(label, value) {
     return '<div class="detail-info-item"><div class="l">' + esc(label) + '</div><div class="v">' + esc(value) + '</div></div>';
@@ -1246,6 +1282,16 @@
   });
   document.getElementById("sidebarOverlay").addEventListener("click", function () { setSidebar(false); });
   setSidebar(window.innerWidth > 960);
+
+  /* ---------------- 表示/非表示設定(各PCでlocalStorage保存) ---------------- */
+  (function applyUiPrefs() {
+    var prefs = {};
+    try { prefs = JSON.parse(window.localStorage.getItem("taiho_ui_prefs_v1") || "{}"); } catch (e) { prefs = {}; }
+    document.querySelectorAll("[data-pref-key]").forEach(function (el) {
+      var key = el.getAttribute("data-pref-key");
+      if (prefs[key] === false) el.style.display = "none";
+    });
+  })();
 
   function init() {
     renderTypeTabs();

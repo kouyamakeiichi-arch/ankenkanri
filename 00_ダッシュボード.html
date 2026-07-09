@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
+<meta name="app-build" content="2026-07-10-1" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ダッシュボード | 太豊建設アプリ</title>
 <style>
@@ -19,6 +20,16 @@
   .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
   .page-header__title { font-weight: 900; font-size: 22px; }
   .page-header__sub { color: var(--text-secondary); font-size: 13px; margin: 0 0 22px 50px; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; font-family: inherit; font-weight: 700; font-size: 13px; padding: 9px 14px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; background: var(--surface); color: var(--text-secondary); white-space: nowrap; }
+  .btn:hover { background: #F1EFFB; }
+  .btn--ghost { background: transparent; }
+  .btn--sm { padding: 7px 12px; font-size: 12.5px; }
+
+  .version-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border-radius: 12px; margin: 0 0 18px 50px; font-size: 13px; font-weight: 700; }
+  .version-banner--update { background: #FFF3E0; border: 1px solid #FBBF24; color: #92620A; }
+  .version-banner--ok { background: #ECFDF5; border: 1px solid #6EE7B7; color: #04785A; }
+  .version-banner button { flex-shrink: 0; }
 
   .hamburger-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; flex-shrink: 0; }
   .hamburger-btn:hover { background: #F1EFFB; }
@@ -138,17 +149,18 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
     工程表・カレンダー
   </a>
-  <a class="sidebar__link" href="08_見積実行予算.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 13h6M9 17h4"/></svg>
+  <div class="sidebar__section">見積ツール</div>
+  <a class="sidebar__link" href="08_見積実行予算.html" data-pref-key="sidebar_estimate_exec">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg>
     見積・実行予算
   </a>
-  <a class="sidebar__link" href="09_見積予算.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-    見積・予算(表計算式)
+  <a class="sidebar__link" href="09_見積予算.html" data-pref-key="sidebar_estimate_budget">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>
+    見積・予算
   </a>
-  <a class="sidebar__link" href="10_簡易見積書.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M9 13h6M9 17h4"/></svg>
-    簡易見積書(1枚)
+  <a class="sidebar__link" href="10_簡易見積書.html" data-pref-key="sidebar_quick_estimate">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h4"/></svg>
+    簡易見積書
   </a>
   <div class="sidebar__section">サポート</div>
   <a class="sidebar__link" href="99_ヘルプ.html">
@@ -165,8 +177,13 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
     <div class="page-header__title">太豊建設アプリ</div>
+    <button class="btn btn--ghost btn--sm" id="versionCheckBtn" style="margin-left:auto;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+      バージョン確認
+    </button>
   </div>
   <p class="page-header__sub" id="todayLabel"></p>
+  <div id="versionBanner" style="display:none;"></div>
 
   <div id="loadingArea" class="loading-wrap"><span class="spinner"></span> 読み込み中...</div>
   <div id="dashboardArea" style="display:none;">
@@ -266,8 +283,8 @@
   var ICON_GEAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
   var ICON_CAL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
 
-  function statCard(label, value, sub, variant) {
-    return '<div class="stat-card' + (variant?" stat-card--"+variant:"") + '"><div class="stat-card__label">' + label + '</div>' +
+  function statCard(label, value, sub, variant, prefKey) {
+    return '<div class="stat-card' + (variant?" stat-card--"+variant:"") + '"' + (prefKey?' data-pref-key="'+prefKey+'"':'') + '><div class="stat-card__label">' + label + '</div>' +
       '<div class="stat-card__value">' + value + '</div>' + (sub ? '<div class="stat-card__sub">' + sub + '</div>' : '') + '</div>';
   }
 
@@ -281,6 +298,62 @@
   });
   document.getElementById("sidebarOverlay").addEventListener("click", function () { setSidebar(false); });
   setSidebar(window.innerWidth > 960);
+
+  /* ---------------- 表示/非表示設定(各PCでlocalStorage保存) ---------------- */
+  function applyUiPrefs() {
+    var prefs = {};
+    try { prefs = JSON.parse(window.localStorage.getItem("taiho_ui_prefs_v1") || "{}"); } catch (e) { prefs = {}; }
+    document.querySelectorAll("[data-pref-key]").forEach(function (el) {
+      var key = el.getAttribute("data-pref-key");
+      if (prefs[key] === false) el.style.display = "none";
+    });
+  }
+  applyUiPrefs();
+
+  /* ---------------- バージョン確認 ---------------- */
+  function currentBuildVersion() {
+    var m = document.querySelector('meta[name="app-build"]');
+    return m ? m.getAttribute("content") : "";
+  }
+  function showVersionBanner(kind, message, showReload) {
+    var el = document.getElementById("versionBanner");
+    el.style.display = "block";
+    el.innerHTML =
+      '<div class="version-banner version-banner--' + kind + '">' +
+      '<span>' + message + '</span>' +
+      (showReload ? '<button class="btn btn--sm" id="reloadNowBtn" style="background:white;">今すぐリロード</button>' : '') +
+      '</div>';
+    if (showReload) {
+      document.getElementById("reloadNowBtn").addEventListener("click", function () {
+        window.location.reload(true);
+      });
+    }
+  }
+  document.getElementById("versionCheckBtn").addEventListener("click", function () {
+    var btn = this;
+    btn.disabled = true;
+    var original = btn.innerHTML;
+    btn.innerHTML = "確認中...";
+    fetch(window.location.pathname + "?t=" + Date.now(), { cache: "no-store" })
+      .then(function (res) { return res.text(); })
+      .then(function (html) {
+        var m = html.match(/<meta name="app-build" content="([^"]*)"/);
+        var serverVersion = m ? m[1] : null;
+        var localVersion = currentBuildVersion();
+        if (serverVersion && serverVersion !== localVersion) {
+          showVersionBanner("update", "新しいバージョンが公開されています(現在: " + localVersion + " → 最新: " + serverVersion + ")。リロードして更新してください。", true);
+        } else {
+          showVersionBanner("ok", "最新版を使用しています(バージョン: " + localVersion + ")。", false);
+        }
+      })
+      .catch(function () {
+        showVersionBanner("update", "バージョン情報の取得に失敗しました。通信状況を確認してください。", false);
+      })
+      .finally(function () {
+        btn.disabled = false;
+        btn.innerHTML = original;
+      });
+  });
 
   var now = new Date();
   document.getElementById("todayLabel").textContent =
@@ -313,10 +386,11 @@
     document.getElementById("statGrid").innerHTML =
       statCard(ICON_FOLDER + " 進行中の案件", activeProjects.length + "件", "全" + projects.length + "件中", "accent") +
       statCard(ICON_USERS + " 登録顧客数", customers.length + "件", "") +
-      statCard(ICON_MONEY + " 未入金額", fmtYen(totalBilling - totalReceived), "請求合計 " + fmtYen(totalBilling), (totalBilling-totalReceived)>0 ? "danger" : "") +
-      statCard(ICON_MONEY + " 粗利合計", fmtYen(profit), "請求 − 発注", profit>=0 ? "success" : "danger") +
+      statCard(ICON_MONEY + " 未入金額", fmtYen(totalBilling - totalReceived), "請求合計 " + fmtYen(totalBilling), (totalBilling-totalReceived)>0 ? "danger" : "", "dash_unpaid") +
+      statCard(ICON_MONEY + " 粗利合計", fmtYen(profit), "請求 − 発注", profit>=0 ? "success" : "danger", "dash_profit") +
       statCard(ICON_CLOCK + " 承認待ち申請", pendingReq.length + "件", "") +
-      statCard(ICON_MONEY + " 支払い予定合計", fmtYen(scheduledPaySum), scheduledPay.length + "件");
+      statCard(ICON_MONEY + " 支払い予定合計", fmtYen(scheduledPaySum), scheduledPay.length + "件", "", "dash_payment");
+    applyUiPrefs();
 
     var byStatus = {};
     projects.forEach(function (p) { byStatus[p.status] = (byStatus[p.status]||0) + 1; });

@@ -130,7 +130,10 @@
   .cell-input:focus{outline:none;border-color:var(--purple);background:#fff;}
   input.cell-input[type=number]{text-align:right;}
   .name-input{font-weight:600;}
-  .cat-name-input{font-weight:700;font-size:14px;background:transparent;}
+  .cat-name-row{display:flex;align-items:center;gap:0;width:100%;}
+  .cat-name-input{font-weight:700;font-size:14px;background:transparent;flex:1;min-width:0;width:auto;}
+  .cat-number-input{font-weight:700;font-size:14px;color:var(--purple);background:transparent;width:28px;flex:none;text-align:right;}
+  .cat-number-dot{font-weight:700;font-size:14px;color:var(--purple);margin-right:4px;user-select:none;flex:none;}
 
   .tax-sub{font-size:10.5px;color:var(--sub);display:block;}
   .rate-badge{
@@ -1046,12 +1049,16 @@
   }
 
   // ---------- cell renderers ----------
-  function catHeaderCell(key, cat){
+  function catHeaderCell(key, cat, catNumber){
     switch(key){
       case "name":
         return '<td class="left">' +
+          '<div class="cat-name-row">' +
           '<span class="collapse-toggle" data-act="toggleCat" data-cat="'+cat.id+'">'+(cat.collapsed?"▶":"▼")+'</span>' +
-          '<input class="cell-input cat-name-input" data-act="catName" data-cat="'+cat.id+'" value="'+escapeAttr(cat.name)+'">' +
+          '<input class="cell-input cat-number-input" data-act="catNumber" data-cat="'+cat.id+'" value="'+escapeAttr(cat.number!=null?cat.number:catNumber)+'" placeholder="'+catNumber+'">' +
+          '<span class="cat-number-dot">.</span>' +
+          '<input class="cell-input cat-name-input" data-act="catName" data-cat="'+cat.id+'" value="'+escapeAttr(cat.name)+'" placeholder="大項目名を入力">' +
+          '</div>' +
           '</td>';
       case "actions":
         return '<td class="row-actions">' +
@@ -1116,15 +1123,17 @@
     var tbody = document.getElementById("tbody");
     tbody.innerHTML = "";
 
+    var catNumber = 0;
     state.categories.forEach(function(cat){
       if(cat.hidden) return;
+      catNumber++;
       var catCalc = calcCategory(cat);
 
       var trHead = document.createElement("tr");
       trHead.className = "cat-header-row";
       trHead.setAttribute("data-cat", cat.id);
       trHead.setAttribute("data-rowtype", "cat");
-      trHead.innerHTML = cols.map(function(k){ return catHeaderCell(k, cat); }).join("");
+      trHead.innerHTML = cols.map(function(k){ return catHeaderCell(k, cat, catNumber); }).join("");
       tbody.appendChild(trHead);
 
       if(!cat.collapsed){
@@ -1526,6 +1535,8 @@
       item2.custom[t.getAttribute("data-col")] = t.value;
     } else if(act === "catName"){
       findCat(t.getAttribute("data-cat")).name = t.value;
+    } else if(act === "catNumber"){
+      findCat(t.getAttribute("data-cat")).number = t.value;
     }
     scheduleAutosave();
   });
@@ -2183,7 +2194,6 @@
         state = normalizeState(JSON.parse(JSON.stringify(proj.versions[0].data)));
       } else {
         state = sampleState();
-        state.categories = [ emptyCategory("大項目1") ];
       }
 
       // 宛先・工事件名・工事場所は、案件管理側の基本情報を常に最新の状態で反映する

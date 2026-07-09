@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
+<meta name="app-build" content="2026-07-10-1" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>設定 | 太豊建設アプリ</title>
 <style>
@@ -191,17 +192,18 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
     工程表・カレンダー
   </a>
-  <a class="sidebar__link" href="08_見積実行予算.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 13h6M9 17h4"/></svg>
+  <div class="sidebar__section">見積ツール</div>
+  <a class="sidebar__link" href="08_見積実行予算.html" data-pref-key="sidebar_estimate_exec">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg>
     見積・実行予算
   </a>
-  <a class="sidebar__link" href="09_見積予算.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-    見積・予算(表計算式)
+  <a class="sidebar__link" href="09_見積予算.html" data-pref-key="sidebar_estimate_budget">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>
+    見積・予算
   </a>
-  <a class="sidebar__link" href="10_簡易見積書.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M9 13h6M9 17h4"/></svg>
-    簡易見積書(1枚)
+  <a class="sidebar__link" href="10_簡易見積書.html" data-pref-key="sidebar_quick_estimate">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h4"/></svg>
+    簡易見積書
   </a>
   <div class="sidebar__section">サポート</div>
   <a class="sidebar__link" href="99_ヘルプ.html">
@@ -235,7 +237,7 @@
     <button class="module-tab" id="tabBizInfo">事業者情報</button>
     <button class="module-tab" id="tabMembers">メンバー管理</button>
     <button class="module-tab" id="tabTypeSettings">案件/顧客/建物タイプ設定</button>
-    <button class="module-tab" id="tabBackup">データバックアップ</button>
+    <button class="module-tab" id="tabDisplayPrefs">表示設定</button>
   </div>
 
   <div class="module-tabs" id="typeSubTabs" style="display:none"></div>
@@ -523,111 +525,6 @@
     storageSet(MEMBERS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
   }
 
-  /* =====================================================================
-     データバックアップ(①〜⑦のクラウドデータをまとめてPCに保存/復元)
-     ===================================================================== */
-  var BACKUP_KEYS = [
-    { key: "taiho_projects_v2",                  label: "①案件" },
-    { key: "taiho_customers_v2",                 label: "②顧客" },
-    { key: "taiho_buildings_v2",                 label: "②建物" },
-    { key: "taiho_files_v1",                     label: "③ファイル" },
-    { key: "taiho_worklogs_v1",                  label: "④日報" },
-    { key: "taiho_requests_v1",                  label: "④社内申請" },
-    { key: "taiho_contractors_v1",               label: "⑤協力業者" },
-    { key: "taiho_orders_v1",                    label: "⑤発注" },
-    { key: "taiho_payments_v1",                  label: "⑤支払い" },
-    { key: "taiho_billings_v1",                  label: "⑤請求" },
-    { key: "taiho_price_items_v2",                label: "⑥単価表" },
-    { key: "taiho_biz_info_v1",                   label: "⑥事業者情報" },
-    { key: "taiho_members_v1",                    label: "⑥メンバー" },
-    { key: "taiho_units_v1",                      label: "⑥単位設定" },
-    { key: "taiho_settings_project_status_v1",    label: "⑥案件ステータス設定" },
-    { key: "taiho_settings_project_types_v1",     label: "⑥案件タイプ設定" },
-    { key: "taiho_schedule_tasks_v1",             label: "⑦工程表の日別工事内容" }
-  ];
-
-  function renderBackupTab(area) {
-    document.getElementById("countBadge").textContent = "";
-    area.innerHTML =
-      '<div class="data-card" style="max-width:640px;">' +
-      '<h3 style="margin:0 0 8px;font-size:15px;">📤 全データをバックアップ</h3>' +
-      '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 14px;">①案件・②顧客建物・③ファイル・④日報申請・⑤金銭・⑥設定・⑦工程表のデータをすべて1つのファイルにまとめて、パソコンに保存します。定期的に保存しておくと安心です。</p>' +
-      '<button class="btn btn--primary" id="backupBtn">📤 全データをバックアップ(PCに保存)</button>' +
-      '<div id="backupStatus" style="font-size:12px;color:var(--text-tertiary);margin-top:8px;"></div>' +
-      '<hr style="margin:24px 0;border:none;border-top:1px solid var(--border);">' +
-      '<h3 style="margin:0 0 8px;font-size:15px;">📥 バックアップから復元</h3>' +
-      '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 14px;">バックアップファイルを選ぶと、クラウド上の今のデータを全て置き換えます。<b>この操作は元に戻せません。</b>先に「全データをバックアップ」で今の状態を保存しておくことをおすすめします。</p>' +
-      '<button class="btn btn--danger-ghost" id="restoreBtn">📥 バックアップから復元</button>' +
-      '<input type="file" id="restoreFileInput" accept=".json" style="display:none">' +
-      '</div>';
-    document.getElementById("backupBtn").addEventListener("click", backupAll);
-    document.getElementById("restoreBtn").addEventListener("click", function () { document.getElementById("restoreFileInput").click(); });
-    document.getElementById("restoreFileInput").addEventListener("change", function () { restoreFromFile(this); });
-  }
-
-  function backupAll() {
-    var btn = document.getElementById("backupBtn");
-    var status = document.getElementById("backupStatus");
-    if (btn) { btn.disabled = true; btn.textContent = "書き出し中..."; }
-    if (status) status.textContent = "";
-    Promise.all(BACKUP_KEYS.map(function (k) { return storageGet(k.key); })).then(function (results) {
-      var data = {};
-      BACKUP_KEYS.forEach(function (k, i) {
-        data[k.key] = (results[i] && results[i].value) ? results[i].value : null;
-      });
-      var obj = { app: "taiho-kensetsu-app", version: 1, exportDate: new Date().toLocaleString("ja-JP"), data: data };
-      var json = JSON.stringify(obj, null, 2);
-      var blob = new Blob([json], { type: "application/json" });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement("a");
-      a.href = url;
-      var d = new Date();
-      var ds = d.getFullYear() + String(d.getMonth()+1).padStart(2,"0") + String(d.getDate()).padStart(2,"0") + "_" + String(d.getHours()).padStart(2,"0") + String(d.getMinutes()).padStart(2,"0");
-      a.download = "taiho_backup_" + ds + ".json";
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      showToast("バックアップを書き出しました");
-      if (status) status.textContent = "最終書き出し: " + obj.exportDate;
-    }).catch(function () {
-      showToast("書き出しに失敗しました");
-    }).then(function () {
-      if (btn) { btn.disabled = false; btn.textContent = "📤 全データをバックアップ(PCに保存)"; }
-    });
-  }
-
-  function restoreFromFile(input) {
-    var file = input.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function (e) {
-      try {
-        var obj = JSON.parse(e.target.result);
-        if (!obj || !obj.data || typeof obj.data !== "object") {
-          alert("このファイルは対応していない形式です。「全データをバックアップ」で作成したファイルを選んでください。");
-          input.value = ""; return;
-        }
-        if (!confirm("バックアップファイル「" + file.name + "」から復元します。\n現在クラウドに保存されているデータは全て上書きされます。\nこの操作は元に戻せません。よろしいですか？")) {
-          input.value = ""; return;
-        }
-        var keys = Object.keys(obj.data);
-        Promise.all(keys.map(function (k) {
-          var v = obj.data[k];
-          if (v === null || v === undefined) return Promise.resolve();
-          return storageSet(k, v);
-        })).then(function () {
-          showToast("復元しました。ページを再読み込みします...");
-          setTimeout(function () { location.reload(); }, 1200);
-        }).catch(function () {
-          alert("復元中にエラーが発生しました。");
-        });
-      } catch (ex) {
-        alert("読み込みに失敗しました。正しいバックアップファイルか確認してください。\n" + ex.message);
-      }
-      input.value = "";
-    };
-    reader.readAsText(file, "UTF-8");
-  }
-
   function setTab(tab) {
     state.tab = tab;
     bizEditing = false;
@@ -635,7 +532,7 @@
     document.getElementById("tabBizInfo").classList.toggle("is-active", tab === "bizInfo");
     document.getElementById("tabMembers").classList.toggle("is-active", tab === "members");
     document.getElementById("tabTypeSettings").classList.toggle("is-active", tab === "typeSettings");
-    document.getElementById("tabBackup").classList.toggle("is-active", tab === "backup");
+    document.getElementById("tabDisplayPrefs").classList.toggle("is-active", tab === "displayPrefs");
     document.getElementById("searchInput").parentElement.style.display = tab === "priceList" ? "" : "none";
     document.getElementById("typeSubTabs").style.display = tab === "typeSettings" ? "flex" : "none";
     document.getElementById("btnCreate").style.display = (tab === "priceList" || tab === "members" || tab === "typeSettings") ? "inline-flex" : "none";
@@ -651,7 +548,7 @@
   document.getElementById("tabBizInfo").addEventListener("click", function () { setTab("bizInfo"); });
   document.getElementById("tabMembers").addEventListener("click", function () { setTab("members"); });
   document.getElementById("tabTypeSettings").addEventListener("click", function () { setTab("typeSettings"); });
-  document.getElementById("tabBackup").addEventListener("click", function () { setTab("backup"); });
+  document.getElementById("tabDisplayPrefs").addEventListener("click", function () { setTab("displayPrefs"); });
 
   function renderTypeSubTabs() {
     var el = document.getElementById("typeSubTabs");
@@ -689,7 +586,7 @@
     if (state.tab === "bizInfo") { renderBizInfoTab(area); return; }
     if (state.tab === "members") { renderMembersTab(area); return; }
     if (state.tab === "typeSettings") { renderTypeSettingsTab(area); return; }
-    if (state.tab === "backup") { renderBackupTab(area); return; }
+    if (state.tab === "displayPrefs") { renderDisplayPrefsTab(area); return; }
 
     var list = filteredItems();
     document.getElementById("countBadge").textContent = list.length + "件";
@@ -871,6 +768,45 @@
   function persistTypeList(catId, next) {
     state.typeSettings[catId] = next;
     storageSet(typeCategoryOf(catId).key, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+  }
+
+  function renderDisplayPrefsTab(area) {
+    document.getElementById("countBadge").textContent = "";
+    var prefs = {};
+    try { prefs = JSON.parse(window.localStorage.getItem("taiho_ui_prefs_v1") || "{}"); } catch (e) { prefs = {}; }
+    var items = [
+      { key: "sidebar_estimate_exec", label: "サイドバー: 見積・実行予算", group: "サイドバー" },
+      { key: "sidebar_estimate_budget", label: "サイドバー: 見積・予算", group: "サイドバー" },
+      { key: "sidebar_quick_estimate", label: "サイドバー: 簡易見積書", group: "サイドバー" },
+      { key: "dash_unpaid", label: "ホーム画面: 未入金額カード", group: "ホーム画面" },
+      { key: "dash_profit", label: "ホーム画面: 粗利合計カード", group: "ホーム画面" },
+      { key: "dash_payment", label: "ホーム画面: 支払い予定合計カード", group: "ホーム画面" }
+    ];
+    var groups = {};
+    items.forEach(function (it) { (groups[it.group] = groups[it.group] || []).push(it); });
+
+    var html = '<div class="biz-card"><p style="font-size:12.5px;color:var(--text-tertiary);margin:0 0 16px;">オフにした項目は、このパソコン・このブラウザだけで非表示になります(他の端末には影響しません)。</p>';
+    Object.keys(groups).forEach(function (g) {
+      html += '<h3>' + esc(g) + '</h3>';
+      groups[g].forEach(function (it) {
+        var checked = prefs[it.key] !== false;
+        html += '<label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px;cursor:pointer;">' +
+          '<input type="checkbox" data-pref="' + it.key + '"' + (checked ? " checked" : "") + ' style="width:16px;height:16px;accent-color:var(--primary);" />' +
+          esc(it.label) + '</label>';
+      });
+    });
+    html += '</div>';
+    area.innerHTML = html;
+
+    area.querySelectorAll("[data-pref]").forEach(function (cb) {
+      cb.addEventListener("change", function () {
+        var current = {};
+        try { current = JSON.parse(window.localStorage.getItem("taiho_ui_prefs_v1") || "{}"); } catch (e) { current = {}; }
+        current[cb.getAttribute("data-pref")] = cb.checked;
+        window.localStorage.setItem("taiho_ui_prefs_v1", JSON.stringify(current));
+        showToast(cb.checked ? "表示にしました(このPCのみ反映)" : "非表示にしました(このPCのみ反映)");
+      });
+    });
   }
 
   function renderTypeSettingsTab(area) {
@@ -1117,6 +1053,16 @@
   });
   document.getElementById("sidebarOverlay").addEventListener("click", function () { setSidebar(false); });
   setSidebar(window.innerWidth > 960);
+
+  /* ---------------- 表示/非表示設定(各PCでlocalStorage保存) ---------------- */
+  (function applyUiPrefs() {
+    var prefs = {};
+    try { prefs = JSON.parse(window.localStorage.getItem("taiho_ui_prefs_v1") || "{}"); } catch (e) { prefs = {}; }
+    document.querySelectorAll("[data-pref-key]").forEach(function (el) {
+      var key = el.getAttribute("data-pref-key");
+      if (prefs[key] === false) el.style.display = "none";
+    });
+  })();
 
   function init() {
     renderResults();
