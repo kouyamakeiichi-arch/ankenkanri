@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-10-1" />
+<meta name="app-build" content="2026-07-10-2" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>設定 | 太豊建設アプリ</title>
 <style>
@@ -238,6 +238,7 @@
     <button class="module-tab" id="tabMembers">メンバー管理</button>
     <button class="module-tab" id="tabTypeSettings">案件/顧客/建物タイプ設定</button>
     <button class="module-tab" id="tabDisplayPrefs">表示設定</button>
+    <button class="module-tab" id="tabBackup">バックアップ</button>
   </div>
 
   <div class="module-tabs" id="typeSubTabs" style="display:none"></div>
@@ -533,6 +534,7 @@
     document.getElementById("tabMembers").classList.toggle("is-active", tab === "members");
     document.getElementById("tabTypeSettings").classList.toggle("is-active", tab === "typeSettings");
     document.getElementById("tabDisplayPrefs").classList.toggle("is-active", tab === "displayPrefs");
+    document.getElementById("tabBackup").classList.toggle("is-active", tab === "backup");
     document.getElementById("searchInput").parentElement.style.display = tab === "priceList" ? "" : "none";
     document.getElementById("typeSubTabs").style.display = tab === "typeSettings" ? "flex" : "none";
     document.getElementById("btnCreate").style.display = (tab === "priceList" || tab === "members" || tab === "typeSettings") ? "inline-flex" : "none";
@@ -549,6 +551,7 @@
   document.getElementById("tabMembers").addEventListener("click", function () { setTab("members"); });
   document.getElementById("tabTypeSettings").addEventListener("click", function () { setTab("typeSettings"); });
   document.getElementById("tabDisplayPrefs").addEventListener("click", function () { setTab("displayPrefs"); });
+  document.getElementById("tabBackup").addEventListener("click", function () { setTab("backup"); });
 
   function renderTypeSubTabs() {
     var el = document.getElementById("typeSubTabs");
@@ -587,6 +590,7 @@
     if (state.tab === "members") { renderMembersTab(area); return; }
     if (state.tab === "typeSettings") { renderTypeSettingsTab(area); return; }
     if (state.tab === "displayPrefs") { renderDisplayPrefsTab(area); return; }
+    if (state.tab === "backup") { renderBackupTab(area); return; }
 
     var list = filteredItems();
     document.getElementById("countBadge").textContent = list.length + "件";
@@ -768,6 +772,98 @@
   function persistTypeList(catId, next) {
     state.typeSettings[catId] = next;
     storageSet(typeCategoryOf(catId).key, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+  }
+
+  var BACKUP_KEYS = [
+    "taiho_projects_v2", "taiho_customers_v2", "taiho_buildings_v2", "taiho_files_v1",
+    "taiho_worklogs_v1", "taiho_requests_v1",
+    "taiho_contractors_v1", "taiho_orders_v1", "taiho_payments_v1", "taiho_billings_v1",
+    "taiho_price_items_v2", "taiho_units_v1", "taiho_biz_info_v1", "taiho_members_v1",
+    "taiho_settings_project_status_v1", "taiho_settings_project_types_v1",
+    "taiho_settings_customer_types_v1", "taiho_settings_building_types_v1",
+    "taiho_schedules_v1"
+  ];
+
+  function renderBackupTab(area) {
+    document.getElementById("countBadge").textContent = "";
+    area.innerHTML =
+      '<div class="biz-card">' +
+      '<h3 style="margin-top:0;">データの書き出し(バックアップ)</h3>' +
+      '<p style="font-size:12.5px;color:var(--text-tertiary);margin:0 0 14px;">案件・顧客・金銭管理・設定など、このアプリの全データを1つのファイルに書き出します。写真やPDFの数が多いと、ファイルサイズが大きくなることがあります。</p>' +
+      '<button class="btn btn--primary btn--sm" id="btnExportBackup">' + ICON_PLUS.replace("M12 5v14M5 12h14","M12 3v12m0-12 4 4m-4-4-4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2") + ' バックアップを書き出す</button>' +
+      '<p id="exportStatus" style="font-size:12px;color:var(--success);margin:10px 0 0;display:none;"></p>' +
+      '<h3>バックアップから復元</h3>' +
+      '<p style="font-size:12.5px;color:var(--text-tertiary);margin:0 0 14px;">書き出したファイルを選ぶと、<b style="color:var(--danger);">現在のデータが上書き</b>されます。この操作は元に戻せません。</p>' +
+      '<input type="file" id="importBackupInput" accept="application/json" style="display:none" />' +
+      '<button class="btn btn--danger-ghost btn--sm" id="btnImportBackup">ファイルを選んで復元する</button>' +
+      '<p id="importStatus" style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;display:none;"></p>' +
+      '</div>';
+
+    document.getElementById("btnExportBackup").addEventListener("click", exportBackup);
+    document.getElementById("btnImportBackup").addEventListener("click", function () {
+      document.getElementById("importBackupInput").click();
+    });
+    document.getElementById("importBackupInput").addEventListener("change", function (e) {
+      var file = e.target.files && e.target.files[0];
+      e.target.value = "";
+      if (file) importBackupFile(file);
+    });
+  }
+
+  function exportBackup() {
+    var btn = document.getElementById("btnExportBackup");
+    var statusEl = document.getElementById("exportStatus");
+    btn.disabled = true;
+    Promise.all(BACKUP_KEYS.map(function (k) { return storageGet(k); })).then(function (results) {
+      var data = {};
+      BACKUP_KEYS.forEach(function (k, i) { data[k] = results[i] && results[i].value ? results[i].value : null; });
+      var payload = { app: "太豊建設アプリ", exportedAt: new Date().toISOString(), data: data };
+      var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      var stamp = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = "taiho_backup_" + stamp + ".json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("バックアップファイルをダウンロードしました");
+      if (statusEl) { statusEl.style.display = "block"; statusEl.textContent = "書き出し完了(" + new Date().toLocaleString("ja-JP") + ")"; }
+      btn.disabled = false;
+    }).catch(function () {
+      showToast("書き出しに失敗しました");
+      btn.disabled = false;
+    });
+  }
+
+  function importBackupFile(file) {
+    var statusEl = document.getElementById("importStatus");
+    var reader = new FileReader();
+    reader.onload = function () {
+      var parsed;
+      try { parsed = JSON.parse(reader.result); } catch (e) { showToast("ファイルの形式が正しくありません"); return; }
+      var data = parsed.data || parsed;
+      var ok = window.confirm("現在のデータを、このバックアップファイルの内容で上書きします。\nこの操作は元に戻せません。復元してよろしいですか?");
+      if (!ok) return;
+      var keys = Object.keys(data);
+      if (statusEl) { statusEl.style.display = "block"; statusEl.textContent = "復元中... (0/" + keys.length + ")"; }
+      var done = 0;
+      Promise.all(keys.map(function (k) {
+        var v = data[k];
+        if (v === null || v === undefined) { done++; return Promise.resolve(); }
+        return storageSet(k, v).then(function () {
+          done++;
+          if (statusEl) statusEl.textContent = "復元中... (" + done + "/" + keys.length + ")";
+        });
+      })).then(function () {
+        showToast("復元が完了しました");
+        if (statusEl) statusEl.textContent = "復元が完了しました。ページを再読み込みしてください。";
+      }).catch(function () {
+        showToast("復元中にエラーが発生しました");
+      });
+    };
+    reader.readAsText(file);
   }
 
   function renderDisplayPrefsTab(area) {
