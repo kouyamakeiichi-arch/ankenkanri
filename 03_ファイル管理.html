@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-1" />
+<meta name="app-build" content="2026-07-27-3" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ファイル管理 | 太豊建設アプリ</title>
 <style>
@@ -283,7 +283,7 @@
   /* ---------------- 定数 ---------------- */
   var PROJECTS_KEY = "taiho_projects_v2"; // ①案件管理と共通のキー(読み取り専用で参照)
   var FILES_KEY = "taiho_files_v1";
-  var MAX_FILE_SIZE = 20 * 1024 * 1024;    // 1ファイルあたり上限 約20MB(実ファイルはFirebase Storageに保存)
+  var MAX_FILE_SIZE = 20 * 1024 * 1024;    // 1ファイルあたり上限 20MB(実ファイルはFirebase Storageに保存)
   var IMAGE_MAX_DIM = 1920;                // 写真は長辺1920pxにリサイズしてからアップロード
   var IMAGE_QUALITY = 0.8;                 // 写真はJPEG画質80%に圧縮
   var ACCEPT_EXT = [".jww",".dxf",".doc",".docx",".xls",".xlsx",".txt"]; // MIME判定できない拡張子を個別に許可
@@ -439,7 +439,7 @@
       area.innerHTML =
         '<div class="empty-state">' + ICON_FOLDER40 +
         '<p class="empty-state__title">「' + esc(f.label) + '」にはまだファイルがありません</p>' +
-        '<p class="empty-state__desc">写真・PDF・図面(JWW/DXF)・Office資料をアップロードしましょう(1ファイル上限 約20MB)。写真は自動で圧縮されます。</p>' +
+        '<p class="empty-state__desc">写真・PDF・図面(JWW/DXF)・Office資料をアップロードしましょう(1ファイル上限 20MB)。写真は自動で圧縮されます。</p>' +
         '<button class="btn btn--primary" id="emptyUploadBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12 4 4m-4-4-4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg> アップロード</button></div>';
       var b = document.getElementById("emptyUploadBtn");
       if (b) b.addEventListener("click", function () { document.getElementById("fileInput").click(); });

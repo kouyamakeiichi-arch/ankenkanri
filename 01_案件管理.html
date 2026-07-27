@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-1" />
+<meta name="app-build" content="2026-07-27-3" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -221,6 +221,7 @@
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
   var firebaseConfig = {
     apiKey: "AIzaSyBVebyezaA9TxKBqfNjCZKhU44DtHqpG98",
@@ -233,7 +234,8 @@
   try {
     firebase.initializeApp(firebaseConfig);
     window.db = firebase.firestore();
-  } catch (e) { window.db = null; }
+    window.fbStorage = firebase.storage();
+  } catch (e) { window.db = null; window.fbStorage = null; }
 </script>
 
 </head>
@@ -350,7 +352,40 @@
   var BILLINGS_KEY = "taiho_billings_v1";
   var WORKLOGS_KEY = "taiho_worklogs_v1";
   var REQUESTS_KEY = "taiho_requests_v1";
-  var MAX_FILE_SIZE = 1.5 * 1024 * 1024;
+  var MAX_FILE_SIZE = 20 * 1024 * 1024; // 1ファイルあたり上限 20MB(実ファイルはFirebase Storageに保存)
+  var IMAGE_MAX_DIM = 1920;            // 写真は長辺1920pxにリサイズしてからアップロード
+  var IMAGE_QUALITY = 0.8;             // 写真はJPEG画質80%に圧縮
+  var ACCEPT_EXT = [".jww",".dxf",".doc",".docx",".xls",".xlsx",".txt"];
+  function extOf(name) { var m = /\.[^.]+$/.exec(name || ""); return m ? m[0].toLowerCase() : ""; }
+  function isAcceptedFile(f) {
+    if (f.type && f.type.indexOf("image/") === 0) return true;
+    if (f.type === "application/pdf") return true;
+    return ACCEPT_EXT.indexOf(extOf(f.name)) !== -1;
+  }
+  function compressImageFile(file) {
+    return new Promise(function (resolve) {
+      if (!file.type || file.type.indexOf("image/") !== 0) { resolve(file); return; }
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          var w = img.width, h = img.height;
+          if (w > IMAGE_MAX_DIM || h > IMAGE_MAX_DIM) {
+            if (w >= h) { h = Math.round(h * IMAGE_MAX_DIM / w); w = IMAGE_MAX_DIM; }
+            else { w = Math.round(w * IMAGE_MAX_DIM / h); h = IMAGE_MAX_DIM; }
+          }
+          var canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          canvas.toBlob(function (blob) { resolve(blob || file); }, "image/jpeg", IMAGE_QUALITY);
+        };
+        img.onerror = function () { resolve(file); };
+        img.src = e.target.result;
+      };
+      reader.onerror = function () { resolve(file); };
+      reader.readAsDataURL(file);
+    });
+  }
   function storageGet(key) {
     return new Promise(function (resolve) {
       if (window.db) {
@@ -1243,18 +1278,19 @@
       '<div class="detail-upload-row">' +
         '<select id="detailFolderSelect">' + folderOptions + '</select>' +
         '<button class="btn btn--primary btn--sm" id="detailUploadBtn">' + ICON_UPLOAD + ' アップロード</button>' +
-        '<input type="file" id="detailFileInput" accept="image/*,application/pdf" multiple style="display:none" />' +
-        '<span style="font-size:11px;color:var(--text-tertiary);">画像・PDF、1ファイル1.5MBまで</span>' +
+        '<input type="file" id="detailFileInput" accept="image/*,application/pdf,.jww,.dxf,.doc,.docx,.xls,.xlsx,.txt" multiple style="display:none" />' +
+        '<span style="font-size:11px;color:var(--text-tertiary);">画像・PDF・図面(JWW/DXF)・Office資料、1ファイル上限20MB。写真は自動で圧縮されます。</span>' +
       '</div>';
     if (!list.length) {
       html += '<div class="detail-empty">まだファイルがアップロードされていません</div>';
     } else {
       html += '<div class="detail-file-grid">' + list.map(function (f) {
+        var url = f.downloadURL || f.dataUrl;
         return '<div class="detail-file-card">' +
           '<div class="detail-file-card__name">' + esc(f.name) + '</div>' +
           '<div class="detail-file-card__sub">' + esc(folderOf(f.folderId).label) + ' ・ ' + fmtSize(f.sizeBytes) + '</div>' +
           '<div class="detail-file-card__actions">' +
-          '<a class="icon-btn" href="' + f.dataUrl + '" target="_blank" rel="noopener" title="開く"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg></a>' +
+          '<a class="icon-btn" href="' + esc(url) + '" target="_blank" rel="noopener" title="開く"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg></a>' +
           '<button class="icon-btn" data-fdel="' + f.id + '" title="削除">' + ICON_TRASH + '</button>' +
           '</div></div>';
       }).join("") + '</div>';
@@ -1267,39 +1303,51 @@
       var files = Array.prototype.slice.call(e.target.files || []);
       e.target.value = "";
       if (!files.length) return;
+      if (!window.fbStorage) { showToast("アップロード機能が利用できません(クラウド未接続)"); return; }
       var folderId = document.getElementById("detailFolderSelect").value;
+      var projectId = state.detailProjectId;
       var accepted = [], rejected = 0;
       files.forEach(function (f) {
-        var isImage = f.type && f.type.indexOf("image/") === 0;
-        var isPdf = f.type === "application/pdf";
-        if ((!isImage && !isPdf) || f.size > MAX_FILE_SIZE) { rejected++; return; }
+        if (!isAcceptedFile(f) || f.size > MAX_FILE_SIZE) { rejected++; return; }
         accepted.push(f);
       });
-      if (rejected > 0) showToast(rejected + "件のファイルは形式または容量の制限でスキップされました");
+      if (rejected > 0) showToast(rejected + "件のファイルは対応形式外または容量(20MB超)の制限でスキップされました");
       if (!accepted.length) return;
+      showToast(accepted.length + "件アップロード中...");
+
       Promise.all(accepted.map(function (f) {
-        return new Promise(function (resolve) {
-          var reader = new FileReader();
-          reader.onload = function () {
-            resolve({ id: "f-" + uid(), projectId: state.detailProjectId, folderId: folderId, name: f.name, mime: f.type, sizeBytes: f.size, dataUrl: reader.result, uploadedAt: Date.now() });
-          };
-          reader.readAsDataURL(f);
-        });
-      })).then(function (newFiles) {
+        var isImage = f.type && f.type.indexOf("image/") === 0;
+        return compressImageFile(f).then(function (blob) {
+          var id = "f-" + uid();
+          var displayName = isImage ? (f.name.replace(/\.[^.]+$/, "") + ".jpg") : f.name;
+          var outMime = isImage ? "image/jpeg" : (f.type || "application/octet-stream");
+          var path = "files/" + projectId + "/" + folderId + "/" + id + "_" + displayName;
+          var ref = window.fbStorage.ref().child(path);
+          return ref.put(blob, { contentType: outMime }).then(function () { return ref.getDownloadURL(); }).then(function (url) {
+            return { id: id, projectId: projectId, folderId: folderId, name: displayName, mime: outMime, sizeBytes: blob.size, storagePath: path, downloadURL: url, uploadedAt: Date.now() };
+          });
+        }).catch(function (err) { console.error("アップロード失敗:", f.name, err); return null; });
+      })).then(function (results) {
+        var newFiles = results.filter(function (r) { return r; });
+        var failedCount = results.length - newFiles.length;
         var next = newFiles.concat(state.files);
         state.files = next;
         storageSet(FILES_KEY, JSON.stringify(next)).then(function () {
-          showToast("アップロードしました");
+          showToast(newFiles.length + "件アップロードしました" + (failedCount ? "(" + failedCount + "件失敗)" : ""));
           renderDetailPanel(p);
-        });
+        }).catch(function () { showToast("ファイル情報の保存に失敗しました"); });
       });
     });
     panel.querySelectorAll("[data-fdel]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var id = btn.getAttribute("data-fdel");
+        var target = state.files.find(function (f) { return f.id === id; });
         var next = state.files.filter(function (f) { return f.id !== id; });
         state.files = next;
         storageSet(FILES_KEY, JSON.stringify(next)).then(function () {
+          if (target && target.storagePath && window.fbStorage) {
+            window.fbStorage.ref().child(target.storagePath).delete().catch(function () {});
+          }
           showToast("削除しました");
           renderDetailPanel(p);
         });
