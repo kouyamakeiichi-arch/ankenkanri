@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-4" />
+<meta name="app-build" content="2026-07-27-5" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ファイル管理 | 太豊建設アプリ</title>
 <style>
@@ -493,6 +493,7 @@
     if (isImage) previewBody = '<img src="' + esc(fileUrl) + '" alt="" />';
     else if (isPdf) previewBody = '<iframe src="' + esc(fileUrl) + '"></iframe>';
     else previewBody = '<div class="empty-state">' + ICON_DOC32 + '<p class="empty-state__title">この形式はブラウザ内でプレビューできません</p><p class="empty-state__desc">「開く」から確認・ダウンロードしてください。</p></div>';
+    var folderOptions = FOLDERS.map(function (f) { return '<option value="' + f.id + '"' + (f.id===file.folderId?" selected":"") + '>' + esc(f.label) + '</option>'; }).join("");
     root.innerHTML =
       '<div class="modal-overlay" id="previewOverlay">' +
         '<div class="preview-modal">' +
@@ -500,6 +501,10 @@
           '<button class="icon-btn" id="previewCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
           '<div class="preview-modal__body">' +
           previewBody +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:8px;padding:0 20px 12px;font-size:12.5px;">' +
+          '<label style="font-weight:700;color:var(--text-secondary);">種別</label>' +
+          '<select id="previewFolderSelect" style="padding:6px 9px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:12.5px;">' + folderOptions + '</select>' +
           '</div>' +
           '<div class="preview-modal__footer">' +
           '<span>' + fmtSize(file.sizeBytes) + ' ・ ' + fmtDateTime(file.uploadedAt) + '</span>' +
@@ -511,6 +516,15 @@
       '</div>';
     document.getElementById("previewCloseBtn").addEventListener("click", closePreview);
     document.getElementById("previewOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "previewOverlay") closePreview(); });
+    document.getElementById("previewFolderSelect").addEventListener("change", function () {
+      var newFolderId = this.value;
+      var next = state.files.map(function (f) { return f.id === file.id ? Object.assign({}, f, { folderId: newFolderId }) : f; });
+      persistFiles(next).then(function () {
+        showToast("種別を「" + folderOf(newFolderId).label + "」に変更しました");
+        renderFolderTabs();
+        renderResults();
+      });
+    });
     document.getElementById("previewDeleteBtn").addEventListener("click", function () {
       confirmDeleteId = file.id;
       closePreview();
