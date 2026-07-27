@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-3" />
+<meta name="app-build" content="2026-07-27-5" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -305,7 +305,7 @@
     <div class="page-header__actions">
       <div class="search-box">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input type="text" id="searchInput" placeholder="案件名・顧客名・担当者で検索" />
+        <input type="text" id="searchInput" placeholder="案件名・顧客名・担当者で検索" autocomplete="off" />
       </div>
       <button class="btn btn--primary" id="btnCreate">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -1286,10 +1286,12 @@
     } else {
       html += '<div class="detail-file-grid">' + list.map(function (f) {
         var url = f.downloadURL || f.dataUrl;
+        var cardFolderOptions = FOLDERS.map(function (fo) { return '<option value="' + fo.id + '"' + (fo.id===f.folderId?" selected":"") + '>' + esc(fo.label) + '</option>'; }).join("");
         return '<div class="detail-file-card">' +
           '<div class="detail-file-card__name">' + esc(f.name) + '</div>' +
-          '<div class="detail-file-card__sub">' + esc(folderOf(f.folderId).label) + ' ・ ' + fmtSize(f.sizeBytes) + '</div>' +
-          '<div class="detail-file-card__actions">' +
+          '<div class="detail-file-card__sub">' + fmtSize(f.sizeBytes) + ' ・ ' + fmtDateTime(f.uploadedAt) + '</div>' +
+          '<select class="file-folder-select" data-fchange="' + f.id + '" style="width:100%;margin-top:6px;padding:5px 7px;border:1px solid var(--border); border-radius:7px;font-family:inherit;font-size:11.5px;">' + cardFolderOptions + '</select>' +
+          '<div class="detail-file-card__actions" style="margin-top:6px;">' +
           '<a class="icon-btn" href="' + esc(url) + '" target="_blank" rel="noopener" title="開く"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg></a>' +
           '<button class="icon-btn" data-fdel="' + f.id + '" title="削除">' + ICON_TRASH + '</button>' +
           '</div></div>';
@@ -1350,6 +1352,17 @@
           }
           showToast("削除しました");
           renderDetailPanel(p);
+        });
+      });
+    });
+    panel.querySelectorAll("[data-fchange]").forEach(function (sel) {
+      sel.addEventListener("change", function () {
+        var id = sel.getAttribute("data-fchange");
+        var newFolderId = sel.value;
+        var next = state.files.map(function (f) { return f.id === id ? Object.assign({}, f, { folderId: newFolderId }) : f; });
+        state.files = next;
+        storageSet(FILES_KEY, JSON.stringify(next)).then(function () {
+          showToast("種別を「" + folderOf(newFolderId).label + "」に変更しました");
         });
       });
     });
