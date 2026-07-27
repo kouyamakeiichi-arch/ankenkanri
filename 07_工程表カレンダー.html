@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-10-1" />
+<meta name="app-build" content="2026-07-27-3" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>工程表・カレンダー | 太豊建設アプリ</title>
 <style>
@@ -134,10 +134,63 @@
   .task-list-row:last-child { border-bottom: none; }
   .task-list-row .d { flex-shrink: 0; font-weight: 700; color: var(--primary); width: 70px; }
 
+  /* ---------------- 単一案件モード ---------------- */
+  .single-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .single-panel__head { font-size: 13.5px; margin-bottom: 12px; }
+  .single-panel__head b { color: var(--primary); }
+  .single-panel__subhead { font-size: 12px; font-weight: 700; color: var(--text-tertiary); margin: 14px 0 8px; }
+  .sheet-meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; }
+  .sheet-meta-row label { font-weight: 700; color: var(--text-secondary); }
+  .sheet-meta-row input[type="date"], .sheet-meta-row input[type="text"] { padding: 6px 9px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 12.5px; }
+  .phase-list { display: flex; flex-direction: column; gap: 6px; }
+  .phase-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--border); flex-wrap: wrap; }
+  .phase-row:last-child { border-bottom: none; }
+  .phase-row__dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .phase-row__name { width: 100px; font-size: 12.5px; font-weight: 700; flex-shrink: 0; }
+  .phase-row__date { padding: 5px 8px; border: 1px solid var(--border); border-radius: 7px; font-family: inherit; font-size: 12px; }
+  .phase-row__arrow { color: var(--text-tertiary); font-size: 12px; }
+  .add-cat-row { display: flex; gap: 8px; margin-top: 10px; }
+  .add-cat-row input { flex: 1; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 12.5px; }
+  .remark-add-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; background: var(--bg); padding: 12px; border-radius: 10px; margin-bottom: 10px; }
+  .remark-add-row select { padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 12.5px; }
+  .remark-add-row input[type="date"] { padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 12.5px; }
+  .remark-add-row textarea { flex: 1; min-width: 180px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 12.5px; resize: vertical; }
+  .remark-list { display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto; }
+  .remark-row { border: 1px solid var(--border); border-radius: 9px; padding: 9px 11px; }
+  .remark-row__head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .remark-row__type { font-size: 11px; font-weight: 700; background: var(--primary-soft); color: var(--primary); padding: 2px 8px; border-radius: 999px; }
+  .remark-row__date { font-size: 11px; color: var(--text-tertiary); }
+  .remark-row__content { font-size: 12.5px; white-space: pre-wrap; }
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; flex-shrink: 0; }
+  .icon-btn:hover { background: var(--bg); color: var(--danger); }
+
   @media (max-width: 640px) {
     .shell { padding: 14px 12px 80px; }
     .page-hint { margin-left: 0; }
   }
+
+  /* ---------------- 印刷 ---------------- */
+  @media print {
+    .sidebar, .sidebar-overlay, .hamburger-btn, .module-tabs, .tab-row, .page-hint,
+    .filter-panel, .no-print, .cal-toolbar button, .cal-toolbar select,
+    .modal-overlay, .single-panel { display: none !important; }
+    body, .shell-wrap { margin: 0 !important; }
+    .shell { max-width: none; padding: 0; }
+    .layout { display: block; }
+    .panel-surface { border: none; padding: 0; overflow: visible; }
+    .cal-toolbar h2 { font-size: 14px; margin: 0 0 6px; }
+    table.matrix { width: 100%; table-layout: fixed; border-collapse: collapse; }
+    table.matrix thead { display: table-header-group; } /* 複数ページになっても見出し行を各ページに繰り返す */
+    table.matrix tr { page-break-inside: avoid; }
+    table.matrix th, table.matrix td { font-size: 10px; padding: 3px; border: 1px solid #999; }
+    table.matrix th.rowhead, table.matrix td.rowhead { position: static; }
+    .wc-content.wc-placeholder { display: none; } /* 「クリックして入力」のヒントは印刷しない */
+    .wc-name { font-size: 9px; }
+    .wc-content { font-size: 9.5px; }
+  }
+</style>
+<style id="printSizeStyle">
+  @media print { @page { size: A3 landscape; margin: 8mm; } }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -219,6 +272,15 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
     <div class="page-header__title">工程表・カレンダー<span class="badge-count" id="countBadge"></span></div>
+    <div class="page-header__actions no-print" style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+      <select id="printSize" style="padding:8px 10px;border:1px solid var(--border);border-radius:9px;font-family:inherit;font-size:12.5px;background:var(--surface);">
+        <option value="A3-landscape" selected>A3よこ</option>
+        <option value="A3-portrait">A3たて</option>
+        <option value="A4-landscape">A4よこ</option>
+        <option value="A4-portrait">A4たて</option>
+      </select>
+      <button class="btn btn--ghost" id="btnPrintSchedule">🖨 印刷</button>
+    </div>
   </div>
   <p class="page-hint" id="pageHint"></p>
 
@@ -281,6 +343,22 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="catDayTaskOverlay">
+  <div class="modal">
+    <h3 id="cdtName"></h3>
+    <div class="meta" id="cdtMeta"></div>
+    <div class="form-row">
+      <label>この日の工事内容</label>
+      <textarea id="cdtContent" rows="5" placeholder="例: 型枠組立、配線敷設など"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn--danger-ghost" id="cdtDeleteBtn" style="margin-right:auto;">削除</button>
+      <button class="btn btn--ghost" id="cdtCancelBtn">キャンセル</button>
+      <button class="btn btn--primary" id="cdtSaveBtn">保存</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -327,6 +405,11 @@
 
   var PROJECTS_KEY = "taiho_projects_v2";
   var TASKS_KEY = "taiho_schedule_tasks_v1";
+  var CATEGORIES_KEY = "taiho_schedule_categories_v1";
+  var PHASES_KEY = "taiho_schedule_phases_v1";
+  var REMARKS_KEY = "taiho_schedule_remarks_v1";
+  var SHEET_META_KEY = "taiho_schedule_sheet_meta_v1";
+  var CATEGORY_NOTES_KEY = "taiho_schedule_category_notes_v1";
 
   var STATUS_LIST = [
     { id: "inquiry",      label: "依頼受付",     color: "#94A3B8" },
@@ -369,6 +452,22 @@
   var allProjects = [];
   var colorMap = {};
   var selected = {};
+  var CATEGORY_PALETTE = ["#6C47FF","#F59E0B","#10B981","#3B82F6","#EF4444","#8B5CF6","#EC4899","#06B6D4","#84CC16","#F97316"];
+  function categoryColor(cat) {
+    var idx = scheduleCategories.indexOf(cat);
+    if (idx === -1) idx = 0;
+    return CATEGORY_PALETTE[idx % CATEGORY_PALETTE.length];
+  }
+  function persistCategories(next) { scheduleCategories = next; return storageSet(CATEGORIES_KEY, JSON.stringify(next)); }
+  function persistPhases(next) { schedulePhases = next; return storageSet(PHASES_KEY, JSON.stringify(next)); }
+  function persistRemarks(next) { scheduleRemarks = next; return storageSet(REMARKS_KEY, JSON.stringify(next)); }
+  function persistSheetMeta(next) { scheduleSheetMeta = next; return storageSet(SHEET_META_KEY, JSON.stringify(next)); }
+  function persistCategoryNotes(next) { scheduleCategoryNotes = next; return storageSet(CATEGORY_NOTES_KEY, JSON.stringify(next)); }
+  function categoryNoteFor(projectId, category, dateISO) { return scheduleCategoryNotes.find(function (n) { return n.projectId === projectId && n.category === category && n.date === dateISO; }); }
+  function phaseFor(projectId, category) { return schedulePhases.find(function (ph) { return ph.projectId === projectId && ph.category === category; }); }
+  function scheduleUid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+  var ICON_TRASH = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/></svg>';
+  var ICON_PENCIL = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
   var tasksCache = [];
 
   function loadTasks() { return tasksCache; }
@@ -507,11 +606,54 @@
     }
   });
 
+  /* ---------------- 工種×日付の工事内容編集モーダル(単一案件モード) ---------------- */
+  var cdtCurrent = null;
+  function openCategoryDayTask(project, category, dateISO) {
+    cdtCurrent = { projectId: project.id, category: category, date: dateISO };
+    var existing = categoryNoteFor(project.id, category, dateISO);
+    document.getElementById("cdtName").textContent = category;
+    document.getElementById("cdtMeta").textContent = project.name + " ・ " + fmtDateShort(dateISO);
+    document.getElementById("cdtContent").value = existing ? existing.content : "";
+    document.getElementById("cdtDeleteBtn").style.display = existing ? "inline-flex" : "none";
+    document.getElementById("catDayTaskOverlay").classList.add("is-open");
+  }
+  document.getElementById("cdtCancelBtn").addEventListener("click", function () { document.getElementById("catDayTaskOverlay").classList.remove("is-open"); });
+  document.getElementById("catDayTaskOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "catDayTaskOverlay") document.getElementById("catDayTaskOverlay").classList.remove("is-open"); });
+  document.getElementById("cdtSaveBtn").addEventListener("click", function () {
+    if (!cdtCurrent) return;
+    var content = document.getElementById("cdtContent").value.trim();
+    var next = scheduleCategoryNotes.slice();
+    var existing = categoryNoteFor(cdtCurrent.projectId, cdtCurrent.category, cdtCurrent.date);
+    if (!content) {
+      if (existing) next = next.filter(function (n) { return n.id !== existing.id; });
+    } else if (existing) {
+      existing.content = content;
+    } else {
+      next.push({ id: scheduleUid(), projectId: cdtCurrent.projectId, category: cdtCurrent.category, date: cdtCurrent.date, content: content });
+    }
+    persistCategoryNotes(next).then(function () {
+      document.getElementById("catDayTaskOverlay").classList.remove("is-open");
+      renderActive();
+    });
+  });
+  document.getElementById("cdtDeleteBtn").addEventListener("click", function () {
+    if (!cdtCurrent) return;
+    var existing = categoryNoteFor(cdtCurrent.projectId, cdtCurrent.category, cdtCurrent.date);
+    if (existing) {
+      persistCategoryNotes(scheduleCategoryNotes.filter(function (n) { return n.id !== existing.id; })).then(function () {
+        document.getElementById("catDayTaskOverlay").classList.remove("is-open");
+        renderActive();
+      });
+    } else {
+      document.getElementById("catDayTaskOverlay").classList.remove("is-open");
+    }
+  });
+
   /* ---------------- サブタブ(総合/月間/週間) ---------------- */
   var TABS = [
     { id: "gantt", label: "総合工程表", hint: "案件名またはバーをクリックすると、案件の概要と登録済みの日別工事内容が見られます。" },
-    { id: "month", label: "月間工程表", hint: "案件名クリック=概要、色付きの日付セルをクリック=その日の工事内容を入力・編集(●は入力済み)。" },
-    { id: "week",  label: "週間工程表", hint: "セルをクリックすると、その日の詳しい工事内容(例: 基礎配筋、型枠組立など)を入力・編集できます。" }
+    { id: "month", label: "月間工程表", hint: "案件名クリック=概要、色付きの日付セルをクリック=その日の工事内容を入力・編集(●は入力済み)。左の絞り込みで案件を1つだけ選ぶと、工種ごとの期間・備考を編集できます。" },
+    { id: "week",  label: "週間工程表", hint: "セルをクリックすると、その日の詳しい工事内容(例: 基礎配筋、型枠組立など)を入力・編集できます。左の絞り込みで案件を1つだけ選ぶと、工種ごとの期間・備考を編集できます。" }
   ];
   var activeTab = "gantt";
 
@@ -613,6 +755,166 @@
   /* ---------------- 月間工程表 ---------------- */
   var monthView = (function () { var d = new Date(); d.setDate(1); return d; })();
 
+  /* ---------------- 単一案件モード：シート情報＋工種期間エディタ ---------------- */
+  function renderSingleProjectPanel(p) {
+    var meta = scheduleSheetMeta[p.id] || {};
+    var catRows = scheduleCategories.map(function (cat) {
+      var ph = phaseFor(p.id, cat);
+      return '<div class="phase-row">' +
+        '<i class="phase-row__dot" style="background:' + categoryColor(cat) + ';"></i>' +
+        '<span class="phase-row__name">' + esc(cat) + '</span>' +
+        '<input type="date" class="phase-row__date" data-phase-start="' + esc(cat) + '" value="' + (ph ? ph.startDate : "") + '" />' +
+        '<span class="phase-row__arrow">→</span>' +
+        '<input type="date" class="phase-row__date" data-phase-end="' + esc(cat) + '" value="' + (ph ? ph.endDate : "") + '" />' +
+        '<button class="icon-btn" data-phase-clear="' + esc(cat) + '" title="期間をクリア">' + ICON_TRASH + '</button>' +
+        '<button class="icon-btn" data-cat-del="' + esc(cat) + '" title="この工種を削除">✕</button>' +
+        '</div>';
+    }).join("");
+
+    return '<div class="single-panel">' +
+      '<div class="single-panel__head"><b>' + esc(p.name) + '</b>の工程表シート情報</div>' +
+      '<div class="sheet-meta-row">' +
+        '<label>作成日</label><input type="date" id="sheetPreparedDate" value="' + (meta.preparedDate || "") + '" />' +
+        '<button class="icon-btn" id="sheetPreparedClear" title="クリア">' + ICON_TRASH + '</button>' +
+        '<label style="margin-left:16px;">現場代理人</label><input type="text" id="sheetSiteManager" value="' + esc(meta.siteManager || "") + '" placeholder="氏名" style="width:140px;" />' +
+        '<button class="icon-btn" id="sheetSiteManagerClear" title="クリア">' + ICON_TRASH + '</button>' +
+      '</div>' +
+      '<div class="single-panel__subhead">工種ごとの期間(○日 → ○日)</div>' +
+      '<div class="phase-list">' + catRows + '</div>' +
+      '<div class="add-cat-row"><input type="text" id="newCatInput" placeholder="工種を追加(例: 塗装工事)" /><button class="btn btn--ghost btn--sm" id="addCatBtn">＋ 追加</button></div>' +
+      '</div>';
+  }
+
+  function bindSingleProjectPanelEvents(p) {
+    document.getElementById("sheetPreparedDate").addEventListener("change", function () {
+      var next = Object.assign({}, scheduleSheetMeta);
+      next[p.id] = Object.assign({}, next[p.id], { preparedDate: this.value });
+      persistSheetMeta(next);
+    });
+    document.getElementById("sheetPreparedClear").addEventListener("click", function () {
+      var next = Object.assign({}, scheduleSheetMeta);
+      next[p.id] = Object.assign({}, next[p.id], { preparedDate: "" });
+      persistSheetMeta(next).then(function () { renderActive(); });
+    });
+    document.getElementById("sheetSiteManager").addEventListener("change", function () {
+      var next = Object.assign({}, scheduleSheetMeta);
+      next[p.id] = Object.assign({}, next[p.id], { siteManager: this.value });
+      persistSheetMeta(next);
+    });
+    document.getElementById("sheetSiteManagerClear").addEventListener("click", function () {
+      var next = Object.assign({}, scheduleSheetMeta);
+      next[p.id] = Object.assign({}, next[p.id], { siteManager: "" });
+      persistSheetMeta(next).then(function () { renderActive(); });
+    });
+
+    function upsertPhase(cat, patch) {
+      var next = schedulePhases.slice();
+      var existing = next.find(function (ph) { return ph.projectId === p.id && ph.category === cat; });
+      if (existing) { Object.assign(existing, patch); }
+      else { next.push(Object.assign({ id: scheduleUid(), projectId: p.id, category: cat, startDate: "", endDate: "" }, patch)); }
+      persistPhases(next).then(function () { renderActive(); });
+    }
+    document.querySelectorAll("[data-phase-start]").forEach(function (inp) {
+      inp.addEventListener("change", function () { upsertPhase(inp.getAttribute("data-phase-start"), { startDate: inp.value }); });
+    });
+    document.querySelectorAll("[data-phase-end]").forEach(function (inp) {
+      inp.addEventListener("change", function () { upsertPhase(inp.getAttribute("data-phase-end"), { endDate: inp.value }); });
+    });
+    document.querySelectorAll("[data-phase-clear]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var cat = btn.getAttribute("data-phase-clear");
+        var next = schedulePhases.filter(function (ph) { return !(ph.projectId === p.id && ph.category === cat); });
+        persistPhases(next).then(function () { renderActive(); });
+      });
+    });
+    document.querySelectorAll("[data-cat-del]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var cat = btn.getAttribute("data-cat-del");
+        if (!confirm('工種「' + cat + '」を削除します。全案件のこの工種の期間データも消えます。よろしいですか？')) return;
+        persistCategories(scheduleCategories.filter(function (c) { return c !== cat; }));
+        persistPhases(schedulePhases.filter(function (ph) { return ph.category !== cat; })).then(function () { renderActive(); });
+      });
+    });
+    document.getElementById("addCatBtn").addEventListener("click", function () {
+      var v = document.getElementById("newCatInput").value.trim();
+      if (!v) return;
+      if (scheduleCategories.indexOf(v) !== -1) { showToastLocal("すでに存在する工種です"); return; }
+      persistCategories(scheduleCategories.concat([v])).then(function () { renderActive(); });
+    });
+  }
+
+  /* ---------------- 単一案件モード：備考(履歴形式) ---------------- */
+  var REMARK_TYPES = ["打ち合わせ","社内検査","監理者検査","その他"];
+  function renderRemarksSection(p) {
+    var list = scheduleRemarks.filter(function (r) { return r.projectId === p.id; }).sort(function (a,b) { return (a.date||"") < (b.date||"") ? 1 : -1; });
+    var typeOpts = REMARK_TYPES.map(function (t) { return '<option value="' + t + '">' + t + '</option>'; }).join("");
+    var addRow =
+      '<div class="remark-add-row">' +
+        '<select id="remarkType">' + typeOpts + '</select>' +
+        '<input type="date" id="remarkDate" value="' + toISO(new Date()) + '" />' +
+        '<textarea id="remarkContent" rows="2" placeholder="例: 完了検査時に提示する書類の確認 など"></textarea>' +
+        '<button class="btn btn--primary btn--sm" id="remarkAddBtn">追加</button>' +
+      '</div>';
+    var listHtml = !list.length
+      ? '<div class="empty-line" style="padding:16px 0;">まだ備考が登録されていません</div>'
+      : list.map(function (r) {
+          return '<div class="remark-row"><div class="remark-row__head"><span class="remark-row__type">' + esc(r.type) + '</span><span class="remark-row__date">' + esc(fmtDateFull(r.date)) + '</span>' +
+            '<button class="icon-btn" data-remark-edit="' + r.id + '" title="編集">' + ICON_PENCIL + '</button>' +
+            '<button class="icon-btn" data-remark-del="' + r.id + '" title="削除">' + ICON_TRASH + '</button></div>' +
+            '<div class="remark-row__content">' + esc(r.content) + '</div></div>';
+        }).join("");
+    return '<div class="single-panel" style="margin-top:14px;"><div class="single-panel__head">備考(打ち合わせ・社内検査・監理者検査など)</div>' + addRow + '<div class="remark-list">' + listHtml + '</div></div>';
+  }
+
+  function bindRemarksEvents(p) {
+    var editingId = null;
+    function submit() {
+      var type = document.getElementById("remarkType").value;
+      var date = document.getElementById("remarkDate").value;
+      var content = document.getElementById("remarkContent").value.trim();
+      if (!content) { showToastLocal("内容を入力してください"); return; }
+      var next;
+      if (editingId) {
+        var id = editingId;
+        next = scheduleRemarks.map(function (r) { return r.id === id ? Object.assign({}, r, { type: type, date: date, content: content }) : r; });
+      } else {
+        next = scheduleRemarks.concat([{ id: scheduleUid(), projectId: p.id, type: type, date: date, content: content, createdAt: Date.now() }]);
+      }
+      persistRemarks(next).then(function () { renderActive(); });
+    }
+    document.getElementById("remarkAddBtn").addEventListener("click", submit);
+    document.querySelectorAll("[data-remark-del]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-remark-del");
+        if (!confirm("この備考を削除します。よろしいですか？")) return;
+        persistRemarks(scheduleRemarks.filter(function (r) { return r.id !== id; })).then(function () { renderActive(); });
+      });
+    });
+    document.querySelectorAll("[data-remark-edit]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-remark-edit");
+        var target = scheduleRemarks.find(function (r) { return r.id === id; });
+        if (!target) return;
+        editingId = id;
+        document.getElementById("remarkType").value = target.type;
+        document.getElementById("remarkDate").value = target.date;
+        document.getElementById("remarkContent").value = target.content;
+        document.getElementById("remarkAddBtn").textContent = "更新";
+        document.getElementById("remarkContent").focus();
+      });
+    });
+  }
+
+  function showToastLocal(msg) {
+    var el = document.getElementById("calArea");
+    if (!el) return;
+    var toast = document.createElement("div");
+    toast.textContent = msg;
+    toast.style.cssText = "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e1b2e;color:#fff;padding:9px 16px;border-radius:8px;font-size:12.5px;z-index:9999;";
+    document.body.appendChild(toast);
+    setTimeout(function () { toast.remove(); }, 2000);
+  }
+
   function renderMonthUI() {
     document.getElementById("calToolbar").innerHTML =
       '<button class="btn-nav" id="mPrev">‹</button>' +
@@ -632,6 +934,9 @@
     var monthEnd = toDateOnly(new Date(y, m, daysInMonth));
     var dowNames = ["日","月","火","水","木","金","土"];
     var tasks = loadTasks();
+
+    var selectedProjects = allProjects.filter(function (p) { return selected[p.id]; });
+    if (selectedProjects.length === 1) { renderMonthBodySingle(selectedProjects[0], y, m, daysInMonth, dowNames); return; }
 
     var rows = allProjects.filter(function (p) { return selected[p.id] && p._end >= monthStart && p._start <= monthEnd; });
 
@@ -676,7 +981,44 @@
     });
   }
 
-  /* ---------------- 週間工程表 ---------------- */
+  function renderMonthBodySingle(p, y, m, daysInMonth, dowNames) {
+    var area = document.getElementById("calArea");
+    var headHtml = '<tr><th class="rowhead">工種</th>';
+    for (var d = 1; d <= daysInMonth; d++) {
+      var dow = new Date(y, m, d).getDay();
+      headHtml += '<th class="' + (dow===0||dow===6?"weekend":"") + '">' + d + '<br>' + dowNames[dow] + '</th>';
+    }
+    headHtml += '</tr>';
+
+    var bodyHtml = scheduleCategories.map(function (cat) {
+      var ph = phaseFor(p.id, cat);
+      var rowHtml = '<tr><td class="rowhead">' + esc(cat) + '</td>';
+      for (var dd2 = 1; dd2 <= daysInMonth; dd2++) {
+        var dd = toDateOnly(new Date(y, m, dd2));
+        var on = ph && ph.startDate && ph.endDate && dd >= toDateOnly(new Date(ph.startDate+"T00:00:00")) && dd <= toDateOnly(new Date(ph.endDate+"T00:00:00"));
+        if (!on) { rowHtml += '<td></td>'; continue; }
+        var iso = toISO(dd);
+        var hasNote = !!categoryNoteFor(p.id, cat, iso);
+        rowHtml += '<td class="cell-on' + (hasNote?" has-task":"") + '" style="background:' + categoryColor(cat) + ';" data-cat-day="' + esc(cat) + '|' + iso + '"></td>';
+      }
+      rowHtml += '</tr>';
+      return rowHtml;
+    }).join("");
+
+    area.innerHTML =
+      renderSingleProjectPanel(p) +
+      '<table class="matrix" style="margin-top:10px;"><thead>' + headHtml + '</thead><tbody>' + bodyHtml + '</tbody></table>' +
+      renderRemarksSection(p);
+
+    bindSingleProjectPanelEvents(p);
+    bindRemarksEvents(p);
+    Array.prototype.forEach.call(area.querySelectorAll("[data-cat-day]"), function (el) {
+      el.addEventListener("click", function () {
+        var parts = el.getAttribute("data-cat-day").split("|");
+        openCategoryDayTask(p, parts[0], parts[1]);
+      });
+    });
+  }
   var weekView = (function () { var d = new Date(); return addDays(d, -d.getDay()); })();
 
   function renderWeekUI() {
@@ -698,6 +1040,9 @@
     for (var i = 0; i < 7; i++) days.push(toDateOnly(addDays(weekView, i)));
     var weekStart = days[0], weekEnd = days[6];
     var tasks = loadTasks();
+
+    var selectedProjects = allProjects.filter(function (p) { return selected[p.id]; });
+    if (selectedProjects.length === 1) { renderWeekBodySingle(selectedProjects[0], days, dowNames); return; }
 
     var rows = allProjects.filter(function (p) { return selected[p.id] && p._end >= weekStart && p._start <= weekEnd; });
 
@@ -742,6 +1087,45 @@
     });
   }
 
+  function renderWeekBodySingle(p, days, dowNames) {
+    var area = document.getElementById("calArea");
+    var headHtml = '<tr><th class="rowhead">工種</th>' + days.map(function (d) {
+      var dow = d.getDay();
+      return '<th class="' + (dow===0||dow===6?"weekend":"") + '">' + (d.getMonth()+1) + '/' + d.getDate() + '(' + dowNames[dow] + ')</th>';
+    }).join("") + '</tr>';
+
+    var bodyHtml = scheduleCategories.map(function (cat) {
+      var ph = phaseFor(p.id, cat);
+      var rowHtml = '<tr><td class="rowhead">' + esc(cat) + '</td>';
+      days.forEach(function (dd) {
+        var on = ph && ph.startDate && ph.endDate && dd >= toDateOnly(new Date(ph.startDate+"T00:00:00")) && dd <= toDateOnly(new Date(ph.endDate+"T00:00:00"));
+        if (!on) { rowHtml += '<td></td>'; return; }
+        var iso = toISO(dd);
+        var note = categoryNoteFor(p.id, cat, iso);
+        rowHtml += '<td class="week-cell" style="background:' + categoryColor(cat) + '22;border-left:3px solid ' + categoryColor(cat) + ';" data-cat-day="' + esc(cat) + '|' + iso + '">' +
+          '<div class="wc-name" style="color:' + categoryColor(cat) + ';">' + esc(cat) + '</div>' +
+          (note && note.content ? '<div class="wc-content">' + esc(note.content) + '</div>' : '<div class="wc-content wc-placeholder">＋ クリックして工事内容を入力</div>') +
+          '</td>';
+      });
+      rowHtml += '</tr>';
+      return rowHtml;
+    }).join("");
+
+    area.innerHTML =
+      renderSingleProjectPanel(p) +
+      '<table class="matrix" style="margin-top:10px;"><thead>' + headHtml + '</thead><tbody>' + bodyHtml + '</tbody></table>' +
+      renderRemarksSection(p);
+
+    bindSingleProjectPanelEvents(p);
+    bindRemarksEvents(p);
+    Array.prototype.forEach.call(area.querySelectorAll("[data-cat-day]"), function (el) {
+      el.addEventListener("click", function () {
+        var parts = el.getAttribute("data-cat-day").split("|");
+        openCategoryDayTask(p, parts[0], parts[1]);
+      });
+    });
+  }
+
   /* ---------------- カレンダーアイコン(SVG差し込み) ---------------- */
   document.getElementById("calIconWrap").innerHTML =
     '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>';
@@ -749,16 +1133,49 @@
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg> Googleカレンダーを開く';
 
   /* ---------------- 初期化 ---------------- */
+  /* ---------------- 印刷 ---------------- */
+  function applyPrintSize() {
+    var v = document.getElementById("printSize").value;
+    var parts = v.split("-"); // [A3|A4, landscape|portrait]
+    document.getElementById("printSizeStyle").textContent =
+      "@media print { @page { size: " + parts[0] + " " + parts[1] + "; margin: 8mm; } }";
+  }
+  document.getElementById("printSize").addEventListener("change", applyPrintSize);
+  document.getElementById("btnPrintSchedule").addEventListener("click", function () {
+    applyPrintSize();
+    setTimeout(function () { window.print(); }, 80);
+  });
+  applyPrintSize();
+
   renderTabs();
   document.getElementById("calArea").innerHTML = '<div class="empty-line">読み込み中...</div>';
 
-  Promise.all([storageGet(PROJECTS_KEY), storageGet(TASKS_KEY)]).then(function (res) {
-    var pData = null, tData = null;
+  var scheduleCategories = ["建築工事","木工事","外壁工事","電気工事","設備工事","その他"];
+  var schedulePhases = [];
+  var scheduleRemarks = [];
+  var scheduleSheetMeta = {};
+  var scheduleCategoryNotes = [];
+
+  Promise.all([
+    storageGet(PROJECTS_KEY), storageGet(TASKS_KEY),
+    storageGet(CATEGORIES_KEY), storageGet(PHASES_KEY), storageGet(REMARKS_KEY), storageGet(SHEET_META_KEY), storageGet(CATEGORY_NOTES_KEY)
+  ]).then(function (res) {
+    var pData = null, tData = null, catData = null, phData = null, rmData = null, smData = null, cnData = null;
     try { pData = res[0] && res[0].value ? JSON.parse(res[0].value) : null; } catch (e) {}
     try { tData = res[1] && res[1].value ? JSON.parse(res[1].value) : null; } catch (e) {}
+    try { catData = res[2] && res[2].value ? JSON.parse(res[2].value) : null; } catch (e) {}
+    try { phData = res[3] && res[3].value ? JSON.parse(res[3].value) : null; } catch (e) {}
+    try { rmData = res[4] && res[4].value ? JSON.parse(res[4].value) : null; } catch (e) {}
+    try { smData = res[5] && res[5].value ? JSON.parse(res[5].value) : null; } catch (e) {}
+    try { cnData = res[6] && res[6].value ? JSON.parse(res[6].value) : null; } catch (e) {}
 
     var projects = Array.isArray(pData) ? pData : [];
     tasksCache = Array.isArray(tData) ? tData : [];
+    if (Array.isArray(catData) && catData.length) scheduleCategories = catData;
+    schedulePhases = Array.isArray(phData) ? phData : [];
+    scheduleRemarks = Array.isArray(rmData) ? rmData : [];
+    scheduleSheetMeta = (smData && typeof smData === "object") ? smData : {};
+    scheduleCategoryNotes = Array.isArray(cnData) ? cnData : [];
 
     allProjects = projects.filter(function (p) { return p.startDate || p.completionDate; }).map(function (p) {
       var s = p.startDate || p.completionDate;

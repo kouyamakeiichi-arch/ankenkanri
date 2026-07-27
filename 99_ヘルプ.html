@@ -155,80 +155,36 @@
   </div>
 
   <div class="toc">
-    <a href="#money-flow">お金の流れ(契約〜請求)</a>
-    <a href="#terms">用語の意味</a>
     <a href="#modules">画面ごとの使い方</a>
   </div>
 
-  <div class="card" id="money-flow">
-    <h2>💰 お金の流れ(契約金額 → 発注 → 支払い → 請求)</h2>
-    <p class="lead">1つの案件の中でお金がどう動くか、塗装工事を例に見てみましょう。</p>
-
-    <div class="flow">
-      <div class="flow-step">
-        <div class="flow-step__badge" style="background:#6C47FF;">①</div>
-        <div class="flow-step__body">
-          <div class="flow-step__title">案件の契約金額</div>
-          <div class="flow-step__desc">お客さんと契約した金額。①案件管理に入力する。</div>
-        </div>
-        <div class="flow-step__amount">100万円<span style="font-size:11px;color:var(--text-tertiary);font-weight:400;">(税別)</span></div>
-      </div>
-      <div class="flow-arrow">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m0 0-5-5m5 5 5-5"/></svg>
-      </div>
-      <div class="flow-step">
-        <div class="flow-step__badge" style="background:#F59E0B;">②</div>
-        <div class="flow-step__body">
-          <div class="flow-step__title">発注金額</div>
-          <div class="flow-step__desc">塗装屋さんに工事を依頼する金額。⑤金銭管理「発注」に入力する。</div>
-        </div>
-        <div class="flow-step__amount">75万円<span style="font-size:11px;color:var(--text-tertiary);font-weight:400;">(税別)</span></div>
-      </div>
-      <div class="flow-arrow">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m0 0-5-5m5 5 5-5"/></svg>
-      </div>
-      <div class="flow-step">
-        <div class="flow-step__badge" style="background:#22D3EE;">③</div>
-        <div class="flow-step__body">
-          <div class="flow-step__title">支払い金額</div>
-          <div class="flow-step__desc">塗装屋さんに実際に振り込む金額。基本は②と同じ。⑤金銭管理「支払い」に入力する。</div>
-        </div>
-        <div class="flow-step__amount">75万円<span style="font-size:11px;color:var(--text-tertiary);font-weight:400;">(税別)</span></div>
-      </div>
-      <div class="flow-arrow">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m0 0-5-5m5 5 5-5"/></svg>
-      </div>
-      <div class="flow-step">
-        <div class="flow-step__badge" style="background:#10B981;">④</div>
-        <div class="flow-step__body">
-          <div class="flow-step__title">請求金額(売上)</div>
-          <div class="flow-step__desc">お客さんに請求する金額。基本は①と同じ。⑤金銭管理「請求」に入力する。</div>
-        </div>
-        <div class="flow-step__amount">100万円<span style="font-size:11px;color:var(--text-tertiary);font-weight:400;">(税別)</span></div>
-      </div>
-    </div>
-
-    <div class="profit-box">
-      <div class="profit-box__label">この案件の粗利(儲け) = ④請求100万円 − ②発注75万円<span style="font-weight:400;">(いずれも税別)</span></div>
-      <div class="profit-box__value">25万円<span style="font-size:13px;color:var(--primary-dark);font-weight:700;">(税別)</span></div>
-    </div>
+  <div class="card" id="schedule-usage">
+    <h2>🗓 ⑦工程表・カレンダーの使い方</h2>
+    <p class="lead">総合・月間・週間の3つの表示と、案件を1つに絞ったときだけ使える「単一案件モード」があります。</p>
+    <table class="field-table">
+      <tr><th style="width:130px;">表示</th><th>内容</th></tr>
+      <tr><td><b>総合工程表</b></td><td>全案件をガントチャートで俯瞰。表示期間(3/6/12ヶ月)を切り替え可能。</td></tr>
+      <tr><td><b>月間工程表</b></td><td>1ヶ月分をマス目で表示。案件ごとに1行、着工日〜完工日が色付きで表示される。</td></tr>
+      <tr><td><b>週間工程表</b></td><td>1週間分を表示。日付セルに、その日の工事内容をメモできる。</td></tr>
+    </table>
 
     <div class="note">
-      ⚠️ 現在のアプリでは①〜④はそれぞれ別々に入力する仕組みです(自動で連動はしません)。⑤金銭管理の「請求」タブでは、同じ案件に紐づく発注金額の合計と請求金額から、粗利を自動計算して表示します。
+      💡 月間・週間表示で、左の「案件で絞り込み」から<b>案件を1つだけ</b>選ぶと、表示が自動的に「単一案件モード」に切り替わります。
     </div>
-  </div>
 
-  <div class="card" id="terms">
-    <h2>📖 用語の意味</h2>
-    <table class="field-table">
-      <tr><th style="width:120px;">用語</th><th>意味</th></tr>
-      <tr><td><b>契約金額</b></td><td>お客さんと契約した工事代金。①案件管理に入力。</td></tr>
-      <tr><td><b>発注金額</b></td><td>協力業者(職人・工務店など)に払う原価。⑤発注タブに入力。</td></tr>
-      <tr><td><b>支払い</b></td><td>発注金額を実際に振り込む記録。分割払いの場合は複数登録してもよい。</td></tr>
-      <tr><td><b>請求(売上)</b></td><td>お客さんに送る請求金額。基本的に契約金額と同じ。</td></tr>
-      <tr><td><b>粗利</b></td><td>請求金額 − 発注金額の合計。会社に残る利益のおおまかな目安。</td></tr>
-      <tr><td><b>回収率</b></td><td>請求金額のうち、実際に入金された割合(%)。</td></tr>
-    </table>
+    <div class="single-panel-help">
+      <p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:14px 0 8px;"><b>単一案件モードでできること</b></p>
+      <table class="field-table">
+        <tr><th style="width:150px;">項目</th><th>内容</th></tr>
+        <tr><td>工種ごとの行</td><td>案件ごとの1行ではなく、建築工事・木工事・外壁工事・電気工事・設備工事・その他などの工種ごとに行が分かれる。工種は自由に追加・削除できる。</td></tr>
+        <tr><td>工種の期間設定</td><td>各工種に「開始日 → 終了日」を入力すると、その期間がカレンダーに色付きで表示される。</td></tr>
+        <tr><td>日付セルへのメモ</td><td>色が付いた日付セルをクリックすると、その日の工事内容(例: 型枠組立、配線敷設など)を入力・編集・削除できる。</td></tr>
+        <tr><td>備考(履歴形式)</td><td>打ち合わせ・社内検査・監理者検査・その他を種類分けして、日付と内容を何度でも登録できる。あとから編集・削除も可能。</td></tr>
+        <tr><td>作成日・現場代理人</td><td>この工程表シート自体の作成日と現場代理人を登録。クリアボタンで消せる。</td></tr>
+      </table>
+    </div>
+
+    <p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:16px 0 0;"><b>印刷</b>：画面右上の用紙サイズ(A3よこ・A3たて・A4よこ・A4たてから選択、A3よこがおすすめ)を選んで「🖨 印刷」を押すと、表示中の工程表がそのまま印刷・PDF保存できます。</p>
   </div>
 
   <div class="card" id="modules">
@@ -240,6 +196,11 @@
       <a class="module-item" href="03_ファイル管理.html"><span class="module-item__dot" style="background:#34D399;"></span>ファイル管理</a>
       <a class="module-item" href="04_日報社内申請.html"><span class="module-item__dot" style="background:#F59E0B;"></span>日報・社内申請</a>
       <a class="module-item" href="05_金銭管理.html"><span class="module-item__dot" style="background:#F472B6;"></span>金銭管理</a>
+      <a class="module-item" href="06_設定.html"><span class="module-item__dot" style="background:#94A3B8;"></span>設定</a>
+      <a class="module-item" href="07_工程表カレンダー.html"><span class="module-item__dot" style="background:#22D3EE;"></span>工程表・カレンダー</a>
+      <a class="module-item" href="08_見積実行予算.html"><span class="module-item__dot" style="background:#DC2626;"></span>見積・実行予算</a>
+      <a class="module-item" href="09_見積予算.html"><span class="module-item__dot" style="background:#7C3AED;"></span>見積・予算(表計算式)</a>
+      <a class="module-item" href="10_簡易見積書.html"><span class="module-item__dot" style="background:#0EA5E9;"></span>簡易見積書</a>
     </div>
   </div>
 </div>
