@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-10-3" />
+<meta name="app-build" content="2026-07-27-1" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -89,6 +89,14 @@
   .project-card__meta { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 12.5px; color: var(--text-secondary); }
   .project-card__meta span { display: flex; align-items: center; gap: 4px; }
   .project-card__footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+  .project-card__na { font-size: 12px; color: var(--text-secondary); background: var(--bg); border-radius: 8px; padding: 6px 9px; margin-top: 8px; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .project-card__na:hover { background: var(--primary-soft); }
+  .project-card__na b { color: var(--primary); font-weight: 700; }
+  .next-action-cell { cursor: pointer; font-size: 12.5px; color: var(--text-secondary); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
+  .next-action-cell:hover { color: var(--primary); text-decoration: underline; }
+  .next-action-cell b { color: var(--primary); font-weight: 700; }
+  .next-action-cell--empty { color: var(--text-tertiary); cursor: default; }
+  .next-action-cell--empty:hover { color: var(--text-tertiary); text-decoration: none; }
   .amount-text { font-family: 'Courier New', monospace; font-weight: 700; color: var(--text); font-size: 13px; }
 
   @media (max-width: 860px) {
@@ -164,6 +172,16 @@
   .detail-list-row .main { flex: 1; min-width: 0; }
   .detail-list-row .main .t1 { font-weight: 700; }
   .detail-list-row .main .t2 { color: var(--text-tertiary); font-size: 11.5px; margin-top: 1px; }
+  .na-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .na-row:last-child { border-bottom: none; }
+  .na-row input[type=checkbox] { margin-top: 3px; width: 16px; height: 16px; flex-shrink: 0; cursor: pointer; }
+  .na-row .main { flex: 1; min-width: 0; }
+  .na-row .main .content { font-size: 13.5px; white-space: pre-wrap; }
+  .na-row.is-done .main .content { text-decoration: line-through; color: var(--text-tertiary); }
+  .na-row .main .meta { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; }
+  .na-row .meta b { color: var(--primary); }
+  .na-row.is-done .meta b { color: var(--text-tertiary); }
+  .na-row .actions { display: flex; gap: 4px; flex-shrink: 0; }
   .detail-empty { color: var(--text-tertiary); font-size: 13px; padding: 20px 0; text-align: center; }
   .detail-file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 14px; }
   .detail-file-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px; position: relative; }
@@ -297,6 +315,7 @@
   <div class="type-tabs" id="typeTabs"></div>
 
   <div class="filter-bar">
+    <button class="link-reset" id="btnFilterMode" style="margin-right:2px;" title="ステータス絞り込みの初期状態を切り替えます(このブラウザだけの設定です)"></button>
     <div class="status-chips" id="statusChips"></div>
     <label class="toggle-check"><input type="checkbox" id="hideDoneCheckbox" /> 完了以外</label>
     <button class="link-reset" id="btnReset" style="display:none">
@@ -325,6 +344,7 @@
   /* 案件詳細ハブで参照する他モジュールのキー(読み取り・一部書き込み) */
   var FILES_KEY = "taiho_files_v1";
   var SCHEDULE_TASKS_KEY = "taiho_schedule_tasks_v1";
+  var NEXT_ACTIONS_KEY = "taiho_next_actions_v1";
   var CONTRACTORS_KEY = "taiho_contractors_v1";
   var ORDERS_KEY = "taiho_orders_v1";
   var BILLINGS_KEY = "taiho_billings_v1";
@@ -510,7 +530,7 @@
   }
 
   var state = {
-    projects: [], customers: [], buildings: [], loading: true, search: "", activeType: "all", activeStatus: [], hideDone: false,
+    projects: [], customers: [], buildings: [], nextActions: [], loading: true, search: "", activeType: "all", activeStatus: [], hideDone: false,
     /* 案件詳細ハブ用 */
     files: [], scheduleTasks: [], contractors: [], orders: [], billings: [], worklogs: [], requests: [],
     secondaryLoaded: false, detailProjectId: null, detailTab: "info"
@@ -552,11 +572,34 @@
     return max + 1;
   }
 
+  /* ---------------- ネクストアクション(案件ごとの次回アポ・メモの履歴) ---------------- */
+  function nextActionsFor(projectId) {
+    return state.nextActions.filter(function (a) { return a.projectId === projectId; });
+  }
+  function nextActionSummary(projectId) {
+    var list = nextActionsFor(projectId).filter(function (a) { return !a.done; });
+    if (!list.length) return null;
+    list.sort(function (a, b) {
+      if (a.dueDate && b.dueDate) return a.dueDate < b.dueDate ? -1 : 1;
+      if (a.dueDate) return -1;
+      if (b.dueDate) return 1;
+      return b.createdAt - a.createdAt;
+    });
+    return list[0];
+  }
+  function persistNextActions(next) {
+    state.nextActions = next;
+    return storageSet(NEXT_ACTIONS_KEY, JSON.stringify(next));
+  }
+
   function computeFiltered() {
     var q = state.search.trim().toLowerCase();
     return state.projects
       .filter(function (p) { return state.activeType === "all" ? true : p.typeId === state.activeType; })
-      .filter(function (p) { return state.activeStatus.length ? state.activeStatus.indexOf(p.status) !== -1 : true; })
+      .filter(function (p) {
+        if (getFilterMode() === "exclude") return state.activeStatus.indexOf(p.status) === -1;
+        return state.activeStatus.length ? state.activeStatus.indexOf(p.status) !== -1 : true;
+      })
       .filter(function (p) { return state.hideDone ? !statusOf(p.status).done : true; })
       .filter(function (p) {
         if (!q) return true;
@@ -585,11 +628,37 @@
     });
   }
 
+  var FILTER_MODE_KEY = "taiho_status_filter_mode_v1"; // ブラウザごとの好み(localStorageのみ、他の人には影響しません)
+  function getFilterMode() {
+    try { return localStorage.getItem(FILTER_MODE_KEY) || "include"; } catch (e) { return "include"; }
+  }
+  function setFilterMode(mode) {
+    try { localStorage.setItem(FILTER_MODE_KEY, mode); } catch (e) {}
+  }
+  function renderFilterModeBtn() {
+    var btn = document.getElementById("btnFilterMode");
+    var mode = getFilterMode();
+    btn.innerHTML = mode === "exclude"
+      ? '🔀 絞り込み方式：除外(まず全部表示 → 外したいものをクリック)'
+      : '🔀 絞り込み方式：選択(まず全部非表示 → 見たいものをクリック)';
+  }
+  document.getElementById("btnFilterMode").addEventListener("click", function () {
+    var next = getFilterMode() === "exclude" ? "include" : "exclude";
+    setFilterMode(next);
+    state.activeStatus = [];
+    renderFilterModeBtn();
+    renderStatusChips();
+    renderResults();
+    syncResetVisibility();
+  });
+
   function renderStatusChips() {
     var el = document.getElementById("statusChips");
     var html = "";
+    var mode = getFilterMode();
     STATUS_LIST.forEach(function (s) {
-      html += '<button class="status-chip' + (state.activeStatus.indexOf(s.id)!==-1?" is-active":"") + '" style="--chip-color:' + s.color + '" data-status="' + s.id + '">' + esc(s.label) + '</button>';
+      var isOn = mode === "exclude" ? (state.activeStatus.indexOf(s.id) === -1) : (state.activeStatus.indexOf(s.id) !== -1);
+      html += '<button class="status-chip' + (isOn ? " is-active" : "") + '" style="--chip-color:' + s.color + '" data-status="' + s.id + '">' + esc(s.label) + '</button>';
     });
     el.innerHTML = html;
     el.querySelectorAll(".status-chip").forEach(function (btn) {
@@ -636,11 +705,18 @@
     var tableRows = "", cardItems = "";
     filtered.forEach(function (p) {
       var t = typeOf(p.typeId);
+      var na = nextActionSummary(p.id);
+      var naHtml = na
+        ? '<span class="next-action-cell" data-detail-na="' + p.id + '" title="' + esc(na.content) + '">' +
+            (na.dueDate ? '<b>' + esc(fmtDateShort(na.dueDate)) + '</b> ' : '') + esc(na.content) +
+          '</span>'
+        : '<span class="next-action-cell next-action-cell--empty" data-detail-na="' + p.id + '">-</span>';
       tableRows +=
         '<tr>' +
           '<td class="cell-no">' + esc(p.no) + '</td>' +
           '<td><div class="cell-name-wrap"><span class="type-bar" style="--bar-color:' + t.color + '"></span>' +
             '<button class="cell-name" data-detail="' + p.id + '">' + esc(p.name) + '</button></div></td>' +
+          '<td>' + naHtml + '</td>' +
           '<td><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span></td>' +
           '<td>' + statusPillHtml(p.id, p.status, "") + '</td>' +
           '<td>' + esc(p.customerName || "-") + '</td>' +
@@ -654,13 +730,14 @@
           '<button class="icon-btn" data-edit="' + p.id + '" aria-label="編集">' + ICON_PENCIL + '</button></div>' +
           '<div class="project-card__meta"><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span>' +
           (p.customerName ? '<span>' + ICON_USER + esc(p.customerName) + '</span>' : '') + '</div>' +
+          (na ? '<div class="project-card__na" data-detail-na="' + p.id + '">' + (na.dueDate ? '<b>' + esc(fmtDateShort(na.dueDate)) + '</b> ' : '') + esc(na.content) + '</div>' : '') +
           '<div class="project-card__footer">' + statusPillHtml(p.id, p.status, "sm") + '</div>' +
         '</div>';
     });
 
     area.innerHTML =
       '<div class="table-wrap"><table class="projects-table"><thead><tr>' +
-      '<th>No</th><th>案件名</th><th>案件タイプ</th><th>ステータス</th><th>顧客</th><th></th>' +
+      '<th>No</th><th>案件名</th><th>ネクストアクション</th><th>案件タイプ</th><th>ステータス</th><th>顧客</th><th></th>' +
       '</tr></thead><tbody>' + tableRows + '</tbody></table></div>' +
       '<div class="card-list">' + cardItems + '</div>';
 
@@ -692,6 +769,13 @@
         var id = el.getAttribute("data-detail");
         var p = state.projects.find(function (x) { return x.id === id; });
         if (p) openDetailView(p.id);
+      });
+    });
+    area.querySelectorAll("[data-detail-na]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var id = el.getAttribute("data-detail-na");
+        var p = state.projects.find(function (x) { return x.id === id; });
+        if (p) openDetailView(p.id, "nextaction");
       });
     });
     area.querySelectorAll("[data-status-change]").forEach(function (el) {
@@ -881,13 +965,14 @@
      案件詳細ハブ画面
      ===================================================================== */
   var DETAIL_TABS = [
-    { id: "info",     label: "基本情報" },
-    { id: "quote",    label: "見積" },
-    { id: "customer", label: "顧客・建物" },
-    { id: "files",    label: "ファイル" },
-    { id: "schedule", label: "工程表" },
-    { id: "money",    label: "金銭" },
-    { id: "worklog",  label: "日報・申請" }
+    { id: "info",       label: "基本情報" },
+    { id: "nextaction", label: "ネクストアクション" },
+    { id: "quote",      label: "見積" },
+    { id: "customer",   label: "顧客・建物" },
+    { id: "files",      label: "ファイル" },
+    { id: "schedule",   label: "工程表" },
+    { id: "money",      label: "金銭" },
+    { id: "worklog",    label: "日報・申請" }
   ];
 
   function loadSecondaryData() {
@@ -910,9 +995,9 @@
 
   function contractorName(id) { var c = state.contractors.find(function (x) { return x.id === id; }); return c ? c.name : "-"; }
 
-  function openDetailView(projectId) {
+  function openDetailView(projectId, tab) {
     state.detailProjectId = projectId;
-    state.detailTab = "info";
+    state.detailTab = tab || "info";
     var root = document.getElementById("detailRoot");
     root.innerHTML = '<div class="detail-page"><div class="detail-page__inner"><div class="loading-wrap"><span class="spinner"></span> 読み込み中...</div></div></div>';
     loadSecondaryData().then(function () { renderDetailView(); });
@@ -959,6 +1044,7 @@
   function renderDetailPanel(p) {
     var panel = document.getElementById("detailPanel");
     if (state.detailTab === "info") return renderDetailInfo(panel, p);
+    if (state.detailTab === "nextaction") return renderDetailNextActions(panel, p);
     if (state.detailTab === "quote") return renderDetailQuote(panel, p);
     if (state.detailTab === "customer") return renderDetailCustomer(panel, p);
     if (state.detailTab === "files") return renderDetailFiles(panel, p);
@@ -983,6 +1069,104 @@
   }
   function infoItem(label, value) {
     return '<div class="detail-info-item"><div class="l">' + esc(label) + '</div><div class="v">' + esc(value) + '</div></div>';
+  }
+
+  /* ---- ネクストアクションタブ(次回アポ・メモの履歴) ---- */
+  function renderDetailNextActions(panel, p) {
+    var list = nextActionsFor(p.id).slice().sort(function (a, b) {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      if (a.dueDate && b.dueDate) return a.dueDate < b.dueDate ? -1 : 1;
+      if (a.dueDate) return -1;
+      if (b.dueDate) return 1;
+      return b.createdAt - a.createdAt;
+    });
+
+    var html =
+      '<div class="detail-task-add">' +
+        '<input type="date" id="naDateInput" />' +
+        '<textarea id="naContentInput" rows="2" placeholder="例: 8/5 見積提出の約束、次回現場立会いの日程調整など"></textarea>' +
+        '<button class="btn btn--primary btn--sm" id="naAddBtn">追加</button>' +
+      '</div>' +
+      '<div class="detail-section-title">履歴(' + list.length + '件)</div>';
+
+    if (!list.length) {
+      html += '<div class="detail-empty">まだ登録されていません。上の欄から次回アポ・メモを追加できます。</div>';
+    } else {
+      html += list.map(function (a) {
+        return '<div class="na-row' + (a.done ? " is-done" : "") + '">' +
+          '<input type="checkbox" data-na-toggle="' + a.id + '"' + (a.done ? " checked" : "") + ' aria-label="完了" />' +
+          '<div class="main"><div class="content">' + esc(a.content) + '</div>' +
+          '<div class="meta">' + (a.dueDate ? '<b>' + esc(fmtDateShort(a.dueDate)) + '</b> ・ ' : '') + '登録 ' + esc(fmtDateTime(a.createdAt)) + (a.done && a.doneAt ? ' ・ 完了 ' + esc(fmtDateTime(a.doneAt)) : '') + '</div></div>' +
+          '<div class="actions">' +
+            '<button class="icon-btn" data-na-edit="' + a.id + '" title="編集">' + ICON_PENCIL + '</button>' +
+            '<button class="icon-btn" data-na-del="' + a.id + '" title="削除">' + ICON_TRASH + '</button>' +
+          '</div>' +
+        '</div>';
+      }).join("");
+    }
+    panel.innerHTML = html;
+    var naEditingId = null;
+
+    function doAddOrUpdate() {
+      var content = document.getElementById("naContentInput").value.trim();
+      var dueDate = document.getElementById("naDateInput").value;
+      if (!content) { showToast("内容を入力してください"); return; }
+      var next;
+      if (naEditingId) {
+        var editId = naEditingId;
+        next = state.nextActions.map(function (a) {
+          if (a.id !== editId) return a;
+          return Object.assign({}, a, { content: content, dueDate: dueDate || "" });
+        });
+      } else {
+        next = state.nextActions.slice();
+        next.push({ id: uid(), projectId: p.id, content: content, dueDate: dueDate || "", done: false, createdAt: Date.now(), doneAt: null });
+      }
+      persistNextActions(next).then(function () {
+        showToast(naEditingId ? "更新しました" : "追加しました");
+        renderDetailPanel(p);
+        renderResults();
+      });
+    }
+    document.getElementById("naAddBtn").addEventListener("click", doAddOrUpdate);
+
+    panel.querySelectorAll("[data-na-toggle]").forEach(function (chk) {
+      chk.addEventListener("change", function () {
+        var id = chk.getAttribute("data-na-toggle");
+        var next = state.nextActions.map(function (a) {
+          if (a.id !== id) return a;
+          return Object.assign({}, a, { done: chk.checked, doneAt: chk.checked ? Date.now() : null });
+        });
+        persistNextActions(next).then(function () {
+          renderDetailPanel(p);
+          renderResults();
+        });
+      });
+    });
+    panel.querySelectorAll("[data-na-del]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-na-del");
+        if (!confirm("この履歴を削除します。よろしいですか？")) return;
+        var next = state.nextActions.filter(function (a) { return a.id !== id; });
+        persistNextActions(next).then(function () {
+          showToast("削除しました");
+          renderDetailPanel(p);
+          renderResults();
+        });
+      });
+    });
+    panel.querySelectorAll("[data-na-edit]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-na-edit");
+        var target = state.nextActions.find(function (a) { return a.id === id; });
+        if (!target) return;
+        naEditingId = id;
+        document.getElementById("naContentInput").value = target.content;
+        document.getElementById("naDateInput").value = target.dueDate || "";
+        document.getElementById("naAddBtn").textContent = "更新";
+        document.getElementById("naContentInput").focus();
+      });
+    });
   }
 
   /* ---- 見積タブ(独立ツールへのリンク) ---- */
@@ -1269,7 +1453,7 @@
     state.search = ""; state.activeType = "all"; state.activeStatus = []; state.hideDone = false;
     document.getElementById("searchInput").value = "";
     document.getElementById("hideDoneCheckbox").checked = false;
-    renderTypeTabs(); renderStatusChips(); renderResults(); syncResetVisibility();
+    renderTypeTabs(); renderFilterModeBtn(); renderStatusChips(); renderResults(); syncResetVisibility();
   });
 
   function setSidebar(open) {
@@ -1295,18 +1479,20 @@
 
   function init() {
     renderTypeTabs();
+    renderFilterModeBtn();
     renderStatusChips();
     renderResults();
     Promise.all([
       storageGet(STORAGE_KEY), storageGet(CUSTOMERS_KEY), storageGet(BUILDINGS_KEY),
-      storageGet(SETTINGS_STATUS_KEY), storageGet(SETTINGS_TYPE_KEY)
+      storageGet(SETTINGS_STATUS_KEY), storageGet(SETTINGS_TYPE_KEY), storageGet(NEXT_ACTIONS_KEY)
     ]).then(function (res) {
-      var data = null, cData = null, bData = null, sData = null, tData = null;
+      var data = null, cData = null, bData = null, sData = null, tData = null, naData = null;
       try { data = res[0] && res[0].value ? JSON.parse(res[0].value) : null; } catch (e) {}
       try { cData = res[1] && res[1].value ? JSON.parse(res[1].value) : null; } catch (e) {}
       try { bData = res[2] && res[2].value ? JSON.parse(res[2].value) : null; } catch (e) {}
       try { sData = res[3] && res[3].value ? JSON.parse(res[3].value) : null; } catch (e) {}
       try { tData = res[4] && res[4].value ? JSON.parse(res[4].value) : null; } catch (e) {}
+      try { naData = res[5] && res[5].value ? JSON.parse(res[5].value) : null; } catch (e) {}
 
       if (data && Array.isArray(data)) {
         state.projects = data;
@@ -1316,6 +1502,7 @@
       }
       state.customers = Array.isArray(cData) ? cData : [];
       state.buildings = Array.isArray(bData) ? bData : [];
+      state.nextActions = Array.isArray(naData) ? naData : [];
 
       // ⑥設定で編集された案件ステータス・案件タイプがあれば、こちらの一覧にも反映する
       if (Array.isArray(sData) && sData.length) {
