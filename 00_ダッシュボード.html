@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-7" />
+<meta name="app-build" content="2026-07-27-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ダッシュボード | 太豊建設アプリ</title>
 <style>
@@ -586,12 +586,14 @@
 
     var html =
       '<div id="pipelineGroup1"></div>' +
+      '<div id="pipelineGroups23">' +
       pipelineGroupHtml("②契約済(受注〜原価確定・精算完了)", contSum.sumRevenue, contSum.sumProfit, contSum.avgRate, "契約合計", "dash_contracted", contSum.details, "pl-cont") +
-      pipelineGroupHtml("③入金済(請求記録がある案件)", paidSum.sumRevenue, paidSum.sumProfit, paidSum.avgRate, "請求合計", "dash_paidgroup", paidSum.details, "pl-paid");
+      pipelineGroupHtml("③入金済(請求記録がある案件)", paidSum.sumRevenue, paidSum.sumProfit, paidSum.avgRate, "請求合計", "dash_paidgroup", paidSum.details, "pl-paid") +
+      '</div>';
 
     document.getElementById("pipelineArea").outerHTML = '<div id="pipelineArea" class="stat-grid" style="margin-bottom:0;">' + html + '</div>';
     renderPrecontractGroup(projects, orders);
-    document.getElementById("pipelineArea").querySelectorAll("[data-toggle]").forEach(function (el) {
+    document.getElementById("pipelineGroups23").querySelectorAll("[data-toggle]").forEach(function (el) {
       el.addEventListener("click", function () {
         var target = document.getElementById(el.getAttribute("data-toggle"));
         if (target) target.classList.toggle("is-open");
