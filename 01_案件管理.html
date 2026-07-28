@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-6" />
+<meta name="app-build" content="2026-07-27-7" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -1619,6 +1619,15 @@
       renderTypeTabs();
       renderStatusChips();
       renderResults();
+
+      // ダッシュボードなど外部からのリンクで ?project=ID&tab=money のように指定されたら、その案件詳細を直接開く
+      try {
+        var params = new URLSearchParams(window.location.search);
+        var pid = params.get("project");
+        if (pid && state.projects.some(function (p) { return p.id === pid; })) {
+          openDetailView(pid, params.get("tab") || "info");
+        }
+      } catch (e) {}
     }).catch(function () {
       state.projects = seedProjects();
       state.loading = false;
