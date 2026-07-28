@@ -421,7 +421,7 @@
         return (a.completionDate||"9999") < (b.completionDate||"9999") ? -1 : 1;
       }).map(function (p) {
         var s = statusOf(p.status);
-        return '<div class="workload-case"><a href="01_案件管理.html" class="workload-case__name" style="color:inherit;text-decoration:none;">' + esc(p.name) +
+        return '<div class="workload-case"><a href="01_案件管理.html?project=' + encodeURIComponent(p.id) + '&tab=info" class="workload-case__name" style="color:inherit;text-decoration:none;">' + esc(p.name) +
           (p.completionDate ? ' <span style="color:var(--text-tertiary);">(〜' + fmtDate(p.completionDate) + ')</span>' : '') + '</a>' +
           '<span class="workload-case__badge" style="background:' + s.color + ';">' + esc(s.label) + '</span></div>';
       }).join("");
