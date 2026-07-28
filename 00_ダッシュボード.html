@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-6" />
+<meta name="app-build" content="2026-07-27-7" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ダッシュボード | 太豊建設アプリ</title>
 <style>
@@ -459,25 +459,25 @@
     });
   }
 
-  var precontractProbFilter = { "90": true, "70": true, "50": true, "none": true };
+  var precontractThreshold = "all"; // "all" | "90" | "70" | "50"
 
   function precontractFilterHtml() {
-    function chk(key, label) {
+    function radio(key, label) {
       return '<label style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--text-secondary);margin-right:12px;cursor:pointer;">' +
-        '<input type="checkbox" data-prob-filter="' + key + '"' + (precontractProbFilter[key] ? " checked" : "") + ' style="accent-color:var(--primary);" />' + label + '</label>';
+        '<input type="radio" name="precontractThreshold" data-prob-threshold="' + key + '"' + (precontractThreshold === key ? " checked" : "") + ' style="accent-color:var(--primary);" />' + label + '</label>';
     }
     return '<div style="margin-bottom:10px;">' +
       '<span style="font-size:11px;color:var(--text-tertiary);margin-right:8px;">契約確度で絞り込み：</span>' +
-      chk("90", "90%") + chk("70", "70%") + chk("50", "50%") + chk("none", "未設定") +
+      radio("all", "すべて(未設定含む)") + radio("90", "90%以上") + radio("70", "70%以上") + radio("50", "50%以上") +
       '</div>';
   }
 
   function bindPrecontractFilterEvents(projects, orders) {
     var wrap = document.getElementById("pipelineGroup1");
     if (!wrap) return;
-    wrap.querySelectorAll("[data-prob-filter]").forEach(function (chk) {
-      chk.addEventListener("change", function () {
-        precontractProbFilter[chk.getAttribute("data-prob-filter")] = chk.checked;
+    wrap.querySelectorAll("[data-prob-threshold]").forEach(function (radio) {
+      radio.addEventListener("change", function () {
+        precontractThreshold = radio.getAttribute("data-prob-threshold");
         renderPrecontractGroup(projects, orders);
       });
     });
@@ -495,9 +495,11 @@
         .reduce(function (s,o) { return s + (Number(o.orderAmount)||0); }, 0);
     }
     var preItemsAll = projects.filter(function (p) { return PRE_CONTRACT_STATUSES.indexOf(p.status) !== -1; });
+    var thresholdNum = precontractThreshold === "all" ? null : parseInt(precontractThreshold, 10);
     var preItems = preItemsAll.filter(function (p) {
-      var key = p.winProbability ? p.winProbability : "none";
-      return !!precontractProbFilter[key];
+      if (thresholdNum === null) return true; // すべて(未設定含む)
+      var v = parseInt(p.winProbability, 10);
+      return !isNaN(v) && v >= thresholdNum;
     });
     var sumRevenue = 0, sumProfit = 0, rates = [], details = [];
     preItems.forEach(function (p) {
