@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-5" />
+<meta name="app-build" content="2026-07-27-6" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ダッシュボード | 太豊建設アプリ</title>
 <style>
@@ -459,7 +459,67 @@
     });
   }
 
-  function pipelineGroupHtml(title, sumRevenue, sumProfit, avgRate, revenueLabel, prefKey, details, groupId, linkMode) {
+  var precontractProbFilter = { "90": true, "70": true, "50": true, "none": true };
+
+  function precontractFilterHtml() {
+    function chk(key, label) {
+      return '<label style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--text-secondary);margin-right:12px;cursor:pointer;">' +
+        '<input type="checkbox" data-prob-filter="' + key + '"' + (precontractProbFilter[key] ? " checked" : "") + ' style="accent-color:var(--primary);" />' + label + '</label>';
+    }
+    return '<div style="margin-bottom:10px;">' +
+      '<span style="font-size:11px;color:var(--text-tertiary);margin-right:8px;">契約確度で絞り込み：</span>' +
+      chk("90", "90%") + chk("70", "70%") + chk("50", "50%") + chk("none", "未設定") +
+      '</div>';
+  }
+
+  function bindPrecontractFilterEvents(projects, orders) {
+    var wrap = document.getElementById("pipelineGroup1");
+    if (!wrap) return;
+    wrap.querySelectorAll("[data-prob-filter]").forEach(function (chk) {
+      chk.addEventListener("change", function () {
+        precontractProbFilter[chk.getAttribute("data-prob-filter")] = chk.checked;
+        renderPrecontractGroup(projects, orders);
+      });
+    });
+    wrap.querySelectorAll("[data-toggle]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var target = document.getElementById(el.getAttribute("data-toggle"));
+        if (target) target.classList.toggle("is-open");
+      });
+    });
+  }
+
+  function renderPrecontractGroup(projects, orders) {
+    function ordersTotalFor(pid) {
+      return orders.filter(function (o) { return o.projectId === pid && o.status !== "cancelled"; })
+        .reduce(function (s,o) { return s + (Number(o.orderAmount)||0); }, 0);
+    }
+    var preItemsAll = projects.filter(function (p) { return PRE_CONTRACT_STATUSES.indexOf(p.status) !== -1; });
+    var preItems = preItemsAll.filter(function (p) {
+      var key = p.winProbability ? p.winProbability : "none";
+      return !!precontractProbFilter[key];
+    });
+    var sumRevenue = 0, sumProfit = 0, rates = [], details = [];
+    preItems.forEach(function (p) {
+      var revenue = Number(p.contractAmount)||0;
+      var cost = ordersTotalFor(p.id);
+      var profit = revenue - cost;
+      sumRevenue += revenue; sumProfit += profit;
+      if (revenue > 0) {
+        var rate = profit / revenue * 100;
+        rates.push(rate);
+        details.push({ id: p.id, name: p.name, revenue: revenue, cost: cost, profit: profit, rate: rate });
+      }
+    });
+    var avgRate = rates.length ? (rates.reduce(function (s,r) { return s+r; }, 0) / rates.length) : null;
+
+    var body = pipelineGroupHtml("①契約前(見積中など、まだ受注していない案件)", sumRevenue, sumProfit, avgRate, "契約予定合計", "dash_precontract", details, "pl-pre", "quickOrder", precontractFilterHtml());
+    document.getElementById("pipelineGroup1").innerHTML = body;
+    bindPrecontractFilterEvents(projects, orders);
+    applyUiPrefs();
+  }
+
+  function pipelineGroupHtml(title, sumRevenue, sumProfit, avgRate, revenueLabel, prefKey, details, groupId, linkMode, filterHtml) {
     var rows = details.slice().sort(function (a, b) { return b.rate - a.rate; }).map(function (d) {
       var href = linkMode === "quickOrder"
         ? "05_金銭管理.html?quickOrder=1&project=" + encodeURIComponent(d.id) + "&title=" + encodeURIComponent(d.name)
@@ -471,6 +531,7 @@
     }).join("");
     return '<div data-pref-key="' + prefKey + '" style="margin-bottom:18px;">' +
       '<div style="font-size:12.5px;font-weight:800;color:var(--text-secondary);margin-bottom:8px;">' + esc(title) + '</div>' +
+      (filterHtml || '') +
       '<div class="stat-grid" style="margin-bottom:0;">' +
         statCard(revenueLabel, fmtYen(sumRevenue), "") +
         statCard("粗利益合計", fmtYen(sumProfit), "", sumProfit>=0?"success":"danger") +
@@ -509,12 +570,6 @@
       return { sumRevenue: sumRevenue, sumProfit: sumProfit, avgRate: avgRate, details: details };
     }
 
-    var preItems = projects.filter(function (p) { return PRE_CONTRACT_STATUSES.indexOf(p.status) !== -1; });
-    var preSum = summarize(preItems, {
-      revenue: function (p) { return Number(p.contractAmount)||0; },
-      cost: function (p) { return ordersTotalFor(p.id); }
-    });
-
     var contItems = projects.filter(function (p) { return CONTRACTED_STATUSES.indexOf(p.status) !== -1; });
     var contSum = summarize(contItems, {
       revenue: function (p) { return Number(p.contractAmount)||0; },
@@ -528,11 +583,12 @@
     });
 
     var html =
-      pipelineGroupHtml("①契約前(見積中など、まだ受注していない案件)", preSum.sumRevenue, preSum.sumProfit, preSum.avgRate, "契約予定合計", "dash_precontract", preSum.details, "pl-pre", "quickOrder") +
+      '<div id="pipelineGroup1"></div>' +
       pipelineGroupHtml("②契約済(受注〜原価確定・精算完了)", contSum.sumRevenue, contSum.sumProfit, contSum.avgRate, "契約合計", "dash_contracted", contSum.details, "pl-cont") +
       pipelineGroupHtml("③入金済(請求記録がある案件)", paidSum.sumRevenue, paidSum.sumProfit, paidSum.avgRate, "請求合計", "dash_paidgroup", paidSum.details, "pl-paid");
 
     document.getElementById("pipelineArea").outerHTML = '<div id="pipelineArea" class="stat-grid" style="margin-bottom:0;">' + html + '</div>';
+    renderPrecontractGroup(projects, orders);
     document.getElementById("pipelineArea").querySelectorAll("[data-toggle]").forEach(function (el) {
       el.addEventListener("click", function () {
         var target = document.getElementById(el.getAttribute("data-toggle"));
