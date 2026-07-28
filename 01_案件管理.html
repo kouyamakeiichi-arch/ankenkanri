@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-5" />
+<meta name="app-build" content="2026-07-27-6" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -43,9 +43,9 @@
 
   .type-tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; scrollbar-width: none; }
   .type-tabs::-webkit-scrollbar { display: none; }
-  .type-tab { font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 8px 14px; border-radius: 999px; border: 1px solid transparent; background: transparent; color: var(--text-secondary); cursor: pointer; white-space: nowrap; transition: all .15s; }
+  .type-tab { font-family: inherit; font-weight: 700; font-size: 13px; padding: 7px 13px; border-radius: 999px; border: 1.5px solid var(--tab-color, var(--border)); background: transparent; color: var(--tab-color, var(--text-secondary)); cursor: pointer; white-space: nowrap; transition: all .15s; }
   .type-tab:hover { background: #EDEAFA; }
-  .type-tab.is-active { background: var(--text); color: white; }
+  .type-tab.is-active { background: var(--tab-color, var(--text)); color: white; }
 
   .filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
   .status-chips { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
@@ -314,6 +314,9 @@
     </div>
   </div>
 
+  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+    <button class="link-reset" id="btnTypeFilterMode" style="margin-right:2px;" title="案件タイプ絞り込みの初期状態を切り替えます(このブラウザだけの設定です)"></button>
+  </div>
   <div class="type-tabs" id="typeTabs"></div>
 
   <div class="filter-bar">
@@ -450,7 +453,8 @@
     { id: "factory",  label: "工場", color: "#22D3EE" },
     { id: "office",   label: "事務所、テナント", color: "#FB923C" },
     { id: "other",    label: "その他工事", color: "#EAB308" },
-    { id: "internal", label: "社内頼まれ事", color: "#14B8A6" }
+    { id: "internal", label: "社内頼まれ事", color: "#14B8A6" },
+    { id: "design",   label: "設計案件", color: "#8B5CF6" }
   ];
   var MANAGER_SUGGESTIONS = ["遠藤了介", "kouyama", "soumu", "jimu", "k.aotsuka"];
 
@@ -565,7 +569,7 @@
   }
 
   var state = {
-    projects: [], customers: [], buildings: [], nextActions: [], loading: true, search: "", activeType: "all", activeStatus: [], hideDone: false,
+    projects: [], customers: [], buildings: [], nextActions: [], loading: true, search: "", activeType: [], activeStatus: [], hideDone: false,
     /* 案件詳細ハブ用 */
     files: [], scheduleTasks: [], contractors: [], orders: [], billings: [], worklogs: [], requests: [],
     secondaryLoaded: false, detailProjectId: null, detailTab: "info"
@@ -630,7 +634,10 @@
   function computeFiltered() {
     var q = state.search.trim().toLowerCase();
     return state.projects
-      .filter(function (p) { return state.activeType === "all" ? true : p.typeId === state.activeType; })
+      .filter(function (p) {
+        if (getTypeFilterMode() === "exclude") return state.activeType.indexOf(p.typeId) === -1;
+        return state.activeType.length ? state.activeType.indexOf(p.typeId) !== -1 : true;
+      })
       .filter(function (p) {
         if (getFilterMode() === "exclude") return state.activeStatus.indexOf(p.status) === -1;
         return state.activeStatus.length ? state.activeStatus.indexOf(p.status) !== -1 : true;
@@ -646,20 +653,52 @@
       .sort(function (a,b) { return (b.no||0) - (a.no||0); });
   }
 
+  var TYPE_FILTER_MODE_KEY = "taiho_type_filter_mode_v1"; // ブラウザごとの好み(localStorageのみ、他の人には影響しません)
+  function getTypeFilterMode() {
+    try { return localStorage.getItem(TYPE_FILTER_MODE_KEY) || "include"; } catch (e) { return "include"; }
+  }
+  function setTypeFilterMode(mode) {
+    try { localStorage.setItem(TYPE_FILTER_MODE_KEY, mode); } catch (e) {}
+  }
+  function renderTypeFilterModeBtn() {
+    var btn = document.getElementById("btnTypeFilterMode");
+    if (!btn) return;
+    var mode = getTypeFilterMode();
+    btn.innerHTML = mode === "exclude"
+      ? '🔀 絞り込み方式：除外(まず全部表示 → 外したいものをクリック)'
+      : '🔀 絞り込み方式：選択(まず全部非表示 → 見たいものをクリック)';
+  }
+
   function renderTypeTabs() {
     var el = document.getElementById("typeTabs");
-    var html = '<button class="type-tab' + (state.activeType==="all"?" is-active":"") + '" data-type="all">全て</button>';
+    var mode = getTypeFilterMode();
+    var html = "";
     TYPE_LIST.forEach(function (t) {
-      html += '<button class="type-tab' + (state.activeType===t.id?" is-active":"") + '" data-type="' + t.id + '">' + esc(t.label) + '</button>';
+      var isOn = mode === "exclude" ? (state.activeType.indexOf(t.id) === -1) : (state.activeType.indexOf(t.id) !== -1);
+      html += '<button class="type-tab' + (isOn ? " is-active" : "") + '" style="--tab-color:' + t.color + '" data-type="' + t.id + '">' + esc(t.label) + '</button>';
     });
     el.innerHTML = html;
     el.querySelectorAll(".type-tab").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        state.activeType = btn.getAttribute("data-type");
+        var id = btn.getAttribute("data-type");
+        var idx = state.activeType.indexOf(id);
+        if (idx === -1) { state.activeType.push(id); } else { state.activeType.splice(idx, 1); }
         renderTypeTabs();
         renderResults();
         syncResetVisibility();
       });
+    });
+  }
+  var btnTypeFilterModeEl = document.getElementById("btnTypeFilterMode");
+  if (btnTypeFilterModeEl) {
+    btnTypeFilterModeEl.addEventListener("click", function () {
+      var next = getTypeFilterMode() === "exclude" ? "include" : "exclude";
+      setTypeFilterMode(next);
+      state.activeType = [];
+      renderTypeFilterModeBtn();
+      renderTypeTabs();
+      renderResults();
+      syncResetVisibility();
     });
   }
 
@@ -710,7 +749,7 @@
   }
 
   function syncResetVisibility() {
-    var has = state.search || state.activeType !== "all" || state.activeStatus.length || state.hideDone;
+    var has = state.search || state.activeType.length || state.activeStatus.length || state.hideDone;
     document.getElementById("btnReset").style.display = has ? "inline-flex" : "none";
   }
 
@@ -1511,10 +1550,10 @@
   });
   document.getElementById("btnCreate").addEventListener("click", function () { openModal(false, null); });
   document.getElementById("btnReset").addEventListener("click", function () {
-    state.search = ""; state.activeType = "all"; state.activeStatus = []; state.hideDone = false;
+    state.search = ""; state.activeType = []; state.activeStatus = []; state.hideDone = false;
     document.getElementById("searchInput").value = "";
     document.getElementById("hideDoneCheckbox").checked = false;
-    renderTypeTabs(); renderFilterModeBtn(); renderStatusChips(); renderResults(); syncResetVisibility();
+    renderTypeTabs(); renderTypeFilterModeBtn(); renderFilterModeBtn(); renderStatusChips(); renderResults(); syncResetVisibility();
   });
 
   function setSidebar(open) {
@@ -1540,6 +1579,7 @@
 
   function init() {
     renderTypeTabs();
+    renderTypeFilterModeBtn();
     renderFilterModeBtn();
     renderStatusChips();
     renderResults();
