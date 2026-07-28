@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-8" />
+<meta name="app-build" content="2026-07-27-9" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -350,6 +350,7 @@
   var FILES_KEY = "taiho_files_v1";
   var SCHEDULE_TASKS_KEY = "taiho_schedule_tasks_v1";
   var NEXT_ACTIONS_KEY = "taiho_next_actions_v1";
+  var WORK_TIME_KEY = "taiho_work_time_v1";
   var CONTRACTORS_KEY = "taiho_contractors_v1";
   var ORDERS_KEY = "taiho_orders_v1";
   var BILLINGS_KEY = "taiho_billings_v1";
@@ -571,7 +572,7 @@
   var state = {
     projects: [], customers: [], buildings: [], nextActions: [], loading: true, search: "", activeType: [], activeStatus: [], hideDone: false,
     /* 案件詳細ハブ用 */
-    files: [], scheduleTasks: [], contractors: [], orders: [], billings: [], worklogs: [], requests: [],
+    files: [], scheduleTasks: [], contractors: [], orders: [], billings: [], worklogs: [], requests: [], workTime: [],
     secondaryLoaded: false, detailProjectId: null, detailTab: "info"
   };
   var modalState = null;
@@ -1046,14 +1047,16 @@
     { id: "files",      label: "ファイル" },
     { id: "schedule",   label: "工程表" },
     { id: "money",      label: "金銭" },
-    { id: "worklog",    label: "日報・申請" }
+    { id: "worklog",    label: "日報・申請" },
+    { id: "worktime",   label: "作業時間(試用)" }
   ];
 
   function loadSecondaryData() {
     if (state.secondaryLoaded) return Promise.resolve();
     return Promise.all([
       storageGet(FILES_KEY), storageGet(SCHEDULE_TASKS_KEY), storageGet(CONTRACTORS_KEY),
-      storageGet(ORDERS_KEY), storageGet(BILLINGS_KEY), storageGet(WORKLOGS_KEY), storageGet(REQUESTS_KEY)
+      storageGet(ORDERS_KEY), storageGet(BILLINGS_KEY), storageGet(WORKLOGS_KEY), storageGet(REQUESTS_KEY),
+      storageGet(WORK_TIME_KEY)
     ]).then(function (res) {
       function arr(i) { try { var v = res[i] && res[i].value ? JSON.parse(res[i].value) : null; return Array.isArray(v) ? v : []; } catch (e) { return []; } }
       state.files = arr(0);
@@ -1063,6 +1066,7 @@
       state.billings = arr(4);
       state.worklogs = arr(5);
       state.requests = arr(6);
+      state.workTime = arr(7);
       state.secondaryLoaded = true;
     }).catch(function () { state.secondaryLoaded = true; });
   }
@@ -1125,6 +1129,7 @@
     if (state.detailTab === "schedule") return renderDetailSchedule(panel, p);
     if (state.detailTab === "money") return renderDetailMoney(panel, p);
     if (state.detailTab === "worklog") return renderDetailWorklog(panel, p);
+    if (state.detailTab === "worktime") return renderDetailWorkTime(panel, p);
   }
 
   /* ---- 基本情報タブ ---- */
@@ -1529,6 +1534,90 @@
     }
     html += '<p style="margin-top:16px;"><a class="link-jump" href="04_日報社内申請.html">④日報・社内申請を開く ' + ICON_CHEV_R + '</a></p>';
     panel.innerHTML = html;
+  }
+
+  /* ---- 作業時間タブ(試用・履歴形式) ---- */
+  function renderDetailWorkTime(panel, p) {
+    var list = state.workTime.filter(function (w) { return w.projectId === p.id; }).sort(function (a,b) { return (a.date||"") < (b.date||"") ? 1 : -1; });
+    var totalHours = list.reduce(function (s,w) { return s + (Number(w.hours)||0); }, 0);
+    var uniqueDays = {};
+    list.forEach(function (w) { if (w.date) uniqueDays[w.date] = true; });
+    var totalDays = Object.keys(uniqueDays).length;
+
+    var html =
+      '<p style="font-size:12.5px;color:var(--text-tertiary);line-height:1.6;margin:0 0 14px;">この案件にかかった時間を記録できます(試用機能・個人利用向け)。</p>' +
+      '<div class="detail-summary-row">' +
+        '<div class="detail-summary-item"><div class="l">合計時間</div><div class="v">' + totalHours.toFixed(1) + '時間</div></div>' +
+        '<div class="detail-summary-item"><div class="l">合計日数</div><div class="v">' + totalDays + '日</div></div>' +
+      '</div>' +
+      '<div class="detail-task-add">' +
+        '<input type="date" id="wtDateInput" value="' + (function(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");})() + '" />' +
+        '<input type="number" id="wtHoursInput" min="0" step="0.5" placeholder="時間(例: 2.5)" style="width:110px;padding:8px 10px;border:1px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;" />' +
+        '<textarea id="wtNoteInput" rows="2" placeholder="メモ(任意、例: 現地調査・見積作成など)"></textarea>' +
+        '<button class="btn btn--primary btn--sm" id="wtAddBtn">追加</button>' +
+      '</div>' +
+      '<div class="detail-section-title">履歴(' + list.length + '件)</div>';
+
+    if (!list.length) {
+      html += '<div class="detail-empty">まだ記録がありません</div>';
+    } else {
+      html += list.map(function (w) {
+        return '<div class="na-row"><div class="main"><div class="content">' + esc(w.hours) + '時間' + (w.note ? ' ・ ' + esc(w.note) : '') + '</div>' +
+          '<div class="meta"><b>' + esc(fmtDateShort(w.date)) + '</b></div></div>' +
+          '<div class="actions">' +
+            '<button class="icon-btn" data-wt-edit="' + w.id + '" title="編集">' + ICON_PENCIL + '</button>' +
+            '<button class="icon-btn" data-wt-del="' + w.id + '" title="削除">' + ICON_TRASH + '</button>' +
+          '</div></div>';
+      }).join("");
+    }
+    panel.innerHTML = html;
+
+    var editingId = null;
+    function doAddOrUpdate() {
+      var date = document.getElementById("wtDateInput").value;
+      var hours = parseFloat(document.getElementById("wtHoursInput").value);
+      var note = document.getElementById("wtNoteInput").value.trim();
+      if (!date) { showToast("日付を選択してください"); return; }
+      if (!hours || hours <= 0) { showToast("時間を入力してください"); return; }
+      var next;
+      if (editingId) {
+        var editId = editingId;
+        next = state.workTime.map(function (w) { return w.id === editId ? Object.assign({}, w, { date: date, hours: hours, note: note }) : w; });
+      } else {
+        next = state.workTime.concat([{ id: uid(), projectId: p.id, date: date, hours: hours, note: note, createdAt: Date.now() }]);
+      }
+      state.workTime = next;
+      storageSet(WORK_TIME_KEY, JSON.stringify(next)).then(function () {
+        showToast(editingId ? "更新しました" : "追加しました");
+        renderDetailPanel(p);
+      });
+    }
+    document.getElementById("wtAddBtn").addEventListener("click", doAddOrUpdate);
+    panel.querySelectorAll("[data-wt-del]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-wt-del");
+        if (!confirm("この記録を削除します。よろしいですか？")) return;
+        var next = state.workTime.filter(function (w) { return w.id !== id; });
+        state.workTime = next;
+        storageSet(WORK_TIME_KEY, JSON.stringify(next)).then(function () {
+          showToast("削除しました");
+          renderDetailPanel(p);
+        });
+      });
+    });
+    panel.querySelectorAll("[data-wt-edit]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-wt-edit");
+        var target = state.workTime.find(function (w) { return w.id === id; });
+        if (!target) return;
+        editingId = id;
+        document.getElementById("wtDateInput").value = target.date;
+        document.getElementById("wtHoursInput").value = target.hours;
+        document.getElementById("wtNoteInput").value = target.note || "";
+        document.getElementById("wtAddBtn").textContent = "更新";
+        document.getElementById("wtHoursInput").focus();
+      });
+    });
   }
 
   document.addEventListener("keydown", function (e) {
