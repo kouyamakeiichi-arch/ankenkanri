@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-11" />
+<meta name="app-build" content="2026-07-27-12" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -1114,6 +1114,13 @@
     root.querySelectorAll("[data-dtab]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         state.detailTab = btn.getAttribute("data-dtab");
+        renderDetailView();
+      });
+    });
+    root.querySelectorAll("[data-status-change]").forEach(function (el) {
+      el.addEventListener("change", function () {
+        var id = el.getAttribute("data-status-change");
+        persist(state.projects.map(function (pr) { return pr.id === id ? Object.assign({}, pr, { status: el.value }) : pr; }));
         renderDetailView();
       });
     });
