@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-12" />
+<meta name="app-build" content="2026-07-27-13" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -862,7 +862,7 @@
   }
 
   function openModal(isEdit, data) {
-    modalState = { isEdit: isEdit, data: data ? Object.assign({}, data) : { typeId: "", name: "", customerName: "", buildingName: "", contractDate: "", startDate: "", completionDate: "", manager: "", creator: "", contractAmount: "", workContent: "", note: "", status: "inquiry" } };
+    modalState = { isEdit: isEdit, data: data ? Object.assign({}, data) : { typeId: "", name: "", customerName: "", buildingName: "", contractDate: "", startDate: "", completionDate: "", manager: "", creator: "", contractAmount: "", winProbability: "", workContent: "", note: "", status: "inquiry" } };
     renderModal();
   }
   function closeModal() { modalState = null; document.getElementById("modalRoot").innerHTML = ""; }
@@ -924,6 +924,13 @@
             '</div>' +
             '<datalist id="managerSuggestions">' + managerOptions + '</datalist>' +
             '<div class="field" id="amountFieldWrap" style="display:' + (taskMode ? "none" : "block") + '"><label>契約金額</label><input type="text" inputmode="numeric" id="f_contractAmount" placeholder="例: 1,250,000" value="' + (d.contractAmount ? Number(d.contractAmount).toLocaleString("ja-JP") : "") + '" /></div>' +
+            '<div class="field" id="probabilityFieldWrap" style="display:' + (taskMode ? "none" : "block") + '"><label>契約確度(契約前の場合のみ使用)</label>' +
+              '<select id="f_winProbability">' +
+                '<option value=""' + (!d.winProbability?" selected":"") + '>未設定</option>' +
+                '<option value="90"' + (d.winProbability==="90"?" selected":"") + '>90%</option>' +
+                '<option value="70"' + (d.winProbability==="70"?" selected":"") + '>70%</option>' +
+                '<option value="50"' + (d.winProbability==="50"?" selected":"") + '>50%</option>' +
+              '</select></div>' +
             '<div class="field"><label>工事内容</label><textarea id="f_workContent" placeholder="例: 基礎工事、確認申請、外構工事など(改行して複数書けます)">' + esc(d.workContent) + '</textarea></div>' +
             '<div class="field"><label>備考・メモ</label><textarea id="f_note" placeholder="自由にメモを入力できます(枠の右下をドラッグすると広げられます)">' + esc(d.note) + '</textarea></div>' +
           '</div>' +
@@ -957,6 +964,7 @@
       document.getElementById("f_completionDate").style.display = nowTask ? "none" : "block";
       document.getElementById("f_completionDateText").style.display = nowTask ? "block" : "none";
       document.getElementById("amountFieldWrap").style.display = nowTask ? "none" : "block";
+      document.getElementById("probabilityFieldWrap").style.display = nowTask ? "none" : "block";
     });
     // 契約金額: 入力中はカンマなしの数字、確定するとカンマ区切りで表示する
     document.getElementById("f_contractAmount").addEventListener("focus", function () {
@@ -995,6 +1003,7 @@
         manager: document.getElementById("f_manager").value.trim(),
         creator: document.getElementById("f_creator").value.trim(),
         contractAmount: taskModeNow ? "" : document.getElementById("f_contractAmount").value.replace(/,/g, ""),
+        winProbability: taskModeNow ? "" : document.getElementById("f_winProbability").value,
         workContent: document.getElementById("f_workContent").value,
         note: document.getElementById("f_note").value,
         status: d.status || "inquiry"
@@ -1149,6 +1158,7 @@
       infoItem("着工日", fmtDate(p.startDate)) +
       infoItem("完工日", fmtDate(p.completionDate)) +
       infoItem("契約金額", fmtYen(p.contractAmount)) +
+      infoItem("契約確度", p.winProbability ? p.winProbability + "%" : "-") +
       infoItem("担当者", p.manager || "-") +
       infoItem("作成者", p.creator || "-") +
       '</div>' +
