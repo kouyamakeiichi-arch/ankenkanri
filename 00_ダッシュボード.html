@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-4" />
+<meta name="app-build" content="2026-07-27-5" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ダッシュボード | 太豊建設アプリ</title>
 <style>
@@ -382,12 +382,25 @@
   var PRE_CONTRACT_STATUSES = ["inquiry", "survey", "estimating", "estimated"];
   var CONTRACTED_STATUSES = ["ordered", "before_start", "in_progress", "completed", "cost_fixed", "settled"];
 
-  function renderWorkload(activeProjects) {
+  function renderWorkload(activeProjects, allProjects, workTime) {
+    allProjects = allProjects || activeProjects;
+    workTime = workTime || [];
+    function timeStatsFor(managerProjectIds) {
+      var entries = workTime.filter(function (w) { return managerProjectIds.indexOf(w.projectId) !== -1; });
+      var hours = entries.reduce(function (s,w) { return s + (Number(w.hours)||0); }, 0);
+      return { hours: hours, days: hours / 7 };
+    }
     var byManager = {};
     activeProjects.forEach(function (p) {
       var name = (p.manager || "").trim() || "担当者未設定";
       if (!byManager[name]) byManager[name] = [];
       byManager[name].push(p);
+    });
+    var allByManager = {};
+    allProjects.forEach(function (p) {
+      var name = (p.manager || "").trim() || "担当者未設定";
+      if (!allByManager[name]) allByManager[name] = [];
+      allByManager[name].push(p.id);
     });
     var names = Object.keys(byManager).sort(function (a, b) {
       return byManager[b].length - byManager[a].length;
@@ -402,6 +415,7 @@
       var ratio = Math.min(100, Math.round(count / cap * 100));
       var color = count > cap ? "#F0525C" : (count === cap ? "#F59E0B" : "#10B981");
       var badgeLabel = count > cap ? "上限超過" : (count === cap ? "上限ちょうど" : "余裕あり");
+      var timeStats = timeStatsFor(allByManager[name] || []);
       var rowId = "wl-" + idx;
       var casesHtml = list.slice().sort(function (a,b) {
         return (a.completionDate||"9999") < (b.completionDate||"9999") ? -1 : 1;
@@ -419,6 +433,7 @@
           '<div class="workload-row__count">' + count + ' / ' + cap + '件</div>' +
           '<div class="workload-row__cap">上限<input type="number" min="1" value="' + cap + '" data-cap-name="' + esc(name) + '" />件</div>' +
         '</div>' +
+        (timeStats.hours > 0 ? '<div style="font-size:11px;color:var(--text-tertiary);margin-top:6px;">📋 記録された作業時間 <b style="color:var(--text-secondary);">' + timeStats.hours.toFixed(1) + '時間(' + timeStats.days.toFixed(1) + '日換算)</b> ※①案件管理の「作業時間」タブに入力された分のみ集計(試用中)</div>' : '') +
         '<div class="workload-row__bar"><div class="workload-row__fill" style="width:' + ratio + '%;background:' + color + ';"></div></div>' +
         '<span class="workload-row__toggle" data-toggle="' + rowId + '">案件の内訳を見る(' + count + '件) ▾</span>' +
         '<div class="workload-row__cases" id="' + rowId + '">' + casesHtml + '</div>' +
@@ -432,7 +447,7 @@
         if (!v || v < 1) v = 1;
         managerCapacity[name] = v;
         storageSet(MANAGER_CAPACITY_KEY, JSON.stringify(managerCapacity)).then(function () {
-          renderWorkload(activeProjects);
+          renderWorkload(activeProjects, allProjects, workTime);
         });
       });
     });
@@ -584,7 +599,8 @@
     storageGet("taiho_payments_v1"),
     storageGet("taiho_orders_v1"),
     storageGet(MANAGER_CAPACITY_KEY),
-    storageGet(DEFAULT_CAPACITY_KEY)
+    storageGet(DEFAULT_CAPACITY_KEY),
+    storageGet("taiho_work_time_v1")
   ]).then(function (res) {
     var projects = parseArr(res[0]);
     var customers = parseArr(res[1]);
@@ -594,6 +610,7 @@
     var orders = parseArr(res[5]);
     try { var mc = res[6] && res[6].value ? JSON.parse(res[6].value) : null; managerCapacity = (mc && typeof mc === "object") ? mc : {}; } catch (e) { managerCapacity = {}; }
     try { var dc = res[7] && res[7].value ? parseInt(res[7].value, 10) : null; if (dc && dc > 0) DEFAULT_CAPACITY = dc; } catch (e) {}
+    var workTime = parseArr(res[8]);
 
     var activeProjects = projects.filter(function (p) { return !statusOf(p.status).done; });
     document.getElementById("defaultCapacityInput").value = DEFAULT_CAPACITY;
@@ -603,10 +620,10 @@
       DEFAULT_CAPACITY = v;
       this.value = v;
       storageSet(DEFAULT_CAPACITY_KEY, String(v)).then(function () {
-        renderWorkload(activeProjects);
+        renderWorkload(activeProjects, projects, workTime);
       });
     });
-    renderWorkload(activeProjects);
+    renderWorkload(activeProjects, projects, workTime);
     renderPipeline(projects, orders, billings);
 
     var totalBilling = billings.reduce(function (s,b) { return s + (Number(b.totalAmount)||0); }, 0);
