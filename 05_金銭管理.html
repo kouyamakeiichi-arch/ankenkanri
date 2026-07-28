@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-10-1" />
+<meta name="app-build" content="2026-07-27-1" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>金銭管理 | 太豊建設アプリ</title>
 <style>
@@ -1212,6 +1212,21 @@
       if (!Array.isArray(blData)) storageSet(BILLINGS_KEY, JSON.stringify(state.billings));
       state.loading = false;
       renderResults();
+
+      // ①案件管理などからのリンクで ?quickOrder=1&project=ID&title=... の形で来たら、発注の新規登録を自動で開く(契約前の簡易処理用)
+      try {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get("quickOrder") === "1") {
+          var pid = params.get("project") || "";
+          var proj = state.projects.find(function (p) { return p.id === pid; });
+          var titleParam = params.get("title") || (proj ? proj.name : "");
+          setTab("orders");
+          openOrderModal(false, {
+            title: titleParam, contractorId: "", projectId: pid,
+            status: "estimating", startDate: "", completionDate: "", orderAmount: "", createdAt: Date.now()
+          });
+        }
+      } catch (e) {}
     }).catch(function () {
       state.contractors = seedContractors();
       state.projects = [];

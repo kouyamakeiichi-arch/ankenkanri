@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-2" />
+<meta name="app-build" content="2026-07-27-3" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ダッシュボード | 太豊建設アプリ</title>
 <style>
@@ -444,9 +444,12 @@
     });
   }
 
-  function pipelineGroupHtml(title, sumRevenue, sumProfit, avgRate, revenueLabel, prefKey, details, groupId) {
+  function pipelineGroupHtml(title, sumRevenue, sumProfit, avgRate, revenueLabel, prefKey, details, groupId, linkMode) {
     var rows = details.slice().sort(function (a, b) { return b.rate - a.rate; }).map(function (d) {
-      return '<a href="01_案件管理.html?project=' + encodeURIComponent(d.id) + '&tab=money" class="detail-list-row" style="text-decoration:none;color:inherit;cursor:pointer;">' +
+      var href = linkMode === "quickOrder"
+        ? "05_金銭管理.html?quickOrder=1&project=" + encodeURIComponent(d.id) + "&title=" + encodeURIComponent(d.name)
+        : "01_案件管理.html?project=" + encodeURIComponent(d.id) + "&tab=money";
+      return '<a href="' + href + '" class="detail-list-row" style="text-decoration:none;color:inherit;cursor:pointer;">' +
         '<div class="main"><div class="t1">' + esc(d.name) + '</div>' +
         '<div class="t2">' + revenueLabel + ' ' + fmtYen(d.revenue) + ' ・ 原価 ' + fmtYen(d.cost) + ' ・ 粗利 ' + fmtYen(d.profit) + '</div></div>' +
         '<span style="font-family:\'Courier New\',monospace;font-weight:700;font-size:13px;color:' + (d.rate>=80?"var(--danger)":d.rate<0?"var(--danger)":"var(--text)") + ';">' + d.rate.toFixed(1) + '%</span></a>';
@@ -510,7 +513,7 @@
     });
 
     var html =
-      pipelineGroupHtml("①契約前(見積中など、まだ受注していない案件)", preSum.sumRevenue, preSum.sumProfit, preSum.avgRate, "契約予定合計", "dash_precontract", preSum.details, "pl-pre") +
+      pipelineGroupHtml("①契約前(見積中など、まだ受注していない案件)", preSum.sumRevenue, preSum.sumProfit, preSum.avgRate, "契約予定合計", "dash_precontract", preSum.details, "pl-pre", "quickOrder") +
       pipelineGroupHtml("②契約済(受注〜原価確定・精算完了)", contSum.sumRevenue, contSum.sumProfit, contSum.avgRate, "契約合計", "dash_contracted", contSum.details, "pl-cont") +
       pipelineGroupHtml("③入金済(請求記録がある案件)", paidSum.sumRevenue, paidSum.sumProfit, paidSum.avgRate, "請求合計", "dash_paidgroup", paidSum.details, "pl-paid");
 

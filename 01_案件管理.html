@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-7" />
+<meta name="app-build" content="2026-07-27-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -1478,6 +1478,7 @@
         '<div class="detail-summary-item"><div class="l">粗利</div><div class="v" style="color:' + (profit<0?"var(--danger)":"var(--success)") + '">' + fmtYen(profit) + '</div></div>' +
         '<div class="detail-summary-item"><div class="l">入金済み</div><div class="v">' + fmtYen(receivedTotal) + '</div></div>' +
       '</div>' +
+      '<p style="margin:-4px 0 14px;"><a class="link-jump" href="05_金銭管理.html?quickOrder=1&project=' + encodeURIComponent(p.id) + '&title=' + encodeURIComponent(p.name) + '" target="_blank" rel="noopener">＋簡易発注を追加(案件名をそのまま発注名として使う、契約前の概算向け) ' + ICON_CHEV_R + '</a></p>' +
       '<div class="detail-section-title">発注(' + orders.length + '件)</div>';
     if (!orders.length) {
       html += '<div class="detail-empty">発注はまだありません</div>';
