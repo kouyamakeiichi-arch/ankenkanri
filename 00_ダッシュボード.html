@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="app-build" content="2026-07-27-3" />
+<meta name="app-build" content="2026-07-27-4" />
 <title>ダッシュボード | 太豊建設アプリ</title>
 <style>
   :root {
@@ -76,6 +76,14 @@
   .quick-tile__label { font-size: 13px; font-weight: 700; }
 
   .empty-line { color: var(--text-tertiary); font-size: 12.5px; padding: 12px 0; }
+  .pipeline-toggle { font-size: 11px; color: var(--primary); font-weight: 700; cursor: pointer; margin-top: 8px; display: inline-block; }
+  .pipeline-detail { display: none; margin-top: 8px; padding-top: 4px; border-top: 1px dashed var(--border); max-height: 320px; overflow-y: auto; }
+  .pipeline-detail.is-open { display: block; }
+  .detail-list-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+  .detail-list-row:last-child { border-bottom: none; }
+  .detail-list-row .main { flex: 1; min-width: 0; }
+  .detail-list-row .main .t1 { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .detail-list-row .main .t2 { color: var(--text-tertiary); font-size: 11px; margin-top: 2px; }
   .loading-wrap { display:flex; align-items:center; justify-content:center; padding: 60px 0; color: var(--text-tertiary); font-size: 13px; }
   .spinner { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--primary-soft); border-top-color: var(--primary); animation: spin .7s linear infinite; margin-right: 8px; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -310,14 +318,22 @@
   var PRE_CONTRACT_STATUSES = ["inquiry", "survey", "estimating", "estimated"];
   var CONTRACTED_STATUSES = ["ordered", "before_start", "in_progress", "completed", "cost_fixed", "settled"];
 
-  function pipelineGroupHtml(title, sumRevenue, sumProfit, avgRate, revenueLabel, prefKey) {
+  function pipelineGroupHtml(title, sumRevenue, sumProfit, avgRate, revenueLabel, prefKey, details, groupId) {
+    var rows = details.slice().sort(function (a, b) { return b.rate - a.rate; }).map(function (d) {
+      return '<div class="detail-list-row"><div class="main"><div class="t1">' + esc(d.name) + '</div>' +
+        '<div class="t2">' + revenueLabel + ' ' + fmtYen(d.revenue) + ' ・ 原価 ' + fmtYen(d.cost) + ' ・ 粗利 ' + fmtYen(d.profit) + '</div></div>' +
+        '<span style="font-family:\'Courier New\',monospace;font-weight:700;font-size:13px;color:' + (d.rate>=80?"var(--danger)":d.rate<0?"var(--danger)":"var(--text)") + ';">' + d.rate.toFixed(1) + '%</span></div>';
+    }).join("");
     return '<div data-pref-key="' + prefKey + '" style="margin-bottom:18px;">' +
       '<div style="font-size:12.5px;font-weight:800;color:var(--text-secondary);margin-bottom:8px;">' + esc(title) + '</div>' +
       '<div class="stat-grid" style="margin-bottom:0;">' +
         statCard(revenueLabel, fmtYen(sumRevenue), "") +
         statCard("粗利益合計", fmtYen(sumProfit), "", sumProfit>=0?"success":"danger") +
         statCard("粗利益率(平均)", (avgRate===null ? "-" : avgRate.toFixed(1)+"%"), "") +
-      '</div></div>';
+      '</div>' +
+      (details.length ? '<div class="pipeline-toggle" data-toggle="' + groupId + '">案件の内訳を見る(' + details.length + '件) ▾</div>' +
+        '<div class="pipeline-detail" id="' + groupId + '">' + rows + '</div>' : '') +
+      '</div>';
   }
 
   function renderPipeline(projects, orders, billings) {
@@ -332,16 +348,20 @@
       return { total: total, received: received };
     }
     function summarize(items, revenueOf) {
-      var sumRevenue = 0, sumProfit = 0, rates = [];
+      var sumRevenue = 0, sumProfit = 0, rates = [], details = [];
       items.forEach(function (it) {
         var revenue = revenueOf.revenue(it);
         var cost = revenueOf.cost(it);
         var profit = revenue - cost;
         sumRevenue += revenue; sumProfit += profit;
-        if (revenue > 0) rates.push(profit / revenue * 100);
+        if (revenue > 0) {
+          var rate = profit / revenue * 100;
+          rates.push(rate);
+          details.push({ name: it.name, revenue: revenue, cost: cost, profit: profit, rate: rate });
+        }
       });
       var avgRate = rates.length ? (rates.reduce(function (s,r) { return s+r; }, 0) / rates.length) : null;
-      return { sumRevenue: sumRevenue, sumProfit: sumProfit, avgRate: avgRate };
+      return { sumRevenue: sumRevenue, sumProfit: sumProfit, avgRate: avgRate, details: details };
     }
 
     var preItems = projects.filter(function (p) { return PRE_CONTRACT_STATUSES.indexOf(p.status) !== -1; });
@@ -363,11 +383,17 @@
     });
 
     var html =
-      pipelineGroupHtml("①契約前(見積中など、まだ受注していない案件)", preSum.sumRevenue, preSum.sumProfit, preSum.avgRate, "契約予定合計", "dash_precontract") +
-      pipelineGroupHtml("②契約済(受注〜原価確定・精算完了)", contSum.sumRevenue, contSum.sumProfit, contSum.avgRate, "契約合計", "dash_contracted") +
-      pipelineGroupHtml("③入金済(請求記録がある案件)", paidSum.sumRevenue, paidSum.sumProfit, paidSum.avgRate, "請求合計", "dash_paidgroup");
+      pipelineGroupHtml("①契約前(見積中など、まだ受注していない案件)", preSum.sumRevenue, preSum.sumProfit, preSum.avgRate, "契約予定合計", "dash_precontract", preSum.details, "pl-pre") +
+      pipelineGroupHtml("②契約済(受注〜原価確定・精算完了)", contSum.sumRevenue, contSum.sumProfit, contSum.avgRate, "契約合計", "dash_contracted", contSum.details, "pl-cont") +
+      pipelineGroupHtml("③入金済(請求記録がある案件)", paidSum.sumRevenue, paidSum.sumProfit, paidSum.avgRate, "請求合計", "dash_paidgroup", paidSum.details, "pl-paid");
 
     document.getElementById("pipelineArea").outerHTML = '<div id="pipelineArea">' + html + '</div>';
+    document.querySelectorAll("[data-toggle]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var target = document.getElementById(el.getAttribute("data-toggle"));
+        target.classList.toggle("is-open");
+      });
+    });
     applyDisplayPrefs();
   }
 
