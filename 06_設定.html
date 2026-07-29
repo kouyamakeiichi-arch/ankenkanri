@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-2" />
+<meta name="app-build" content="2026-07-27-3" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>設定 | 太豊建設アプリ</title>
 <style>
@@ -653,7 +653,7 @@
     document.getElementById("typeSubTabs").style.display = tab === "typeSettings" ? "flex" : "none";
     document.getElementById("btnCreate").style.display = (tab === "priceList" || tab === "members" || tab === "typeSettings") ? "inline-flex" : "none";
     document.getElementById("btnCreate").innerHTML = tab === "members"
-      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> メンバーを招待'
+      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> メンバーを追加'
       : (tab === "typeSettings"
         ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> 項目を追加'
         : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> 単価を追加');
@@ -814,14 +814,14 @@
     document.getElementById("countBadge").textContent = state.members.length + "件";
     if (state.members.length === 0) {
       area.innerHTML = '<div class="empty-state">' + ICON_LIST40 +
-        '<p class="empty-state__title">メンバーがいません</p><p class="empty-state__desc">「メンバーを招待」から追加しましょう。</p></div>';
+        '<p class="empty-state__title">メンバーがいません</p><p class="empty-state__desc">「メンバーを追加」から追加しましょう。</p></div>';
       return;
     }
     var rows = "";
     state.members.forEach(function (m) {
       var r = roleOf(m.role);
       rows += '<tr><td><button class="cell-name" data-medit="' + m.id + '">' + esc(m.name) + '</button></td>' +
-        '<td>' + esc(m.email) + '</td>' +
+        '<td>' + (m.email ? esc(m.email) : '<span style="color:var(--text-tertiary);">未入力</span>') + '</td>' +
         '<td><span class="role-badge" style="background:' + r.color + '">' + esc(r.label) + '</span></td>' +
         '<td class="cell-actions"><button class="icon-btn" data-medit="' + m.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td></tr>';
     });
@@ -848,14 +848,14 @@
     var roleOptions = ROLES.map(function (r) { return '<option value="' + r.id + '"' + (d.role===r.id?" selected":"") + '>' + esc(r.label) + '</option>'; }).join("");
     root.innerHTML =
       '<div class="modal-overlay" id="modalOverlay"><div class="modal" role="dialog" aria-modal="true">' +
-      '<div class="modal__header"><h2>' + (isEdit ? "メンバーを編集" : "メンバーを招待") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
+      '<div class="modal__header"><h2>' + (isEdit ? "メンバーを編集" : "メンバーを追加") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
       '<div class="modal__body">' +
       '<div class="field"><label>ユーザー名 <span class="req">*</span></label><input type="text" id="f_mname" value="' + esc(d.name) + '" /><p class="field__error" id="err_mname" style="display:none"></p></div>' +
-      '<div class="field"><label>メールアドレス <span class="req">*</span></label><input type="text" id="f_memail" value="' + esc(d.email) + '" /><p class="field__error" id="err_memail" style="display:none"></p></div>' +
+      '<div class="field"><label>メールアドレス(あとから入力でもOK)</label><input type="text" id="f_memail" value="' + esc(d.email) + '" placeholder="例: taro@example.com" /></div>' +
       '<div class="field"><label>権限</label><select id="f_mrole">' + roleOptions + '</select></div>' +
       '</div><div class="modal__footer">' +
       (isEdit ? '<button class="btn btn--danger-ghost" id="modalDeleteBtn">' + ICON_TRASH + ' 削除</button>' : '<span></span>') +
-      '<div class="modal__footer-right"><button class="btn btn--ghost" id="modalCancelBtn">キャンセル</button><button class="btn btn--primary" id="modalSaveBtn">' + (isEdit ? "保存" : "招待") + '</button></div>' +
+      '<div class="modal__footer-right"><button class="btn btn--ghost" id="modalCancelBtn">キャンセル</button><button class="btn btn--primary" id="modalSaveBtn">' + (isEdit ? "保存" : "追加") + '</button></div>' +
       '</div></div></div>';
     document.getElementById("modalCloseBtn").addEventListener("click", closeMemberModal);
     document.getElementById("modalCancelBtn").addEventListener("click", closeMemberModal);
@@ -867,7 +867,6 @@
       var email = document.getElementById("f_memail").value.trim();
       var ok = true;
       if (!name) { document.getElementById("err_mname").textContent = "ユーザー名を入力してください"; document.getElementById("err_mname").style.display = "block"; ok = false; }
-      if (!email) { document.getElementById("err_memail").textContent = "メールアドレスを入力してください"; document.getElementById("err_memail").style.display = "block"; ok = false; }
       if (!ok) return;
       var form = { id: d.id, name: name, email: email, role: document.getElementById("f_mrole").value };
       if (isEdit) {
@@ -876,7 +875,7 @@
       } else {
         form.id = "m-" + Date.now();
         persistMembers([form].concat(state.members));
-        showToast("メンバーを招待しました");
+        showToast("メンバーを追加しました");
       }
       closeMemberModal();
       renderResults();

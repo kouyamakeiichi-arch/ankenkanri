@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-13" />
+<meta name="app-build" content="2026-07-27-16" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -307,6 +307,9 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         <input type="text" id="searchInput" placeholder="案件名・顧客名・担当者で検索" autocomplete="off" />
       </div>
+      <select id="managerFilter" style="padding:9px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;background:var(--surface);color:var(--text);">
+        <option value="">担当者(すべて)</option>
+      </select>
       <button class="btn btn--primary" id="btnCreate">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
         作成
@@ -527,6 +530,9 @@
     return d.getFullYear() + "年" + (d.getMonth()+1) + "月" + d.getDate() + "日(" + w + ")";
   }
 
+  var PROB_GRADE_MAP = { "90": "S", "70": "A", "50": "B", "30": "C" };
+  function probGrade(v) { return PROB_GRADE_MAP[v] || "-"; }
+
   function fmtYen(v) {
     if (v === "" || v === null || v === undefined || isNaN(Number(v)) || Number(v) === 0) return "-";
     return "¥" + Number(v).toLocaleString("ja-JP");
@@ -570,7 +576,7 @@
   }
 
   var state = {
-    projects: [], customers: [], buildings: [], nextActions: [], loading: true, search: "", activeType: [], activeStatus: [], hideDone: false,
+    projects: [], customers: [], buildings: [], nextActions: [], loading: true, search: "", activeType: [], activeStatus: [], hideDone: false, managerFilter: "",
     /* 案件詳細ハブ用 */
     files: [], scheduleTasks: [], contractors: [], orders: [], billings: [], worklogs: [], requests: [], workTime: [],
     secondaryLoaded: false, detailProjectId: null, detailTab: "info"
@@ -644,6 +650,7 @@
         return state.activeStatus.length ? state.activeStatus.indexOf(p.status) !== -1 : true;
       })
       .filter(function (p) { return state.hideDone ? !statusOf(p.status).done : true; })
+      .filter(function (p) { return state.managerFilter ? (p.manager||"") === state.managerFilter : true; })
       .filter(function (p) {
         if (!q) return true;
         return (p.name||"").toLowerCase().indexOf(q) >= 0 ||
@@ -750,7 +757,7 @@
   }
 
   function syncResetVisibility() {
-    var has = state.search || state.activeType.length || state.activeStatus.length || state.hideDone;
+    var has = state.search || state.activeType.length || state.activeStatus.length || state.hideDone || state.managerFilter;
     document.getElementById("btnReset").style.display = has ? "inline-flex" : "none";
   }
 
@@ -777,6 +784,11 @@
       return;
     }
 
+    function orderTotalFor(pid) {
+      return state.orders.filter(function (o) { return o.projectId === pid && o.status !== "cancelled"; })
+        .reduce(function (s,o) { return s + (Number(o.orderAmount)||0); }, 0);
+    }
+
     var tableRows = "", cardItems = "";
     filtered.forEach(function (p) {
       var t = typeOf(p.typeId);
@@ -786,15 +798,21 @@
             (na.dueDate ? '<b>' + esc(fmtDateShort(na.dueDate)) + '</b> ' : '') + esc(na.content) +
           '</span>'
         : '<span class="next-action-cell next-action-cell--empty" data-detail-na="' + p.id + '">-</span>';
+      var revenue = Number(p.contractAmount)||0;
+      var cost = orderTotalFor(p.id);
+      var profit = revenue - cost;
       tableRows +=
         '<tr>' +
           '<td class="cell-no">' + esc(p.no) + '</td>' +
+          '<td><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span></td>' +
           '<td><div class="cell-name-wrap"><span class="type-bar" style="--bar-color:' + t.color + '"></span>' +
             '<button class="cell-name" data-detail="' + p.id + '">' + esc(p.name) + '</button></div></td>' +
           '<td>' + naHtml + '</td>' +
-          '<td><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span></td>' +
-          '<td>' + statusPillHtml(p.id, p.status, "") + '</td>' +
           '<td>' + esc(p.customerName || "-") + '</td>' +
+          '<td>' + esc(p.manager || "-") + '</td>' +
+          '<td class="amount-text">' + fmtYen(revenue) + '</td>' +
+          '<td class="amount-text">' + fmtYen(cost) + '</td>' +
+          '<td class="amount-text" style="color:' + (profit>=0?"var(--success)":"var(--danger)") + ';">' + fmtYen(profit) + '</td>' +
           '<td class="cell-actions"><button class="icon-btn" data-edit="' + p.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td>' +
         '</tr>';
 
@@ -812,7 +830,7 @@
 
     area.innerHTML =
       '<div class="table-wrap"><table class="projects-table"><thead><tr>' +
-      '<th>No</th><th>案件名</th><th>ネクストアクション</th><th>案件タイプ</th><th>ステータス</th><th>顧客</th><th></th>' +
+      '<th>No</th><th>案件タイプ</th><th>案件名</th><th>ネクストアクション</th><th>顧客</th><th>担当者</th><th>売上</th><th>原価</th><th>粗利益</th><th></th>' +
       '</tr></thead><tbody>' + tableRows + '</tbody></table></div>' +
       '<div class="card-list">' + cardItems + '</div>';
 
@@ -924,12 +942,13 @@
             '</div>' +
             '<datalist id="managerSuggestions">' + managerOptions + '</datalist>' +
             '<div class="field" id="amountFieldWrap" style="display:' + (taskMode ? "none" : "block") + '"><label>契約金額</label><input type="text" inputmode="numeric" id="f_contractAmount" placeholder="例: 1,250,000" value="' + (d.contractAmount ? Number(d.contractAmount).toLocaleString("ja-JP") : "") + '" /></div>' +
-            '<div class="field" id="probabilityFieldWrap" style="display:' + (taskMode ? "none" : "block") + '"><label>契約確度(契約前の場合のみ使用)</label>' +
+            '<div class="field" id="probabilityFieldWrap" style="display:' + (taskMode ? "none" : "block") + '"><label>契約確度(S/A/B/C、契約前の場合のみ使用)</label>' +
               '<select id="f_winProbability">' +
                 '<option value=""' + (!d.winProbability?" selected":"") + '>未設定</option>' +
-                '<option value="90"' + (d.winProbability==="90"?" selected":"") + '>90%</option>' +
-                '<option value="70"' + (d.winProbability==="70"?" selected":"") + '>70%</option>' +
-                '<option value="50"' + (d.winProbability==="50"?" selected":"") + '>50%</option>' +
+                '<option value="90"' + (d.winProbability==="90"?" selected":"") + '>S</option>' +
+                '<option value="70"' + (d.winProbability==="70"?" selected":"") + '>A</option>' +
+                '<option value="50"' + (d.winProbability==="50"?" selected":"") + '>B</option>' +
+                '<option value="30"' + (d.winProbability==="30"?" selected":"") + '>C</option>' +
               '</select></div>' +
             '<div class="field"><label>工事内容</label><textarea id="f_workContent" placeholder="例: 基礎工事、確認申請、外構工事など(改行して複数書けます)">' + esc(d.workContent) + '</textarea></div>' +
             '<div class="field"><label>備考・メモ</label><textarea id="f_note" placeholder="自由にメモを入力できます(枠の右下をドラッグすると広げられます)">' + esc(d.note) + '</textarea></div>' +
@@ -1158,7 +1177,7 @@
       infoItem("着工日", fmtDate(p.startDate)) +
       infoItem("完工日", fmtDate(p.completionDate)) +
       infoItem("契約金額", fmtYen(p.contractAmount)) +
-      infoItem("契約確度", p.winProbability ? p.winProbability + "%" : "-") +
+      infoItem("契約確度", p.winProbability ? probGrade(p.winProbability) : "-") +
       infoItem("担当者", p.manager || "-") +
       infoItem("作成者", p.creator || "-") +
       '</div>' +
@@ -1659,9 +1678,10 @@
   });
   document.getElementById("btnCreate").addEventListener("click", function () { openModal(false, null); });
   document.getElementById("btnReset").addEventListener("click", function () {
-    state.search = ""; state.activeType = []; state.activeStatus = []; state.hideDone = false;
+    state.search = ""; state.activeType = []; state.activeStatus = []; state.hideDone = false; state.managerFilter = "";
     document.getElementById("searchInput").value = "";
     document.getElementById("hideDoneCheckbox").checked = false;
+    document.getElementById("managerFilter").value = "";
     renderTypeTabs(); renderTypeFilterModeBtn(); renderFilterModeBtn(); renderStatusChips(); renderResults(); syncResetVisibility();
   });
 
@@ -1694,15 +1714,19 @@
     renderResults();
     Promise.all([
       storageGet(STORAGE_KEY), storageGet(CUSTOMERS_KEY), storageGet(BUILDINGS_KEY),
-      storageGet(SETTINGS_STATUS_KEY), storageGet(SETTINGS_TYPE_KEY), storageGet(NEXT_ACTIONS_KEY)
+      storageGet(SETTINGS_STATUS_KEY), storageGet(SETTINGS_TYPE_KEY), storageGet(NEXT_ACTIONS_KEY), storageGet("taiho_members_v1"),
+      storageGet(ORDERS_KEY)
     ]).then(function (res) {
-      var data = null, cData = null, bData = null, sData = null, tData = null, naData = null;
+      var data = null, cData = null, bData = null, sData = null, tData = null, naData = null, mData = null, oData = null;
       try { data = res[0] && res[0].value ? JSON.parse(res[0].value) : null; } catch (e) {}
       try { cData = res[1] && res[1].value ? JSON.parse(res[1].value) : null; } catch (e) {}
       try { bData = res[2] && res[2].value ? JSON.parse(res[2].value) : null; } catch (e) {}
       try { sData = res[3] && res[3].value ? JSON.parse(res[3].value) : null; } catch (e) {}
       try { tData = res[4] && res[4].value ? JSON.parse(res[4].value) : null; } catch (e) {}
       try { naData = res[5] && res[5].value ? JSON.parse(res[5].value) : null; } catch (e) {}
+      try { mData = res[6] && res[6].value ? JSON.parse(res[6].value) : null; } catch (e) {}
+      try { oData = res[7] && res[7].value ? JSON.parse(res[7].value) : null; } catch (e) {}
+      if (!state.secondaryLoaded) state.orders = Array.isArray(oData) ? oData : [];
 
       if (data && Array.isArray(data)) {
         state.projects = data;
@@ -1723,6 +1747,19 @@
         TYPE_LIST.length = 0;
         tData.forEach(function (t) { TYPE_LIST.push(t); });
       }
+
+      // ⑥メンバー管理の登録名 + 既存案件で使われている担当者名をあわせてプルダウンの選択肢にする
+      var memberNames = (Array.isArray(mData) ? mData : []).map(function (m) { return (m.name||"").trim(); }).filter(Boolean);
+      var usedNames = state.projects.map(function (p) { return (p.manager||"").trim(); }).filter(Boolean);
+      var managerNames = Array.from(new Set(memberNames.concat(usedNames))).sort(function (a,b) { return a.localeCompare(b, "ja"); });
+      var managerFilterEl = document.getElementById("managerFilter");
+      managerFilterEl.innerHTML = '<option value="">担当者(すべて)</option>' +
+        managerNames.map(function (n) { return '<option value="' + esc(n) + '">' + esc(n) + '</option>'; }).join("");
+      managerFilterEl.addEventListener("change", function () {
+        state.managerFilter = this.value;
+        renderResults();
+        syncResetVisibility();
+      });
 
       state.loading = false;
       renderTypeTabs();
