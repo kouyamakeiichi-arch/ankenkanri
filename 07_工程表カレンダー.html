@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-3" />
+<meta name="app-build" content="2026-07-27-4" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>工程表・カレンダー | 太豊建設アプリ</title>
 <style>
@@ -463,6 +463,30 @@
   function persistRemarks(next) { scheduleRemarks = next; return storageSet(REMARKS_KEY, JSON.stringify(next)); }
   function persistSheetMeta(next) { scheduleSheetMeta = next; return storageSet(SHEET_META_KEY, JSON.stringify(next)); }
   function persistCategoryNotes(next) { scheduleCategoryNotes = next; return storageSet(CATEGORY_NOTES_KEY, JSON.stringify(next)); }
+
+  // 保存の直前にクラウドから最新データを取得し直し、そこに変更を適用してから保存する(他の人の更新を上書きしないための安全策)
+  function makePersistTransform(key, getCurrent, setCurrent, isObjectType) {
+    return function (transformFn) {
+      return storageGet(key).then(function (res) {
+        var fresh = null;
+        try { fresh = res && res.value ? JSON.parse(res.value) : null; } catch (e) { fresh = null; }
+        var validFresh = isObjectType ? (fresh && typeof fresh === "object" && !Array.isArray(fresh)) : Array.isArray(fresh);
+        if (!validFresh) fresh = getCurrent();
+        var next = transformFn(fresh);
+        setCurrent(next);
+        return storageSet(key, JSON.stringify(next));
+      }).catch(function () {
+        var next = transformFn(getCurrent());
+        setCurrent(next);
+        return storageSet(key, JSON.stringify(next));
+      });
+    };
+  }
+  var persistCategoriesTransform = makePersistTransform(CATEGORIES_KEY, function () { return scheduleCategories; }, function (v) { scheduleCategories = v; }, false);
+  var persistPhasesTransform = makePersistTransform(PHASES_KEY, function () { return schedulePhases; }, function (v) { schedulePhases = v; }, false);
+  var persistRemarksTransform = makePersistTransform(REMARKS_KEY, function () { return scheduleRemarks; }, function (v) { scheduleRemarks = v; }, false);
+  var persistSheetMetaTransform = makePersistTransform(SHEET_META_KEY, function () { return scheduleSheetMeta; }, function (v) { scheduleSheetMeta = v; }, true);
+  var persistCategoryNotesTransform = makePersistTransform(CATEGORY_NOTES_KEY, function () { return scheduleCategoryNotes; }, function (v) { scheduleCategoryNotes = v; }, false);
   function categoryNoteFor(projectId, category, dateISO) { return scheduleCategoryNotes.find(function (n) { return n.projectId === projectId && n.category === category && n.date === dateISO; }); }
   function phaseFor(projectId, category) { return schedulePhases.find(function (ph) { return ph.projectId === projectId && ph.category === category; }); }
   function scheduleUid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
@@ -473,6 +497,7 @@
   function loadTasks() { return tasksCache; }
   function findTask(tasks, projectId, dateISO) { return tasks.find(function (t) { return t.projectId === projectId && t.date === dateISO; }); }
   function saveTasks(next) { tasksCache = next; return storageSet(TASKS_KEY, JSON.stringify(next)); }
+  var saveTasksTransform = makePersistTransform(TASKS_KEY, function () { return tasksCache; }, function (v) { tasksCache = v; }, false);
 
   /* ---------------- サイドバー ---------------- */
   function setSidebar(open) {
@@ -577,33 +602,31 @@
   document.getElementById("dtSaveBtn").addEventListener("click", function () {
     if (!dtCurrent) return;
     var content = document.getElementById("dtContent").value.trim();
-    var tasks = loadTasks().slice();
-    var existing = findTask(tasks, dtCurrent.projectId, dtCurrent.date);
-    if (!content) {
-      if (existing) tasks = tasks.filter(function (t) { return t.id !== existing.id; });
-    } else if (existing) {
-      existing.content = content;
-    } else {
-      tasks.push({ id: uid(), projectId: dtCurrent.projectId, date: dtCurrent.date, content: content });
-    }
-    saveTasks(tasks).then(function () {
+    var projectId = dtCurrent.projectId, date = dtCurrent.date;
+    saveTasksTransform(function (fresh) {
+      var existing = findTask(fresh, projectId, date);
+      if (!content) {
+        return existing ? fresh.filter(function (t) { return t.id !== existing.id; }) : fresh;
+      } else if (existing) {
+        return fresh.map(function (t) { return t.id === existing.id ? Object.assign({}, t, { content: content }) : t; });
+      } else {
+        return fresh.concat([{ id: uid(), projectId: projectId, date: date, content: content }]);
+      }
+    }).then(function () {
       document.getElementById("dayTaskOverlay").classList.remove("is-open");
       renderActive();
     });
   });
   document.getElementById("dtDeleteBtn").addEventListener("click", function () {
     if (!dtCurrent) return;
-    var tasks = loadTasks().slice();
-    var existing = findTask(tasks, dtCurrent.projectId, dtCurrent.date);
-    if (existing) {
-      tasks = tasks.filter(function (t) { return t.id !== existing.id; });
-      saveTasks(tasks).then(function () {
-        document.getElementById("dayTaskOverlay").classList.remove("is-open");
-        renderActive();
-      });
-    } else {
+    var projectId = dtCurrent.projectId, date = dtCurrent.date;
+    saveTasksTransform(function (fresh) {
+      var existing = findTask(fresh, projectId, date);
+      return existing ? fresh.filter(function (t) { return t.id !== existing.id; }) : fresh;
+    }).then(function () {
       document.getElementById("dayTaskOverlay").classList.remove("is-open");
-    }
+      renderActive();
+    });
   });
 
   /* ---------------- 工種×日付の工事内容編集モーダル(単一案件モード) ---------------- */
@@ -622,25 +645,30 @@
   document.getElementById("cdtSaveBtn").addEventListener("click", function () {
     if (!cdtCurrent) return;
     var content = document.getElementById("cdtContent").value.trim();
-    var next = scheduleCategoryNotes.slice();
-    var existing = categoryNoteFor(cdtCurrent.projectId, cdtCurrent.category, cdtCurrent.date);
-    if (!content) {
-      if (existing) next = next.filter(function (n) { return n.id !== existing.id; });
-    } else if (existing) {
-      existing.content = content;
-    } else {
-      next.push({ id: scheduleUid(), projectId: cdtCurrent.projectId, category: cdtCurrent.category, date: cdtCurrent.date, content: content });
-    }
-    persistCategoryNotes(next).then(function () {
+    var projectId = cdtCurrent.projectId, category = cdtCurrent.category, date = cdtCurrent.date;
+    persistCategoryNotesTransform(function (fresh) {
+      var existing = fresh.find(function (n) { return n.projectId === projectId && n.category === category && n.date === date; });
+      if (!content) {
+        return existing ? fresh.filter(function (n) { return n.id !== existing.id; }) : fresh;
+      } else if (existing) {
+        return fresh.map(function (n) { return n.id === existing.id ? Object.assign({}, n, { content: content }) : n; });
+      } else {
+        return fresh.concat([{ id: scheduleUid(), projectId: projectId, category: category, date: date, content: content }]);
+      }
+    }).then(function () {
       document.getElementById("catDayTaskOverlay").classList.remove("is-open");
       renderActive();
     });
   });
   document.getElementById("cdtDeleteBtn").addEventListener("click", function () {
     if (!cdtCurrent) return;
-    var existing = categoryNoteFor(cdtCurrent.projectId, cdtCurrent.category, cdtCurrent.date);
-    if (existing) {
-      persistCategoryNotes(scheduleCategoryNotes.filter(function (n) { return n.id !== existing.id; })).then(function () {
+    var projectId = cdtCurrent.projectId, category = cdtCurrent.category, date = cdtCurrent.date;
+    var existingCheck = categoryNoteFor(projectId, category, date);
+    if (existingCheck) {
+      persistCategoryNotesTransform(function (fresh) {
+        var existing = fresh.find(function (n) { return n.projectId === projectId && n.category === category && n.date === date; });
+        return existing ? fresh.filter(function (n) { return n.id !== existing.id; }) : fresh;
+      }).then(function () {
         document.getElementById("catDayTaskOverlay").classList.remove("is-open");
         renderActive();
       });
@@ -786,33 +814,49 @@
   }
 
   function bindSingleProjectPanelEvents(p) {
+    var pid = p.id;
     document.getElementById("sheetPreparedDate").addEventListener("change", function () {
-      var next = Object.assign({}, scheduleSheetMeta);
-      next[p.id] = Object.assign({}, next[p.id], { preparedDate: this.value });
-      persistSheetMeta(next);
+      var v = this.value;
+      persistSheetMetaTransform(function (fresh) {
+        var next = Object.assign({}, fresh);
+        next[pid] = Object.assign({}, next[pid], { preparedDate: v });
+        return next;
+      });
     });
     document.getElementById("sheetPreparedClear").addEventListener("click", function () {
-      var next = Object.assign({}, scheduleSheetMeta);
-      next[p.id] = Object.assign({}, next[p.id], { preparedDate: "" });
-      persistSheetMeta(next).then(function () { renderActive(); });
+      persistSheetMetaTransform(function (fresh) {
+        var next = Object.assign({}, fresh);
+        next[pid] = Object.assign({}, next[pid], { preparedDate: "" });
+        return next;
+      }).then(function () { renderActive(); });
     });
     document.getElementById("sheetSiteManager").addEventListener("change", function () {
-      var next = Object.assign({}, scheduleSheetMeta);
-      next[p.id] = Object.assign({}, next[p.id], { siteManager: this.value });
-      persistSheetMeta(next);
+      var v = this.value;
+      persistSheetMetaTransform(function (fresh) {
+        var next = Object.assign({}, fresh);
+        next[pid] = Object.assign({}, next[pid], { siteManager: v });
+        return next;
+      });
     });
     document.getElementById("sheetSiteManagerClear").addEventListener("click", function () {
-      var next = Object.assign({}, scheduleSheetMeta);
-      next[p.id] = Object.assign({}, next[p.id], { siteManager: "" });
-      persistSheetMeta(next).then(function () { renderActive(); });
+      persistSheetMetaTransform(function (fresh) {
+        var next = Object.assign({}, fresh);
+        next[pid] = Object.assign({}, next[pid], { siteManager: "" });
+        return next;
+      }).then(function () { renderActive(); });
     });
 
     function upsertPhase(cat, patch) {
-      var next = schedulePhases.slice();
-      var existing = next.find(function (ph) { return ph.projectId === p.id && ph.category === cat; });
-      if (existing) { Object.assign(existing, patch); }
-      else { next.push(Object.assign({ id: scheduleUid(), projectId: p.id, category: cat, startDate: "", endDate: "" }, patch)); }
-      persistPhases(next).then(function () { renderActive(); });
+      persistPhasesTransform(function (fresh) {
+        var next = fresh.slice();
+        var existing = next.find(function (ph) { return ph.projectId === pid && ph.category === cat; });
+        if (existing) {
+          next = next.map(function (ph) { return ph.id === existing.id ? Object.assign({}, ph, patch) : ph; });
+        } else {
+          next.push(Object.assign({ id: scheduleUid(), projectId: pid, category: cat, startDate: "", endDate: "" }, patch));
+        }
+        return next;
+      }).then(function () { renderActive(); });
     }
     document.querySelectorAll("[data-phase-start]").forEach(function (inp) {
       inp.addEventListener("change", function () { upsertPhase(inp.getAttribute("data-phase-start"), { startDate: inp.value }); });
@@ -823,23 +867,26 @@
     document.querySelectorAll("[data-phase-clear]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var cat = btn.getAttribute("data-phase-clear");
-        var next = schedulePhases.filter(function (ph) { return !(ph.projectId === p.id && ph.category === cat); });
-        persistPhases(next).then(function () { renderActive(); });
+        persistPhasesTransform(function (fresh) {
+          return fresh.filter(function (ph) { return !(ph.projectId === pid && ph.category === cat); });
+        }).then(function () { renderActive(); });
       });
     });
     document.querySelectorAll("[data-cat-del]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var cat = btn.getAttribute("data-cat-del");
         if (!confirm('工種「' + cat + '」を削除します。全案件のこの工種の期間データも消えます。よろしいですか？')) return;
-        persistCategories(scheduleCategories.filter(function (c) { return c !== cat; }));
-        persistPhases(schedulePhases.filter(function (ph) { return ph.category !== cat; })).then(function () { renderActive(); });
+        persistCategoriesTransform(function (fresh) { return fresh.filter(function (c) { return c !== cat; }); });
+        persistPhasesTransform(function (fresh) { return fresh.filter(function (ph) { return ph.category !== cat; }); }).then(function () { renderActive(); });
       });
     });
     document.getElementById("addCatBtn").addEventListener("click", function () {
       var v = document.getElementById("newCatInput").value.trim();
       if (!v) return;
       if (scheduleCategories.indexOf(v) !== -1) { showToastLocal("すでに存在する工種です"); return; }
-      persistCategories(scheduleCategories.concat([v])).then(function () { renderActive(); });
+      persistCategoriesTransform(function (fresh) {
+        return fresh.indexOf(v) === -1 ? fresh.concat([v]) : fresh;
+      }).then(function () { renderActive(); });
     });
   }
 
@@ -873,21 +920,21 @@
       var date = document.getElementById("remarkDate").value;
       var content = document.getElementById("remarkContent").value.trim();
       if (!content) { showToastLocal("内容を入力してください"); return; }
-      var next;
-      if (editingId) {
-        var id = editingId;
-        next = scheduleRemarks.map(function (r) { return r.id === id ? Object.assign({}, r, { type: type, date: date, content: content }) : r; });
-      } else {
-        next = scheduleRemarks.concat([{ id: scheduleUid(), projectId: p.id, type: type, date: date, content: content, createdAt: Date.now() }]);
-      }
-      persistRemarks(next).then(function () { renderActive(); });
+      var idBeingEdited = editingId;
+      var pid = p.id;
+      persistRemarksTransform(function (fresh) {
+        if (idBeingEdited) {
+          return fresh.map(function (r) { return r.id === idBeingEdited ? Object.assign({}, r, { type: type, date: date, content: content }) : r; });
+        }
+        return fresh.concat([{ id: scheduleUid(), projectId: pid, type: type, date: date, content: content, createdAt: Date.now() }]);
+      }).then(function () { renderActive(); });
     }
     document.getElementById("remarkAddBtn").addEventListener("click", submit);
     document.querySelectorAll("[data-remark-del]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var id = btn.getAttribute("data-remark-del");
         if (!confirm("この備考を削除します。よろしいですか？")) return;
-        persistRemarks(scheduleRemarks.filter(function (r) { return r.id !== id; })).then(function () { renderActive(); });
+        persistRemarksTransform(function (fresh) { return fresh.filter(function (r) { return r.id !== id; }); }).then(function () { renderActive(); });
       });
     });
     document.querySelectorAll("[data-remark-edit]").forEach(function (btn) {
