@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-18" />
+<meta name="app-build" content="2026-07-27-19" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -60,20 +60,20 @@
 
   .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow-x: auto; }
   table.projects-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  .projects-table thead th { position: sticky; top: 0; z-index: 5; background: var(--surface); text-align: left; font-size: 12px; font-weight: 700; color: var(--text-tertiary); padding: 12px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .projects-table thead th { position: sticky; top: 0; z-index: 5; background: var(--surface); text-align: left; font-size: 10.5px; font-weight: 700; color: var(--text-tertiary); padding: 10px 6px; border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .projects-table tbody tr { border-bottom: 1px solid var(--border); transition: background .12s; }
   .projects-table tbody tr:last-child { border-bottom: none; }
   .projects-table tbody tr:hover { background: #FBFAFF; }
-  .projects-table td { padding: 13px 10px; font-size: 13.5px; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .projects-table td { padding: 11px 6px; font-size: 12.5px; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .cell-no { font-family: 'Courier New', monospace; color: var(--text-tertiary); font-size: 12.5px; }
   .cell-name-wrap { display: flex; align-items: center; gap: 8px; overflow: hidden; }
   .cell-name-wrap .cell-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
-  .cell-customer { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+  .cell-customer { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; font-size: 11.5px; }
   .type-bar { width: 4px; height: 26px; border-radius: 3px; background: var(--bar-color); flex-shrink: 0; }
   .cell-name { font-weight: 700; background: none; border: none; cursor: pointer; text-align: left; color: inherit; font-family: inherit; font-size: inherit; padding: 0; }
   .cell-actions { text-align: right; }
 
-  .type-tag { font-size: 11.5px; font-weight: 700; color: var(--tag-color); background: color-mix(in srgb, var(--tag-color) 12%, white); padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .type-tag { font-size: 10.5px; font-weight: 700; color: var(--tag-color); background: color-mix(in srgb, var(--tag-color) 12%, white); padding: 2px 6px; border-radius: 999px; white-space: nowrap; }
 
   .status-pill { position: relative; display: inline-flex; align-items: center; gap: 6px; background: var(--pill-color); border-radius: 999px; padding: 5px 26px 5px 10px; }
   .status-pill__dot { width: 6px; height: 6px; border-radius: 50%; background: white; opacity: .9; flex-shrink:0; }
@@ -99,7 +99,8 @@
   .next-action-cell b { color: var(--primary); font-weight: 700; }
   .next-action-cell--empty { color: var(--text-tertiary); cursor: default; }
   .next-action-cell--empty:hover { color: var(--text-tertiary); text-decoration: none; }
-  .amount-text { font-family: 'Courier New', monospace; font-weight: 700; color: var(--text); font-size: 13px; }
+  .amount-text { font-family: 'Courier New', monospace; font-weight: 700; color: var(--text); font-size: 10.5px; }
+  .projects-table td.amount-text { padding-left: 6px; padding-right: 6px; }
 
   @media (max-width: 860px) {
     .table-wrap { display: none; }
@@ -539,6 +540,10 @@
     if (v === "" || v === null || v === undefined || isNaN(Number(v)) || Number(v) === 0) return "-";
     return "¥" + Number(v).toLocaleString("ja-JP");
   }
+  function fmtYenShort(v) {
+    if (v === "" || v === null || v === undefined || isNaN(Number(v)) || Number(v) === 0) return "-";
+    return Number(v).toLocaleString("ja-JP");
+  }
 
   function fmtSize(bytes) {
     if (!bytes) return "0KB";
@@ -806,15 +811,16 @@
       tableRows +=
         '<tr>' +
           '<td class="cell-no">' + esc(p.no) + '</td>' +
-          '<td><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span></td>' +
           '<td><div class="cell-name-wrap"><span class="type-bar" style="--bar-color:' + t.color + '"></span>' +
             '<button class="cell-name" data-detail="' + p.id + '">' + esc(p.name) + '</button></div></td>' +
+          '<td><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span></td>' +
+          '<td>' + statusPillHtml(p.id, p.status, "sm") + '</td>' +
           '<td>' + naHtml + '</td>' +
           '<td><span class="cell-customer">' + esc(p.customerName || "-") + '</span></td>' +
-          '<td>' + esc(p.manager || "-") + '</td>' +
-          '<td class="amount-text">' + fmtYen(revenue) + '</td>' +
-          '<td class="amount-text">' + fmtYen(cost) + '</td>' +
-          '<td class="amount-text" style="color:' + (profit>=0?"var(--success)":"var(--danger)") + ';">' + fmtYen(profit) + '</td>' +
+          '<td><span class="cell-customer">' + esc(p.manager || "-") + '</span></td>' +
+          '<td class="amount-text">' + fmtYenShort(revenue) + '</td>' +
+          '<td class="amount-text">' + fmtYenShort(cost) + '</td>' +
+          '<td class="amount-text" style="color:' + (profit>=0?"var(--success)":"var(--danger)") + ';">' + fmtYenShort(profit) + '</td>' +
           '<td class="cell-actions"><button class="icon-btn" data-edit="' + p.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td>' +
         '</tr>';
 
@@ -832,9 +838,9 @@
 
     area.innerHTML =
       '<div class="table-wrap"><table class="projects-table">' +
-      '<colgroup><col style="width:44px"><col style="width:92px"><col style="width:168px"><col style="width:130px"><col style="width:108px"><col style="width:74px"><col style="width:77px"><col style="width:77px"><col style="width:77px"><col style="width:36px"></colgroup>' +
+      '<colgroup><col style="width:34px"><col style="width:118px"><col style="width:62px"><col style="width:80px"><col style="width:96px"><col style="width:68px"><col style="width:52px"><col style="width:70px"><col style="width:70px"><col style="width:70px"><col style="width:28px"></colgroup>' +
       '<thead><tr>' +
-      '<th>No</th><th>案件タイプ</th><th>案件名</th><th>ネクストアクション</th><th>顧客</th><th>担当者</th><th>売上</th><th>原価</th><th>粗利益</th><th></th>' +
+      '<th>No</th><th>案件名</th><th>タイプ</th><th>状況</th><th>ネクストアクション</th><th>顧客</th><th>担当</th><th>売上</th><th>原価</th><th>粗利</th><th></th>' +
       '</tr></thead><tbody>' + tableRows + '</tbody></table></div>' +
       '<div class="card-list">' + cardItems + '</div>';
 
