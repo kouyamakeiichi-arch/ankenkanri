@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-2" />
+<meta name="app-build" content="2026-07-27-1" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>金銭管理 | 太豊建設アプリ</title>
 <style>
@@ -679,7 +679,7 @@
 
     area.innerHTML =
       '<div class="table-wrap"><table class="data-table"><thead><tr>' +
-      '<th>発注名</th><th>発注先</th><th>案件</th><th>ステータス</th><th>着工日</th><th>完工日</th><th>発注金額(実行金額)</th><th></th>' +
+      '<th>発注名</th><th>発注先</th><th>案件</th><th>ステータス</th><th>着工日</th><th>完工日</th><th>発注金額</th><th></th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div><div class="card-list">' + cards + '</div>';
 
     area.querySelectorAll("[data-oedit]").forEach(function (el) {
@@ -820,13 +820,13 @@
     var summaryHtml =
       '<div class="summary-bar" style="margin-bottom:14px;">' +
       '<div class="summary-item">請求合計<b>' + fmtYen(sumBilling) + '</b></div>' +
-      '<div class="summary-item">発注合計(実行金額)<b>' + fmtYen(sumOrders) + '</b></div>' +
+      '<div class="summary-item">発注合計<b>' + fmtYen(sumOrders) + '</b></div>' +
       '<div class="summary-item">粗利合計<b style="color:' + (totalProfit<0?"var(--danger)":"var(--success)") + '">' + fmtYen(totalProfit) + '</b></div>' +
       '</div>';
 
     area.innerHTML = summaryHtml +
       '<div class="table-wrap"><table class="data-table"><thead><tr>' +
-      '<th>案件名</th><th>ステータス</th><th>完工日</th><th>次回入金予定日</th><th>請求(売上)</th><th>発注合計(実行金額)</th><th>粗利</th><th>未入金</th><th>回収率</th><th></th>' +
+      '<th>案件名</th><th>ステータス</th><th>完工日</th><th>次回入金予定日</th><th>請求(売上)</th><th>発注合計</th><th>粗利</th><th>未入金</th><th>回収率</th><th></th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div><div class="card-list">' + cards + '</div>';
 
     area.querySelectorAll("[data-bledit]").forEach(function (el) {
@@ -947,7 +947,7 @@
       '<div class="field"><label>着工日</label><input type="date" id="f_startDate" value="' + esc(d.startDate) + '" /></div>' +
       '<div class="field"><label>完工日</label><input type="date" id="f_completionDate" value="' + esc(d.completionDate) + '" /></div>' +
       '</div>' +
-      '<div class="field"><label>発注金額(実行金額)</label><input type="number" id="f_orderAmount" placeholder="例: 500000" value="' + esc(d.orderAmount) + '" /></div>' +
+      '<div class="field"><label>発注金額</label><input type="number" id="f_orderAmount" placeholder="例: 500000" value="' + esc(d.orderAmount) + '" /></div>' +
       '</div><div class="modal__footer">' +
       (isEdit ? '<button class="btn btn--danger-ghost" id="modalDeleteBtn">' + ICON_TRASH + ' 削除</button>' : '<span></span>') +
       '<div class="modal__footer-right"><button class="btn btn--ghost" id="modalCancelBtn">キャンセル</button><button class="btn btn--primary" id="modalSaveBtn">' + (isEdit ? "保存" : "追加") + '</button></div>' +
