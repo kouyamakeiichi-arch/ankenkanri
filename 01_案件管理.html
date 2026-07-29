@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-25" />
+<meta name="app-build" content="2026-07-27-26" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -1139,7 +1139,8 @@
     document.getElementById("confirmOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "confirmOverlay") { confirmDeleteId = null; renderConfirm(); } });
     document.getElementById("confirmCancelBtn").addEventListener("click", function () { confirmDeleteId = null; renderConfirm(); });
     document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
-      persistTransform(function (fresh) { return fresh.filter(function (p) { return p.id !== confirmDeleteId; }); });
+      var idToDelete = confirmDeleteId;
+      persistTransform(function (fresh) { return fresh.filter(function (p) { return p.id !== idToDelete; }); });
       confirmDeleteId = null;
       renderConfirm();
       showToast("案件を削除しました");
