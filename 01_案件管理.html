@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-23" />
+<meta name="app-build" content="2026-07-27-25" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -621,6 +621,24 @@
     renderResults();
   }
 
+  // 保存の直前にクラウドから最新データを取得し直し、そこに変更を適用してから保存する(他の人の更新を上書きしないための安全策)
+  function persistTransform(transformFn) {
+    return storageGet(STORAGE_KEY).then(function (res) {
+      var fresh = null;
+      try { fresh = res && res.value ? JSON.parse(res.value) : null; } catch (e) { fresh = null; }
+      if (!Array.isArray(fresh)) fresh = state.projects;
+      var next = transformFn(fresh);
+      state.projects = next;
+      renderResults();
+      return storageSet(STORAGE_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+    }).catch(function () {
+      var next = transformFn(state.projects);
+      state.projects = next;
+      renderResults();
+      storageSet(STORAGE_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+    });
+  }
+
   function nextNo() {
     if (state.projects.length === 0) return 1;
     var max = 0;
@@ -887,7 +905,7 @@
     area.querySelectorAll("[data-status-change]").forEach(function (el) {
       el.addEventListener("change", function () {
         var id = el.getAttribute("data-status-change");
-        persist(state.projects.map(function (p) { return p.id === id ? Object.assign({}, p, { status: el.value }) : p; }));
+        persistTransform(function (fresh) { return fresh.map(function (p) { return p.id === id ? Object.assign({}, p, { status: el.value }) : p; }); });
       });
     });
   }
@@ -1062,34 +1080,45 @@
       if (!ok) return;
 
       if (isEdit) {
-        persist(state.projects.map(function (p) { return p.id === form.id ? Object.assign({}, p, form) : p; }));
+        persistTransform(function (fresh) { return fresh.map(function (p) { return p.id === form.id ? Object.assign({}, p, form) : p; }); });
         showToast("案件を更新しました");
       } else {
         form.id = "p-" + Date.now();
-        form.no = nextNo();
-        persist([form].concat(state.projects));
+        persistTransform(function (fresh) {
+          form.no = fresh.reduce(function (max, p) { return (p.no||0) > max ? p.no : max; }, 0) + 1;
+          return [form].concat(fresh);
+        });
         showToast("案件を作成しました");
       }
 
-      // 発注金額(実行金額)を⑤金銭管理の発注データへ自動反映
+      // 発注金額(実行金額)を⑤金銭管理の発注データへ自動反映(保存直前に最新データを取得し直してから反映)
       if (!taskModeNow) {
         var orderAmountRaw = document.getElementById("f_orderAmount").value.replace(/,/g, "");
         var orderAmountVal = parseFloat(orderAmountRaw);
-        var existingOrder = linkedOrderFor(form.id);
-        var nextOrders = state.orders.slice();
-        if (!isNaN(orderAmountVal) && orderAmountVal > 0) {
-          if (existingOrder) {
-            nextOrders = nextOrders.map(function (o) { return o.id === existingOrder.id ? Object.assign({}, o, { orderAmount: orderAmountVal, title: form.name }) : o; });
-          } else {
-            nextOrders.push({ id: uid(), projectId: form.id, title: form.name, contractorId: "", status: "estimating", startDate: "", completionDate: "", orderAmount: orderAmountVal, createdAt: Date.now(), linkedFromBasicInfo: true });
+        var savedProjectId = form.id;
+        var savedProjectName = form.name;
+        storageGet(ORDERS_KEY).then(function (res) {
+          var freshOrders = null;
+          try { freshOrders = res && res.value ? JSON.parse(res.value) : null; } catch (e) { freshOrders = null; }
+          if (!Array.isArray(freshOrders)) freshOrders = state.orders;
+          var existingOrder = freshOrders.find(function (o) { return o.projectId === savedProjectId && o.linkedFromBasicInfo === true; });
+          var nextOrders = freshOrders.slice();
+          if (!isNaN(orderAmountVal) && orderAmountVal > 0) {
+            if (existingOrder) {
+              nextOrders = nextOrders.map(function (o) { return o.id === existingOrder.id ? Object.assign({}, o, { orderAmount: orderAmountVal, title: savedProjectName }) : o; });
+            } else {
+              nextOrders.push({ id: uid(), projectId: savedProjectId, title: savedProjectName, contractorId: "", status: "estimating", startDate: "", completionDate: "", orderAmount: orderAmountVal, createdAt: Date.now(), linkedFromBasicInfo: true });
+            }
+          } else if (existingOrder) {
+            nextOrders = nextOrders.filter(function (o) { return o.id !== existingOrder.id; });
           }
-        } else if (existingOrder) {
-          nextOrders = nextOrders.filter(function (o) { return o.id !== existingOrder.id; });
-        }
-        if (JSON.stringify(nextOrders) !== JSON.stringify(state.orders)) {
           state.orders = nextOrders;
-          storageSet(ORDERS_KEY, JSON.stringify(nextOrders)).then(function () { renderResults(); });
-        }
+          return storageSet(ORDERS_KEY, JSON.stringify(nextOrders));
+        }).then(function () {
+          renderResults();
+        }).catch(function () {
+          showToast("発注データの保存に失敗しました");
+        });
       }
 
       closeModal();
@@ -1110,7 +1139,7 @@
     document.getElementById("confirmOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "confirmOverlay") { confirmDeleteId = null; renderConfirm(); } });
     document.getElementById("confirmCancelBtn").addEventListener("click", function () { confirmDeleteId = null; renderConfirm(); });
     document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
-      persist(state.projects.filter(function (p) { return p.id !== confirmDeleteId; }));
+      persistTransform(function (fresh) { return fresh.filter(function (p) { return p.id !== confirmDeleteId; }); });
       confirmDeleteId = null;
       renderConfirm();
       showToast("案件を削除しました");
@@ -1199,8 +1228,9 @@
     root.querySelectorAll("[data-status-change]").forEach(function (el) {
       el.addEventListener("change", function () {
         var id = el.getAttribute("data-status-change");
-        persist(state.projects.map(function (pr) { return pr.id === id ? Object.assign({}, pr, { status: el.value }) : pr; }));
-        renderDetailView();
+        persistTransform(function (fresh) { return fresh.map(function (pr) { return pr.id === id ? Object.assign({}, pr, { status: el.value }) : pr; }); }).then(function () {
+          renderDetailView();
+        });
       });
     });
 
@@ -1466,9 +1496,14 @@
       })).then(function (results) {
         var newFiles = results.filter(function (r) { return r; });
         var failedCount = results.length - newFiles.length;
-        var next = newFiles.concat(state.files);
-        state.files = next;
-        storageSet(FILES_KEY, JSON.stringify(next)).then(function () {
+        storageGet(FILES_KEY).then(function (res) {
+          var fresh = null;
+          try { fresh = res && res.value ? JSON.parse(res.value) : null; } catch (e) { fresh = null; }
+          if (!Array.isArray(fresh)) fresh = state.files;
+          var next = newFiles.concat(fresh);
+          state.files = next;
+          return storageSet(FILES_KEY, JSON.stringify(next));
+        }).then(function () {
           showToast(newFiles.length + "件アップロードしました" + (failedCount ? "(" + failedCount + "件失敗)" : ""));
           renderDetailPanel(p);
         }).catch(function () { showToast("ファイル情報の保存に失敗しました"); });
@@ -1478,9 +1513,14 @@
       btn.addEventListener("click", function () {
         var id = btn.getAttribute("data-fdel");
         var target = state.files.find(function (f) { return f.id === id; });
-        var next = state.files.filter(function (f) { return f.id !== id; });
-        state.files = next;
-        storageSet(FILES_KEY, JSON.stringify(next)).then(function () {
+        storageGet(FILES_KEY).then(function (res) {
+          var fresh = null;
+          try { fresh = res && res.value ? JSON.parse(res.value) : null; } catch (e) { fresh = null; }
+          if (!Array.isArray(fresh)) fresh = state.files;
+          var next = fresh.filter(function (f) { return f.id !== id; });
+          state.files = next;
+          return storageSet(FILES_KEY, JSON.stringify(next));
+        }).then(function () {
           if (target && target.storagePath && window.fbStorage) {
             window.fbStorage.ref().child(target.storagePath).delete().catch(function () {});
           }
@@ -1493,9 +1533,14 @@
       sel.addEventListener("change", function () {
         var id = sel.getAttribute("data-fchange");
         var newFolderId = sel.value;
-        var next = state.files.map(function (f) { return f.id === id ? Object.assign({}, f, { folderId: newFolderId }) : f; });
-        state.files = next;
-        storageSet(FILES_KEY, JSON.stringify(next)).then(function () {
+        storageGet(FILES_KEY).then(function (res) {
+          var fresh = null;
+          try { fresh = res && res.value ? JSON.parse(res.value) : null; } catch (e) { fresh = null; }
+          if (!Array.isArray(fresh)) fresh = state.files;
+          var next = fresh.map(function (f) { return f.id === id ? Object.assign({}, f, { folderId: newFolderId }) : f; });
+          state.files = next;
+          return storageSet(FILES_KEY, JSON.stringify(next));
+        }).then(function () {
           showToast("種別を「" + folderOf(newFolderId).label + "」に変更しました");
         });
       });

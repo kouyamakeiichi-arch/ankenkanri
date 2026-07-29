@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-10-2" />
+<meta name="app-build" content="2026-07-27-2" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>顧客・建物管理 | 太豊建設アプリ</title>
 <style>
@@ -383,6 +383,40 @@
     storageSet(BUILDINGS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
   }
 
+  // 保存の直前にクラウドから最新データを取得し直し、そこに変更を適用してから保存する(他の人の更新を上書きしないための安全策)
+  function persistCustomersTransform(transformFn) {
+    return storageGet(CUSTOMERS_KEY).then(function (res) {
+      var fresh = null;
+      try { fresh = res && res.value ? JSON.parse(res.value) : null; } catch (e) { fresh = null; }
+      if (!Array.isArray(fresh)) fresh = state.customers;
+      var next = transformFn(fresh);
+      state.customers = next;
+      renderResults();
+      return storageSet(CUSTOMERS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+    }).catch(function () {
+      var next = transformFn(state.customers);
+      state.customers = next;
+      renderResults();
+      storageSet(CUSTOMERS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+    });
+  }
+  function persistBuildingsTransform(transformFn) {
+    return storageGet(BUILDINGS_KEY).then(function (res) {
+      var fresh = null;
+      try { fresh = res && res.value ? JSON.parse(res.value) : null; } catch (e) { fresh = null; }
+      if (!Array.isArray(fresh)) fresh = state.buildings;
+      var next = transformFn(fresh);
+      state.buildings = next;
+      renderResults();
+      return storageSet(BUILDINGS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+    }).catch(function () {
+      var next = transformFn(state.buildings);
+      state.buildings = next;
+      renderResults();
+      storageSet(BUILDINGS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+    });
+  }
+
   function customerName(id) {
     var c = state.customers.find(function (x) { return x.id === id; });
     return c ? c.name : "-";
@@ -593,11 +627,11 @@
         phone: document.getElementById("f_phone").value.trim()
       };
       if (isEdit) {
-        persistCustomers(state.customers.map(function (c) { return c.id === form.id ? Object.assign({}, c, form) : c; }));
+        persistCustomersTransform(function (fresh) { return fresh.map(function (c) { return c.id === form.id ? Object.assign({}, c, form) : c; }); });
         showToast("顧客を更新しました");
       } else {
         form.id = "c-" + Date.now();
-        persistCustomers([form].concat(state.customers));
+        persistCustomersTransform(function (fresh) { return [form].concat(fresh); });
         showToast("顧客を作成しました");
       }
       closeCustomerModal();
@@ -649,11 +683,11 @@
         address: document.getElementById("f_address").value.trim()
       };
       if (isEdit) {
-        persistBuildings(state.buildings.map(function (b) { return b.id === form.id ? Object.assign({}, b, form) : b; }));
+        persistBuildingsTransform(function (fresh) { return fresh.map(function (b) { return b.id === form.id ? Object.assign({}, b, form) : b; }); });
         showToast("建物を更新しました");
       } else {
         form.id = "b-" + Date.now();
-        persistBuildings([form].concat(state.buildings));
+        persistBuildingsTransform(function (fresh) { return [form].concat(fresh); });
         showToast("建物を作成しました");
       }
       closeBuildingModal();
@@ -677,10 +711,10 @@
       if (isCust) {
         var used = state.buildings.some(function (b) { return b.customerId === confirmDelete.id; });
         if (used) { showToast("この顧客は建物に紐付いているため削除できません"); confirmDelete = null; renderConfirm(); return; }
-        persistCustomers(state.customers.filter(function (c) { return c.id !== confirmDelete.id; }));
+        persistCustomersTransform(function (fresh) { return fresh.filter(function (c) { return c.id !== confirmDelete.id; }); });
         showToast("顧客を削除しました");
       } else {
-        persistBuildings(state.buildings.filter(function (b) { return b.id !== confirmDelete.id; }));
+        persistBuildingsTransform(function (fresh) { return fresh.filter(function (b) { return b.id !== confirmDelete.id; }); });
         showToast("建物を削除しました");
       }
       confirmDelete = null;
@@ -768,6 +802,10 @@
         } else if (editBuildingId) {
           var b = state.buildings.find(function (x) { return x.id === editBuildingId; });
           if (b) { setTab("buildings"); openBuildingModal(true, b); }
+        } else if (params.get("newCustomer") === "1") {
+          setTab("customers"); openCustomerModal(false, null);
+        } else if (params.get("newBuilding") === "1") {
+          setTab("buildings"); openBuildingModal(false, null);
         }
       } catch (e) {}
     }).catch(function () {
