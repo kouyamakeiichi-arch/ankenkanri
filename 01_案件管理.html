@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-19" />
+<meta name="app-build" content="2026-07-27-23" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -562,6 +562,9 @@
     return (d.getMonth()+1) + "/" + d.getDate() + "(" + ["日","月","火","水","木","金","土"][d.getDay()] + ")";
   }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+  function linkedOrderFor(projectId) {
+    return (state.orders || []).find(function (o) { return o.projectId === projectId && o.linkedFromBasicInfo === true; });
+  }
 
   function seedProjects() {
     return [
@@ -840,7 +843,7 @@
       '<div class="table-wrap"><table class="projects-table">' +
       '<colgroup><col style="width:34px"><col style="width:118px"><col style="width:62px"><col style="width:80px"><col style="width:96px"><col style="width:68px"><col style="width:52px"><col style="width:70px"><col style="width:70px"><col style="width:70px"><col style="width:28px"></colgroup>' +
       '<thead><tr>' +
-      '<th>No</th><th>案件名</th><th>タイプ</th><th>状況</th><th>ネクストアクション</th><th>顧客</th><th>担当</th><th>売上</th><th>原価</th><th>粗利</th><th></th>' +
+      '<th>No</th><th>案件名</th><th>タイプ</th><th>状況</th><th>ネクストアクション</th><th>顧客</th><th>担当</th><th>売上</th><th>原価(実行)</th><th>粗利</th><th></th>' +
       '</tr></thead><tbody>' + tableRows + '</tbody></table></div>' +
       '<div class="card-list">' + cardItems + '</div>';
 
@@ -913,6 +916,8 @@
     var selectedCustomerId = d.customerId || findCustomerIdByName(d.customerName);
     var selectedBuildingId = d.buildingId || findBuildingIdByName(d.buildingName);
     var taskMode = isTaskType(d.typeId);
+    var linkedOrder = d.id ? linkedOrderFor(d.id) : null;
+    var linkedOrderAmount = linkedOrder ? linkedOrder.orderAmount : "";
 
     root.innerHTML =
       '<div class="modal-overlay" id="modalOverlay">' +
@@ -930,8 +935,11 @@
                 '<label id="lbl_customer">' + (taskMode ? "依頼先" : "顧客") + ' <span class="hint" style="font-size:11px;color:var(--text-tertiary);font-weight:400;" id="hint_customer">' + (taskMode ? "" : "②顧客管理から選択") + '</span></label>' +
                 '<select id="f_customerId" style="display:' + (taskMode ? "none" : "block") + '">' + customerOptionsHtml(selectedCustomerId) + '</select>' +
                 '<input type="text" id="f_customerFreeText" placeholder="依頼してきた人・部署など" value="' + esc(d.customerName) + '" style="display:' + (taskMode ? "block" : "none") + '" />' +
+                '<a href="02_顧客建物管理.html?newCustomer=1" target="_blank" rel="noopener" class="link-jump" id="newCustomerLink" style="font-size:11px;margin-top:4px;display:' + (taskMode ? "none" : "inline-block") + ';">＋新規顧客を登録</a>' +
               '</div>' +
-              '<div class="field" id="buildingFieldWrap" style="display:' + (taskMode ? "none" : "block") + '"><label>建物</label><select id="f_buildingId">' + buildingOptionsHtml(selectedCustomerId, selectedBuildingId) + '</select></div>' +
+              '<div class="field" id="buildingFieldWrap" style="display:' + (taskMode ? "none" : "block") + '"><label>建物</label><select id="f_buildingId">' + buildingOptionsHtml(selectedCustomerId, selectedBuildingId) + '</select>' +
+                '<a href="02_顧客建物管理.html?newBuilding=1" target="_blank" rel="noopener" class="link-jump" style="font-size:11px;margin-top:4px;display:inline-block;">＋新規建物を登録</a>' +
+              '</div>' +
             '</div>' +
             '<div class="field-row">' +
               '<div class="field"><label id="lbl_contractDate">' + (taskMode ? "依頼を受けた日" : "契約日") + '</label><input type="date" id="f_contractDate" value="' + esc(d.contractDate) + '" /></div>' +
@@ -952,6 +960,8 @@
             '</div>' +
             '<datalist id="managerSuggestions">' + managerOptions + '</datalist>' +
             '<div class="field" id="amountFieldWrap" style="display:' + (taskMode ? "none" : "block") + '"><label>契約金額</label><input type="text" inputmode="numeric" id="f_contractAmount" placeholder="例: 1,250,000" value="' + (d.contractAmount ? Number(d.contractAmount).toLocaleString("ja-JP") : "") + '" /></div>' +
+            '<div class="field" id="orderAmountFieldWrap" style="display:' + (taskMode ? "none" : "block") + '"><label>発注金額（実行金額）<span style="font-weight:400;color:var(--text-tertiary);">（簡易入力・1件分のみ）</span></label><input type="text" inputmode="numeric" id="f_orderAmount" placeholder="例: 900,000" value="' + (linkedOrderAmount ? Number(linkedOrderAmount).toLocaleString("ja-JP") : "") + '" />' +
+              '<p style="font-size:11px;color:var(--text-tertiary);margin:5px 0 0;">ここに入力すると、⑤金銭管理の「発注」に自動で登録・更新されます(発注名は案件名がそのまま使われます)。複数の発注先がある場合は、⑤金銭管理から個別に追加してください。</p></div>' +
             '<div class="field" id="probabilityFieldWrap" style="display:' + (taskMode ? "none" : "block") + '"><label>契約確度(S/A/B/C、契約前の場合のみ使用)</label>' +
               '<select id="f_winProbability">' +
                 '<option value=""' + (!d.winProbability?" selected":"") + '>未設定</option>' +
@@ -983,6 +993,7 @@
       document.getElementById("lbl_customer").firstChild.textContent = (nowTask ? "依頼先" : "顧客") + " ";
       document.getElementById("hint_customer").textContent = nowTask ? "" : "②顧客管理から選択";
       document.getElementById("f_customerId").style.display = nowTask ? "none" : "block";
+      document.getElementById("newCustomerLink").style.display = nowTask ? "none" : "inline-block";
       document.getElementById("f_customerFreeText").style.display = nowTask ? "block" : "none";
       document.getElementById("buildingFieldWrap").style.display = nowTask ? "none" : "block";
       document.getElementById("lbl_contractDate").textContent = nowTask ? "依頼を受けた日" : "契約日";
@@ -993,6 +1004,7 @@
       document.getElementById("f_completionDate").style.display = nowTask ? "none" : "block";
       document.getElementById("f_completionDateText").style.display = nowTask ? "block" : "none";
       document.getElementById("amountFieldWrap").style.display = nowTask ? "none" : "block";
+      document.getElementById("orderAmountFieldWrap").style.display = nowTask ? "none" : "block";
       document.getElementById("probabilityFieldWrap").style.display = nowTask ? "none" : "block";
     });
     // 契約金額: 入力中はカンマなしの数字、確定するとカンマ区切りで表示する
@@ -1000,6 +1012,13 @@
       this.value = this.value.replace(/,/g, "");
     });
     document.getElementById("f_contractAmount").addEventListener("blur", function () {
+      var n = parseFloat(this.value.replace(/,/g, ""));
+      this.value = (!isNaN(n) && n !== 0) ? n.toLocaleString("ja-JP") : "";
+    });
+    document.getElementById("f_orderAmount").addEventListener("focus", function () {
+      this.value = this.value.replace(/,/g, "");
+    });
+    document.getElementById("f_orderAmount").addEventListener("blur", function () {
       var n = parseFloat(this.value.replace(/,/g, ""));
       this.value = (!isNaN(n) && n !== 0) ? n.toLocaleString("ja-JP") : "";
     });
@@ -1051,6 +1070,28 @@
         persist([form].concat(state.projects));
         showToast("案件を作成しました");
       }
+
+      // 発注金額(実行金額)を⑤金銭管理の発注データへ自動反映
+      if (!taskModeNow) {
+        var orderAmountRaw = document.getElementById("f_orderAmount").value.replace(/,/g, "");
+        var orderAmountVal = parseFloat(orderAmountRaw);
+        var existingOrder = linkedOrderFor(form.id);
+        var nextOrders = state.orders.slice();
+        if (!isNaN(orderAmountVal) && orderAmountVal > 0) {
+          if (existingOrder) {
+            nextOrders = nextOrders.map(function (o) { return o.id === existingOrder.id ? Object.assign({}, o, { orderAmount: orderAmountVal, title: form.name }) : o; });
+          } else {
+            nextOrders.push({ id: uid(), projectId: form.id, title: form.name, contractorId: "", status: "estimating", startDate: "", completionDate: "", orderAmount: orderAmountVal, createdAt: Date.now(), linkedFromBasicInfo: true });
+          }
+        } else if (existingOrder) {
+          nextOrders = nextOrders.filter(function (o) { return o.id !== existingOrder.id; });
+        }
+        if (JSON.stringify(nextOrders) !== JSON.stringify(state.orders)) {
+          state.orders = nextOrders;
+          storageSet(ORDERS_KEY, JSON.stringify(nextOrders)).then(function () { renderResults(); });
+        }
+      }
+
       closeModal();
     });
   }
@@ -1528,7 +1569,7 @@
     var html =
       '<div class="detail-summary-row">' +
         '<div class="detail-summary-item"><div class="l">請求合計</div><div class="v">' + fmtYen(billingsTotal) + '</div></div>' +
-        '<div class="detail-summary-item"><div class="l">発注合計</div><div class="v">' + fmtYen(ordersTotal) + '</div></div>' +
+        '<div class="detail-summary-item"><div class="l">発注合計(実行金額)</div><div class="v">' + fmtYen(ordersTotal) + '</div></div>' +
         '<div class="detail-summary-item"><div class="l">粗利</div><div class="v" style="color:' + (profit<0?"var(--danger)":"var(--success)") + '">' + fmtYen(profit) + '</div></div>' +
         '<div class="detail-summary-item"><div class="l">入金済み</div><div class="v">' + fmtYen(receivedTotal) + '</div></div>' +
       '</div>' +

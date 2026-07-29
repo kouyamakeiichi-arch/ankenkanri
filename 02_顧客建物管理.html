@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-10-2" />
+<meta name="app-build" content="2026-07-27-1" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>顧客・建物管理 | 太豊建設アプリ</title>
 <style>
@@ -768,6 +768,10 @@
         } else if (editBuildingId) {
           var b = state.buildings.find(function (x) { return x.id === editBuildingId; });
           if (b) { setTab("buildings"); openBuildingModal(true, b); }
+        } else if (params.get("newCustomer") === "1") {
+          setTab("customers"); openCustomerModal(false, null);
+        } else if (params.get("newBuilding") === "1") {
+          setTab("buildings"); openBuildingModal(false, null);
         }
       } catch (e) {}
     }).catch(function () {
