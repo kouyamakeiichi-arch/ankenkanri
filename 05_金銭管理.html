@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-1" />
+<meta name="app-build" content="2026-07-27-3" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>金銭管理 | 太豊建設アプリ</title>
 <style>
@@ -431,6 +431,31 @@
     state.billings = next;
     storageSet(BILLINGS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
   }
+
+  // 保存の直前にクラウドから最新データを取得し直し、そこに変更を適用してから保存する(他の人の更新を上書きしないための安全策)
+  function makePersistTransform(key, stateField) {
+    return function (transformFn) {
+      return storageGet(key).then(function (res) {
+        var fresh = null;
+        try { fresh = res && res.value ? JSON.parse(res.value) : null; } catch (e) { fresh = null; }
+        if (!Array.isArray(fresh)) fresh = state[stateField];
+        var next = transformFn(fresh);
+        state[stateField] = next;
+        renderResults();
+        return storageSet(key, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+      }).catch(function () {
+        var next = transformFn(state[stateField]);
+        state[stateField] = next;
+        renderResults();
+        storageSet(key, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+      });
+    };
+  }
+  var persistContractorsTransform = makePersistTransform(CONTRACTORS_KEY, "contractors");
+  var persistOrdersTransform = makePersistTransform(ORDERS_KEY, "orders");
+  var persistPaymentsTransform = makePersistTransform(PAYMENTS_KEY, "payments");
+  var persistBillingsTransform = makePersistTransform(BILLINGS_KEY, "billings");
+
   function contractorName(id) { var c = state.contractors.find(function (x) { return x.id === id; }); return c ? c.name : ""; }
   function projectName(id) { var p = state.projects.find(function (x) { return x.id === id; }); return p ? p.name : ""; }
   function projectOrdersTotal(projectId) {
@@ -679,7 +704,7 @@
 
     area.innerHTML =
       '<div class="table-wrap"><table class="data-table"><thead><tr>' +
-      '<th>発注名</th><th>発注先</th><th>案件</th><th>ステータス</th><th>着工日</th><th>完工日</th><th>発注金額</th><th></th>' +
+      '<th>発注名</th><th>発注先</th><th>案件</th><th>ステータス</th><th>着工日</th><th>完工日</th><th>発注金額(実行金額)</th><th></th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div><div class="card-list">' + cards + '</div>';
 
     area.querySelectorAll("[data-oedit]").forEach(function (el) {
@@ -691,7 +716,7 @@
     area.querySelectorAll("[data-status-change]").forEach(function (el) {
       el.addEventListener("change", function () {
         var id = el.getAttribute("data-status-change");
-        persistOrders(state.orders.map(function (o) { return o.id === id ? Object.assign({}, o, { status: el.value }) : o; }));
+        persistOrdersTransform(function (fresh) { return fresh.map(function (o) { return o.id === id ? Object.assign({}, o, { status: el.value }) : o; }); });
         renderResults();
       });
     });
@@ -758,7 +783,7 @@
     area.querySelectorAll("[data-pstatus-change]").forEach(function (el) {
       el.addEventListener("change", function () {
         var id = el.getAttribute("data-pstatus-change");
-        persistPayments(state.payments.map(function (p) { return p.id === id ? Object.assign({}, p, { status: el.value }) : p; }));
+        persistPaymentsTransform(function (fresh) { return fresh.map(function (p) { return p.id === id ? Object.assign({}, p, { status: el.value }) : p; }); });
         renderResults();
       });
     });
@@ -820,13 +845,13 @@
     var summaryHtml =
       '<div class="summary-bar" style="margin-bottom:14px;">' +
       '<div class="summary-item">請求合計<b>' + fmtYen(sumBilling) + '</b></div>' +
-      '<div class="summary-item">発注合計<b>' + fmtYen(sumOrders) + '</b></div>' +
+      '<div class="summary-item">発注合計(実行金額)<b>' + fmtYen(sumOrders) + '</b></div>' +
       '<div class="summary-item">粗利合計<b style="color:' + (totalProfit<0?"var(--danger)":"var(--success)") + '">' + fmtYen(totalProfit) + '</b></div>' +
       '</div>';
 
     area.innerHTML = summaryHtml +
       '<div class="table-wrap"><table class="data-table"><thead><tr>' +
-      '<th>案件名</th><th>ステータス</th><th>完工日</th><th>次回入金予定日</th><th>請求(売上)</th><th>発注合計</th><th>粗利</th><th>未入金</th><th>回収率</th><th></th>' +
+      '<th>案件名</th><th>ステータス</th><th>完工日</th><th>次回入金予定日</th><th>請求(売上)</th><th>発注合計(実行金額)</th><th>粗利</th><th>未入金</th><th>回収率</th><th></th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div><div class="card-list">' + cards + '</div>';
 
     area.querySelectorAll("[data-bledit]").forEach(function (el) {
@@ -838,7 +863,7 @@
     area.querySelectorAll("[data-bstatus-change]").forEach(function (el) {
       el.addEventListener("change", function () {
         var id = el.getAttribute("data-bstatus-change");
-        persistBillings(state.billings.map(function (bl) { return bl.id === id ? Object.assign({}, bl, { status: el.value }) : bl; }));
+        persistBillingsTransform(function (fresh) { return fresh.map(function (bl) { return bl.id === id ? Object.assign({}, bl, { status: el.value }) : bl; }); });
         renderResults();
       });
     });
@@ -918,11 +943,11 @@
         note: document.getElementById("f_note").value.trim()
       };
       if (isEdit) {
-        persistContractors(state.contractors.map(function (c) { return c.id === form.id ? Object.assign({}, c, form) : c; }));
+        persistContractorsTransform(function (fresh) { return fresh.map(function (c) { return c.id === form.id ? Object.assign({}, c, form) : c; }); });
         showToast("協力業者を更新しました");
       } else {
         form.id = "k-" + Date.now();
-        persistContractors([form].concat(state.contractors));
+        persistContractorsTransform(function (fresh) { return [form].concat(fresh); });
         showToast("協力業者を登録しました");
       }
       closeModal();
@@ -947,7 +972,7 @@
       '<div class="field"><label>着工日</label><input type="date" id="f_startDate" value="' + esc(d.startDate) + '" /></div>' +
       '<div class="field"><label>完工日</label><input type="date" id="f_completionDate" value="' + esc(d.completionDate) + '" /></div>' +
       '</div>' +
-      '<div class="field"><label>発注金額</label><input type="number" id="f_orderAmount" placeholder="例: 500000" value="' + esc(d.orderAmount) + '" /></div>' +
+      '<div class="field"><label>発注金額(実行金額)</label><input type="number" id="f_orderAmount" placeholder="例: 500000" value="' + esc(d.orderAmount) + '" /></div>' +
       '</div><div class="modal__footer">' +
       (isEdit ? '<button class="btn btn--danger-ghost" id="modalDeleteBtn">' + ICON_TRASH + ' 削除</button>' : '<span></span>') +
       '<div class="modal__footer-right"><button class="btn btn--ghost" id="modalCancelBtn">キャンセル</button><button class="btn btn--primary" id="modalSaveBtn">' + (isEdit ? "保存" : "追加") + '</button></div>' +
@@ -973,11 +998,11 @@
         createdAt: d.createdAt || Date.now()
       };
       if (isEdit) {
-        persistOrders(state.orders.map(function (o) { return o.id === form.id ? Object.assign({}, o, form) : o; }));
+        persistOrdersTransform(function (fresh) { return fresh.map(function (o) { return o.id === form.id ? Object.assign({}, o, form) : o; }); });
         showToast("発注を更新しました");
       } else {
         form.id = "o-" + Date.now();
-        persistOrders([form].concat(state.orders));
+        persistOrdersTransform(function (fresh) { return [form].concat(fresh); });
         showToast("発注を追加しました");
       }
       closeModal();
@@ -1035,11 +1060,11 @@
         amount: document.getElementById("f_amount").value
       };
       if (isEdit) {
-        persistPayments(state.payments.map(function (p) { return p.id === form.id ? Object.assign({}, p, form) : p; }));
+        persistPaymentsTransform(function (fresh) { return fresh.map(function (p) { return p.id === form.id ? Object.assign({}, p, form) : p; }); });
         showToast("支払いを更新しました");
       } else {
         form.id = "pay-" + Date.now();
-        persistPayments([form].concat(state.payments));
+        persistPaymentsTransform(function (fresh) { return [form].concat(fresh); });
         showToast("支払いを追加しました");
       }
       closeModal();
@@ -1112,11 +1137,11 @@
         createdAt: d.createdAt || Date.now()
       };
       if (isEdit) {
-        persistBillings(state.billings.map(function (bl) { return bl.id === form.id ? Object.assign({}, bl, form) : bl; }));
+        persistBillingsTransform(function (fresh) { return fresh.map(function (bl) { return bl.id === form.id ? Object.assign({}, bl, form) : bl; }); });
         showToast("請求を更新しました");
       } else {
         form.id = "bl-" + Date.now();
-        persistBillings([form].concat(state.billings));
+        persistBillingsTransform(function (fresh) { return [form].concat(fresh); });
         showToast("請求を追加しました");
       }
       closeModal();
@@ -1136,17 +1161,19 @@
     document.getElementById("confirmOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "confirmOverlay") { confirmDelete = null; renderConfirm(); } });
     document.getElementById("confirmCancelBtn").addEventListener("click", function () { confirmDelete = null; renderConfirm(); });
     document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
-      if (confirmDelete.kind === "contractor") {
-        persistContractors(state.contractors.filter(function (c) { return c.id !== confirmDelete.id; }));
+      var kindToDelete = confirmDelete.kind;
+      var idToDelete = confirmDelete.id;
+      if (kindToDelete === "contractor") {
+        persistContractorsTransform(function (fresh) { return fresh.filter(function (c) { return c.id !== idToDelete; }); });
         showToast("協力業者を削除しました");
-      } else if (confirmDelete.kind === "order") {
-        persistOrders(state.orders.filter(function (o) { return o.id !== confirmDelete.id; }));
+      } else if (kindToDelete === "order") {
+        persistOrdersTransform(function (fresh) { return fresh.filter(function (o) { return o.id !== idToDelete; }); });
         showToast("発注を削除しました");
-      } else if (confirmDelete.kind === "payment") {
-        persistPayments(state.payments.filter(function (p) { return p.id !== confirmDelete.id; }));
+      } else if (kindToDelete === "payment") {
+        persistPaymentsTransform(function (fresh) { return fresh.filter(function (p) { return p.id !== idToDelete; }); });
         showToast("支払いを削除しました");
       } else {
-        persistBillings(state.billings.filter(function (bl) { return bl.id !== confirmDelete.id; }));
+        persistBillingsTransform(function (fresh) { return fresh.filter(function (bl) { return bl.id !== idToDelete; }); });
         showToast("請求を削除しました");
       }
       confirmDelete = null;
