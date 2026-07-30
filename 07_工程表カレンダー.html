@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-4" />
+<meta name="app-build" content="2026-07-27-11" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>工程表・カレンダー | 太豊建設アプリ</title>
 <style>
@@ -148,6 +148,7 @@
   .phase-row__dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
   .phase-row__name { width: 100px; font-size: 12.5px; font-weight: 700; flex-shrink: 0; }
   .phase-row__date { padding: 5px 8px; border: 1px solid var(--border); border-radius: 7px; font-family: inherit; font-size: 12px; }
+  .phase-row__contractor { padding: 5px 8px; border: 1px solid var(--border); border-radius: 7px; font-family: inherit; font-size: 12px; width: 110px; }
   .phase-row__arrow { color: var(--text-tertiary); font-size: 12px; }
   .add-cat-row { display: flex; gap: 8px; margin-top: 10px; }
   .add-cat-row input { flex: 1; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 12.5px; }
@@ -256,6 +257,10 @@
   <a class="sidebar__link" href="10_簡易見積書.html" data-pref-key="sidebar_quick_estimate">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M9 13h6M9 17h4"/></svg>
     簡易見積書(1枚)
+  </a>
+  <a class="sidebar__link" href="11_見積実行予算Pro.html" data-pref-key="sidebar_quote3">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 12h6M9 16h6M9 20h3"/></svg>
+    見積・実行予算Pro
   </a>
   <div class="sidebar__section">サポート</div>
   <a class="sidebar__link" href="99_ヘルプ.html">
@@ -542,6 +547,14 @@
   }
 
   /* ---------------- 案件フィルター ---------------- */
+  var SELECTED_PROJECTS_KEY = "taiho_schedule_selected_v1"; // ブラウザごとの好み(localStorageのみ、他の人には影響しません)
+  function saveSelectedPrefs() {
+    try { localStorage.setItem(SELECTED_PROJECTS_KEY, JSON.stringify(selected)); } catch (e) {}
+  }
+  function loadSelectedPrefs() {
+    try { var raw = localStorage.getItem(SELECTED_PROJECTS_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+  }
+
   function renderFilterList() {
     var el = document.getElementById("filterList");
     if (!allProjects.length) { el.innerHTML = '<div class="empty-line">着工日・完工日が設定された案件がありません</div>'; return; }
@@ -554,14 +567,15 @@
         e.preventDefault();
         var id = label.querySelector("input").getAttribute("data-id");
         selected[id] = !selected[id];
+        saveSelectedPrefs();
         renderFilterList();
         renderActive();
         updateBadge();
       });
     });
   }
-  document.getElementById("selAllBtn").addEventListener("click", function () { allProjects.forEach(function (p) { selected[p.id] = true; }); renderFilterList(); renderActive(); updateBadge(); });
-  document.getElementById("selNoneBtn").addEventListener("click", function () { allProjects.forEach(function (p) { selected[p.id] = false; }); renderFilterList(); renderActive(); updateBadge(); });
+  document.getElementById("selAllBtn").addEventListener("click", function () { allProjects.forEach(function (p) { selected[p.id] = true; }); saveSelectedPrefs(); renderFilterList(); renderActive(); updateBadge(); });
+  document.getElementById("selNoneBtn").addEventListener("click", function () { allProjects.forEach(function (p) { selected[p.id] = false; }); saveSelectedPrefs(); renderFilterList(); renderActive(); updateBadge(); });
 
   /* ---------------- 案件の概要モーダル ---------------- */
   function openDetail(p) {
@@ -794,7 +808,10 @@
         '<input type="date" class="phase-row__date" data-phase-start="' + esc(cat) + '" value="' + (ph ? ph.startDate : "") + '" />' +
         '<span class="phase-row__arrow">→</span>' +
         '<input type="date" class="phase-row__date" data-phase-end="' + esc(cat) + '" value="' + (ph ? ph.endDate : "") + '" />' +
+        '<input type="text" class="phase-row__contractor" data-phase-contractor="' + esc(cat) + '" value="' + esc(ph ? ph.contractor : "") + '" placeholder="担当業者" list="contractorSuggestions" />' +
+        '<button class="icon-btn" data-new-contractor="' + esc(cat) + '" title="候補にない場合、新規協力業者を登録" style="font-size:11px;white-space:nowrap;width:auto;padding:4px 6px;">＋業者</button>' +
         '<button class="icon-btn" data-phase-clear="' + esc(cat) + '" title="期間をクリア">' + ICON_TRASH + '</button>' +
+        '<button class="icon-btn" data-cat-edit="' + esc(cat) + '" title="この工種の名前を編集">' + ICON_PENCIL + '</button>' +
         '<button class="icon-btn" data-cat-del="' + esc(cat) + '" title="この工種を削除">✕</button>' +
         '</div>';
     }).join("");
@@ -807,7 +824,10 @@
         '<label style="margin-left:16px;">現場代理人</label><input type="text" id="sheetSiteManager" value="' + esc(meta.siteManager || "") + '" placeholder="氏名" style="width:140px;" />' +
         '<button class="icon-btn" id="sheetSiteManagerClear" title="クリア">' + ICON_TRASH + '</button>' +
       '</div>' +
+      '<p style="font-size:11px;color:var(--text-tertiary);margin:2px 0 10px;">💡 日付は「2026/7/15」のように直接入力もできますが、欄の右端のカレンダーアイコンから選ぶ方がスムーズです。</p>' +
       '<div class="single-panel__subhead">工種ごとの期間(○日 → ○日)</div>' +
+      '<p style="font-size:11px;color:var(--text-tertiary);margin:-4px 0 8px;">💡 開始日・終了日も直接入力できますが、カレンダーアイコンから選ぶ方が楽です。</p>' +
+      '<datalist id="contractorSuggestions">' + contractorNames.map(function (n) { return '<option value="' + esc(n) + '">'; }).join("") + '</datalist>' +
       '<div class="phase-list">' + catRows + '</div>' +
       '<div class="add-cat-row"><input type="text" id="newCatInput" placeholder="工種を追加(例: 塗装工事)" /><button class="btn btn--ghost btn--sm" id="addCatBtn">＋ 追加</button></div>' +
       '</div>';
@@ -864,6 +884,17 @@
     document.querySelectorAll("[data-phase-end]").forEach(function (inp) {
       inp.addEventListener("change", function () { upsertPhase(inp.getAttribute("data-phase-end"), { endDate: inp.value }); });
     });
+    document.querySelectorAll("[data-phase-contractor]").forEach(function (inp) {
+      inp.addEventListener("change", function () { upsertPhase(inp.getAttribute("data-phase-contractor"), { contractor: inp.value }); });
+    });
+    document.querySelectorAll("[data-new-contractor]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var cat = btn.getAttribute("data-new-contractor");
+        var inp = document.querySelector('[data-phase-contractor="' + cat.replace(/"/g,'\\"') + '"]');
+        var name = inp ? inp.value.trim() : "";
+        window.open("05_金銭管理.html?newContractor=1&name=" + encodeURIComponent(name), "_blank", "noopener");
+      });
+    });
     document.querySelectorAll("[data-phase-clear]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var cat = btn.getAttribute("data-phase-clear");
@@ -878,6 +909,28 @@
         if (!confirm('工種「' + cat + '」を削除します。全案件のこの工種の期間データも消えます。よろしいですか？')) return;
         persistCategoriesTransform(function (fresh) { return fresh.filter(function (c) { return c !== cat; }); });
         persistPhasesTransform(function (fresh) { return fresh.filter(function (ph) { return ph.category !== cat; }); }).then(function () { renderActive(); });
+      });
+    });
+    document.querySelectorAll("[data-cat-edit]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var oldName = btn.getAttribute("data-cat-edit");
+        var newName = prompt("工種名を編集", oldName);
+        if (newName === null) return; // キャンセル
+        newName = newName.trim();
+        if (!newName || newName === oldName) return;
+        if (scheduleCategories.indexOf(newName) !== -1) { showToastLocal("その工種名はすでに存在します"); return; }
+        persistCategoriesTransform(function (fresh) {
+          return fresh.map(function (c) { return c === oldName ? newName : c; });
+        });
+        persistPhasesTransform(function (fresh) {
+          return fresh.map(function (ph) { return ph.category === oldName ? Object.assign({}, ph, { category: newName }) : ph; });
+        });
+        persistCategoryNotesTransform(function (fresh) {
+          return fresh.map(function (n) { return n.category === oldName ? Object.assign({}, n, { category: newName }) : n; });
+        }).then(function () {
+          showToastLocal("工種名を更新しました");
+          renderActive();
+        });
       });
     });
     document.getElementById("addCatBtn").addEventListener("click", function () {
@@ -998,17 +1051,42 @@
     headHtml += '</tr>';
 
     var bodyHtml = rows.map(function (p) {
-      var rowHtml = '<tr><td class="rowhead" data-detail="' + p.id + '">' + esc(p.name) + '</td>';
-      for (var dd2 = 1; dd2 <= daysInMonth; dd2++) {
-        var dd = toDateOnly(new Date(y, m, dd2));
-        var iso = toISO(dd);
-        var on = dd >= p._start && dd <= p._end;
-        if (!on) { rowHtml += '<td></td>'; continue; }
-        var hasTask = !!findTask(tasks, p.id, iso);
-        rowHtml += '<td class="cell-on' + (hasTask?" has-task":"") + '" style="background:' + colorMap[p.id] + ';" data-day="' + p.id + '|' + iso + '"></td>';
+      var activeCats = scheduleCategories.filter(function (cat) {
+        var ph = phaseFor(p.id, cat);
+        return ph && ph.startDate && ph.endDate;
+      });
+
+      if (!activeCats.length) {
+        // 工種の期間が未入力の案件は、従来通り1行で表示
+        var rowHtml = '<tr><td class="rowhead" data-detail="' + p.id + '">' + esc(p.name) + '</td>';
+        for (var dd2 = 1; dd2 <= daysInMonth; dd2++) {
+          var dd = toDateOnly(new Date(y, m, dd2));
+          var iso = toISO(dd);
+          var on = dd >= p._start && dd <= p._end;
+          if (!on) { rowHtml += '<td></td>'; continue; }
+          var hasTask = !!findTask(tasks, p.id, iso);
+          rowHtml += '<td class="cell-on' + (hasTask?" has-task":"") + '" style="background:' + colorMap[p.id] + ';" data-day="' + p.id + '|' + iso + '"></td>';
+        }
+        rowHtml += '</tr>';
+        return rowHtml;
       }
-      rowHtml += '</tr>';
-      return rowHtml;
+
+      // 工種の期間が入力済みの案件は、工種ごとに複数行で表示
+      return activeCats.map(function (cat, ci) {
+        var ph = phaseFor(p.id, cat);
+        var label = (ci === 0 ? '<b>' + esc(p.name) + '</b><br>' : '') + '　・' + esc(cat);
+        var rowHtml = '<tr><td class="rowhead" data-detail="' + p.id + '">' + label + '</td>';
+        for (var dd3 = 1; dd3 <= daysInMonth; dd3++) {
+          var dd2b = toDateOnly(new Date(y, m, dd3));
+          var on2 = dd2b >= toDateOnly(new Date(ph.startDate+"T00:00:00")) && dd2b <= toDateOnly(new Date(ph.endDate+"T00:00:00"));
+          if (!on2) { rowHtml += '<td></td>'; continue; }
+          var iso2 = toISO(dd2b);
+          var hasNote2 = !!categoryNoteFor(p.id, cat, iso2);
+          rowHtml += '<td class="cell-on' + (hasNote2?" has-task":"") + '" style="background:' + categoryColor(cat) + ';" data-cat-day="' + p.id + '|' + esc(cat) + '|' + iso2 + '"></td>';
+        }
+        rowHtml += '</tr>';
+        return rowHtml;
+      }).join("");
     }).join("");
 
     area.innerHTML = '<table class="matrix"><thead>' + headHtml + '</thead><tbody>' + bodyHtml + '</tbody></table>';
@@ -1024,6 +1102,13 @@
         var parts = el.getAttribute("data-day").split("|");
         var p = allProjects.find(function (x) { return x.id === parts[0]; });
         if (p) openDayTask(p, parts[1]);
+      });
+    });
+    Array.prototype.forEach.call(area.querySelectorAll("[data-cat-day]"), function (el) {
+      el.addEventListener("click", function () {
+        var parts = el.getAttribute("data-cat-day").split("|");
+        var p = allProjects.find(function (x) { return x.id === parts[0]; });
+        if (p) openCategoryDayTask(p, parts[1], parts[2]);
       });
     });
   }
@@ -1102,19 +1187,44 @@
     }).join("") + '</tr>';
 
     var bodyHtml = rows.map(function (p) {
-      var rowHtml = '<tr><td class="rowhead" data-detail="' + p.id + '">' + esc(p.name) + '</td>';
-      days.forEach(function (dd) {
-        var on = dd >= p._start && dd <= p._end;
-        if (!on) { rowHtml += '<td></td>'; return; }
-        var iso = toISO(dd);
-        var task = findTask(tasks, p.id, iso);
-        rowHtml += '<td class="week-cell" style="background:' + colorMap[p.id] + '22;border-left:3px solid ' + colorMap[p.id] + ';" data-day="' + p.id + '|' + iso + '">' +
-          '<div class="wc-name" style="color:' + colorMap[p.id] + ';">' + esc(p.name) + '</div>' +
-          (task && task.content ? '<div class="wc-content">' + esc(task.content) + '</div>' : '<div class="wc-content wc-placeholder">＋ クリックして工事内容を入力</div>') +
-          '</td>';
+      var activeCats = scheduleCategories.filter(function (cat) {
+        var ph = phaseFor(p.id, cat);
+        return ph && ph.startDate && ph.endDate;
       });
-      rowHtml += '</tr>';
-      return rowHtml;
+
+      if (!activeCats.length) {
+        var rowHtml = '<tr><td class="rowhead" data-detail="' + p.id + '">' + esc(p.name) + '</td>';
+        days.forEach(function (dd) {
+          var on = dd >= p._start && dd <= p._end;
+          if (!on) { rowHtml += '<td></td>'; return; }
+          var iso = toISO(dd);
+          var task = findTask(tasks, p.id, iso);
+          rowHtml += '<td class="week-cell" style="background:' + colorMap[p.id] + '22;border-left:3px solid ' + colorMap[p.id] + ';" data-day="' + p.id + '|' + iso + '">' +
+            '<div class="wc-name" style="color:' + colorMap[p.id] + ';">' + esc(p.name) + '</div>' +
+            (task && task.content ? '<div class="wc-content">' + esc(task.content) + '</div>' : '<div class="wc-content wc-placeholder">＋ クリックして工事内容を入力</div>') +
+            '</td>';
+        });
+        rowHtml += '</tr>';
+        return rowHtml;
+      }
+
+      return activeCats.map(function (cat, ci) {
+        var ph = phaseFor(p.id, cat);
+        var label = (ci === 0 ? '<b>' + esc(p.name) + '</b><br>' : '') + '　・' + esc(cat);
+        var rowHtml = '<tr><td class="rowhead" data-detail="' + p.id + '">' + label + '</td>';
+        days.forEach(function (dd) {
+          var on = dd >= toDateOnly(new Date(ph.startDate+"T00:00:00")) && dd <= toDateOnly(new Date(ph.endDate+"T00:00:00"));
+          if (!on) { rowHtml += '<td></td>'; return; }
+          var iso = toISO(dd);
+          var note = categoryNoteFor(p.id, cat, iso);
+          rowHtml += '<td class="week-cell" style="background:' + categoryColor(cat) + '22;border-left:3px solid ' + categoryColor(cat) + ';" data-cat-day="' + p.id + '|' + esc(cat) + '|' + iso + '">' +
+            '<div class="wc-name" style="color:' + categoryColor(cat) + ';">' + esc(cat) + '</div>' +
+            (note && note.content ? '<div class="wc-content">' + esc(note.content) + '</div>' : '<div class="wc-content wc-placeholder">＋ クリックして工事内容を入力</div>') +
+            '</td>';
+        });
+        rowHtml += '</tr>';
+        return rowHtml;
+      }).join("");
     }).join("");
 
     area.innerHTML = '<table class="matrix"><thead>' + headHtml + '</thead><tbody>' + bodyHtml + '</tbody></table>';
@@ -1130,6 +1240,13 @@
         var parts = el.getAttribute("data-day").split("|");
         var p = allProjects.find(function (x) { return x.id === parts[0]; });
         if (p) openDayTask(p, parts[1]);
+      });
+    });
+    Array.prototype.forEach.call(area.querySelectorAll("[data-cat-day]"), function (el) {
+      el.addEventListener("click", function () {
+        var parts = el.getAttribute("data-cat-day").split("|");
+        var p = allProjects.find(function (x) { return x.id === parts[0]; });
+        if (p) openCategoryDayTask(p, parts[1], parts[2]);
       });
     });
   }
@@ -1202,12 +1319,15 @@
   var scheduleRemarks = [];
   var scheduleSheetMeta = {};
   var scheduleCategoryNotes = [];
+  var contractorNames = [];
+  var CONTRACTORS_KEY = "taiho_contractors_v1";
 
   Promise.all([
     storageGet(PROJECTS_KEY), storageGet(TASKS_KEY),
-    storageGet(CATEGORIES_KEY), storageGet(PHASES_KEY), storageGet(REMARKS_KEY), storageGet(SHEET_META_KEY), storageGet(CATEGORY_NOTES_KEY)
+    storageGet(CATEGORIES_KEY), storageGet(PHASES_KEY), storageGet(REMARKS_KEY), storageGet(SHEET_META_KEY), storageGet(CATEGORY_NOTES_KEY),
+    storageGet(CONTRACTORS_KEY)
   ]).then(function (res) {
-    var pData = null, tData = null, catData = null, phData = null, rmData = null, smData = null, cnData = null;
+    var pData = null, tData = null, catData = null, phData = null, rmData = null, smData = null, cnData = null, ctData = null;
     try { pData = res[0] && res[0].value ? JSON.parse(res[0].value) : null; } catch (e) {}
     try { tData = res[1] && res[1].value ? JSON.parse(res[1].value) : null; } catch (e) {}
     try { catData = res[2] && res[2].value ? JSON.parse(res[2].value) : null; } catch (e) {}
@@ -1215,6 +1335,7 @@
     try { rmData = res[4] && res[4].value ? JSON.parse(res[4].value) : null; } catch (e) {}
     try { smData = res[5] && res[5].value ? JSON.parse(res[5].value) : null; } catch (e) {}
     try { cnData = res[6] && res[6].value ? JSON.parse(res[6].value) : null; } catch (e) {}
+    try { ctData = res[7] && res[7].value ? JSON.parse(res[7].value) : null; } catch (e) {}
 
     var projects = Array.isArray(pData) ? pData : [];
     tasksCache = Array.isArray(tData) ? tData : [];
@@ -1223,6 +1344,7 @@
     scheduleRemarks = Array.isArray(rmData) ? rmData : [];
     scheduleSheetMeta = (smData && typeof smData === "object") ? smData : {};
     scheduleCategoryNotes = Array.isArray(cnData) ? cnData : [];
+    contractorNames = (Array.isArray(ctData) ? ctData : []).map(function (c) { return c.name; }).filter(Boolean);
 
     allProjects = projects.filter(function (p) { return p.startDate || p.completionDate; }).map(function (p) {
       var s = p.startDate || p.completionDate;
@@ -1234,9 +1356,11 @@
     }).sort(function (a,b) { return a._start - b._start; });
 
     var TYPE_PALETTE_FALLBACK = "#6C47FF";
+    var savedSelected = loadSelectedPrefs();
     allProjects.forEach(function (p) {
       colorMap[p.id] = (p.typeId ? typeOf(p.typeId).color : null) || TYPE_PALETTE_FALLBACK;
-      selected[p.id] = true;
+      // 保存されている好みがあればそれを使い、新しく増えた案件(保存データに無いもの)はデフォルトで表示する
+      selected[p.id] = (savedSelected && Object.prototype.hasOwnProperty.call(savedSelected, p.id)) ? !!savedSelected[p.id] : true;
     });
 
     renderFilterList();

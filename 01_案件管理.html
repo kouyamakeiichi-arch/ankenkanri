@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-26" />
+<meta name="app-build" content="2026-07-27-29" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -289,6 +289,10 @@
   <a class="sidebar__link" href="10_簡易見積書.html" data-pref-key="sidebar_quick_estimate">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M9 13h6M9 17h4"/></svg>
     簡易見積書(1枚)
+  </a>
+  <a class="sidebar__link" href="11_見積実行予算Pro.html" data-pref-key="sidebar_quote3">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 12h6M9 16h6M9 20h3"/></svg>
+    見積・実行予算Pro
   </a>
   <div class="sidebar__section">サポート</div>
   <a class="sidebar__link" href="99_ヘルプ.html">
@@ -719,6 +723,7 @@
         var id = btn.getAttribute("data-type");
         var idx = state.activeType.indexOf(id);
         if (idx === -1) { state.activeType.push(id); } else { state.activeType.splice(idx, 1); }
+        saveFilterPrefs();
         renderTypeTabs();
         renderResults();
         syncResetVisibility();
@@ -736,6 +741,23 @@
       renderResults();
       syncResetVisibility();
     });
+  }
+
+  var LIST_FILTERS_KEY = "taiho_list_filters_v1"; // ブラウザごとの好み(localStorageのみ、他の人には影響しません)
+  function saveFilterPrefs() {
+    try {
+      localStorage.setItem(LIST_FILTERS_KEY, JSON.stringify({
+        activeType: state.activeType, activeStatus: state.activeStatus,
+        managerFilter: state.managerFilter, hideDone: state.hideDone
+      }));
+    } catch (e) {}
+  }
+  function loadFilterPrefs() {
+    try {
+      var raw = localStorage.getItem(LIST_FILTERS_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) { return null; }
   }
 
   var FILTER_MODE_KEY = "taiho_status_filter_mode_v1"; // ブラウザごとの好み(localStorageのみ、他の人には影響しません)
@@ -777,6 +799,7 @@
         var id = btn.getAttribute("data-status");
         var idx = state.activeStatus.indexOf(id);
         if (idx === -1) { state.activeStatus.push(id); } else { state.activeStatus.splice(idx, 1); }
+        saveFilterPrefs();
         renderStatusChips();
         renderResults();
         syncResetVisibility();
@@ -1398,7 +1421,12 @@
       '下のボタンから開くと、宛先・工事件名が反映された状態の白紙シートで始められます(このツールは案件との自動連携はまだ無く、都度「保存」が必要です)。' +
       '</p>' +
       '<p><a class="link-jump" href="10_簡易見積書.html?' + qp + '" target="_blank" rel="noopener">⑩簡易見積書アプリを開く ' + ICON_CHEV_R + '</a></p>' +
-      '<p style="font-size:11.5px;color:var(--text-tertiary);margin-top:16px;">※⑧⑨はクラウド(Firebase)に保存され、この案件と紐付きます。⑩は今のところブラウザ内保存のみです。</p>';
+      '<div class="detail-section-title">見積・実行予算Pro</div>' +
+      '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 10px;">' +
+      '工種タブ・Excel風のセル操作・見積鏡（工事別の実行金額/見積金額/粗利集計）・御見積書印刷までまとめた高機能版です。クラウド(Firebase)に保存されます。' +
+      '</p>' +
+      '<p><a class="link-jump" href="11_見積実行予算Pro.html?' + qp + '" target="_blank" rel="noopener">⑪見積・実行予算Proアプリを開く ' + ICON_CHEV_R + '</a></p>' +
+      '<p style="font-size:11.5px;color:var(--text-tertiary);margin-top:16px;">※⑧⑨⑪はクラウド(Firebase)に保存されます。⑩は今のところブラウザ内保存のみです。</p>';
   }
 
   /* ---- 顧客・建物タブ ---- */
@@ -1770,6 +1798,7 @@
   });
   document.getElementById("hideDoneCheckbox").addEventListener("change", function (e) {
     state.hideDone = e.target.checked;
+    saveFilterPrefs();
     renderResults();
     syncResetVisibility();
   });
@@ -1779,6 +1808,7 @@
     document.getElementById("searchInput").value = "";
     document.getElementById("hideDoneCheckbox").checked = false;
     document.getElementById("managerFilter").value = "";
+    try { localStorage.removeItem(LIST_FILTERS_KEY); } catch (e) {}
     renderTypeTabs(); renderTypeFilterModeBtn(); renderFilterModeBtn(); renderStatusChips(); renderResults(); syncResetVisibility();
   });
 
@@ -1854,14 +1884,29 @@
         managerNames.map(function (n) { return '<option value="' + esc(n) + '">' + esc(n) + '</option>'; }).join("");
       managerFilterEl.addEventListener("change", function () {
         state.managerFilter = this.value;
+        saveFilterPrefs();
         renderResults();
         syncResetVisibility();
       });
+
+      // ブラウザに保存されている絞り込み条件があれば復元する(このPC/ブラウザだけの好み)
+      var savedFilters = loadFilterPrefs();
+      if (savedFilters) {
+        if (Array.isArray(savedFilters.activeType)) state.activeType = savedFilters.activeType;
+        if (Array.isArray(savedFilters.activeStatus)) state.activeStatus = savedFilters.activeStatus;
+        if (typeof savedFilters.hideDone === "boolean") state.hideDone = savedFilters.hideDone;
+        if (typeof savedFilters.managerFilter === "string" && managerNames.indexOf(savedFilters.managerFilter) !== -1) {
+          state.managerFilter = savedFilters.managerFilter;
+          managerFilterEl.value = savedFilters.managerFilter;
+        }
+        document.getElementById("hideDoneCheckbox").checked = state.hideDone;
+      }
 
       state.loading = false;
       renderTypeTabs();
       renderStatusChips();
       renderResults();
+      syncResetVisibility();
 
       // ダッシュボードなど外部からのリンクで ?project=ID&tab=money のように指定されたら、その案件詳細を直接開く
       try {

@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
+<meta name="app-build" content="2026-07-31-1" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>簡易見積書(1枚) | 太豊建設アプリ</title>
 <style>
@@ -147,6 +148,7 @@
 
 <div class="topbar no-print">
   <input type="text" class="proj-name" id="projName" value="無題の見積" spellcheck="false">
+  <span id="autosaveStatus" style="font-size:11px;color:#999;white-space:nowrap;">—</span>
   <button class="btn btn-primary" id="btnSave">💾 保存</button>
   <button class="btn" id="btnNew">＋ 新規</button>
   <button class="btn" id="btnList">📁 保存済み一覧</button>
@@ -351,6 +353,44 @@
 
   var currentProjectId = null;
   var data = emptyData();
+
+  /* ---------------- 自動保存(下書き、閉じ忘れ・クラッシュ対策) ---------------- */
+  var DRAFT_KEY = "simple_quote_draft_v1";
+  var autosaveTimer = null;
+  function scheduleAutosave(){
+    clearTimeout(autosaveTimer);
+    var el = document.getElementById("autosaveStatus");
+    if (el) el.textContent = "✏ 編集中...";
+    autosaveTimer = setTimeout(function(){
+      try{
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+          data: data, currentProjectId: currentProjectId,
+          projName: document.getElementById("projName").value,
+          savedAt: Date.now()
+        }));
+        if (el) {
+          var n = new Date();
+          el.textContent = "💾 下書き保存 " + String(n.getHours()).padStart(2,"0") + ":" + String(n.getMinutes()).padStart(2,"0") + ":" + String(n.getSeconds()).padStart(2,"0");
+        }
+      }catch(e){}
+    }, 800);
+  }
+  function checkDraftOnLoad(){
+    try{
+      var raw = localStorage.getItem(DRAFT_KEY);
+      if(!raw) return;
+      var draft = JSON.parse(raw);
+      if(!draft || !draft.data) return;
+      var mins = Math.max(0, Math.round((Date.now()-(draft.savedAt||0))/60000));
+      var label = mins < 1 ? "1分未満前" : mins + "分前";
+      if(confirm("前回、保存されていない入力内容の下書きが見つかりました(" + label + ")。\n復元しますか？")){
+        currentProjectId = draft.currentProjectId || null;
+        loadIntoForm(draft.data, draft.projName || "無題の見積");
+      } else {
+        localStorage.removeItem(DRAFT_KEY);
+      }
+    }catch(e){}
+  }
   var company = loadCompany();
 
   /* ---------------- レンダリング ---------------- */
@@ -371,10 +411,10 @@
   function bindHeaderEvents(){
     var map = {f_date:"date",f_no:"no",f_client:"client",f_honorific:"honorific",f_estimator:"estimator",f_kojimei:"kojimei",f_delivery:"delivery",f_place:"place",f_pay:"pay",f_valid:"valid",f_remarks:"remarks"};
     Object.keys(map).forEach(function(id){
-      document.getElementById(id).addEventListener("input", function(){ data[map[id]] = this.value; renderTotals(); });
-      document.getElementById(id).addEventListener("change", function(){ data[map[id]] = this.value; renderTotals(); });
+      document.getElementById(id).addEventListener("input", function(){ data[map[id]] = this.value; renderTotals(); scheduleAutosave(); });
+      document.getElementById(id).addEventListener("change", function(){ data[map[id]] = this.value; renderTotals(); scheduleAutosave(); });
     });
-    document.getElementById("t_taxrate").addEventListener("input", function(){ data.taxRate = parseFloat(this.value)||0; renderTotals(); });
+    document.getElementById("t_taxrate").addEventListener("input", function(){ data.taxRate = parseFloat(this.value)||0; renderTotals(); scheduleAutosave(); });
   }
 
   function renderItems(){
@@ -412,6 +452,7 @@
           amounts[3].textContent = (itemAmount(it)||itemExecAmount(it)) ? fmt(itemMargin(it)) : "";
         }
         renderTotals();
+        scheduleAutosave();
         updateRowCountLabel();
       });
       inp.addEventListener("blur", function(){
@@ -424,6 +465,7 @@
         var tr = btn.closest("tr"); var idx = parseInt(tr.getAttribute("data-idx"));
         data.items.splice(idx,1);
         renderItems(); renderTotals();
+        scheduleAutosave();
       });
     });
     body.querySelectorAll("[data-ins]").forEach(function(btn){
@@ -438,6 +480,7 @@
   function insItemAfter(idx){
     data.items.splice(idx+1, 0, emptyItem());
     renderItems(); renderTotals();
+    scheduleAutosave();
   }
 
   function updateRowCountLabel(){
@@ -523,6 +566,7 @@
       }
       cellSel = { r1:r1, c1:c1, r2:r1+rowsNeeded-1, c2:c1+colsNeeded-1 };
       renderItems(); renderTotals();
+      scheduleAutosave();
       applyCellHighlight();
     };
     if(clipGrid){ doPasteWith(clipGrid); return; }
@@ -584,6 +628,7 @@
       }
     }
     renderItems(); renderTotals();
+    scheduleAutosave();
     applyCellHighlight();
   }
 
@@ -598,6 +643,7 @@
     if(ctxRow==null) return;
     data.items.splice(ctxRow,1);
     renderItems(); renderTotals();
+    scheduleAutosave();
   });
 
   /* =====================================================================
@@ -657,6 +703,7 @@
   document.getElementById("btnAddRow").addEventListener("click", function(){
     data.items.push(emptyItem());
     renderItems(); renderTotals();
+    scheduleAutosave();
   });
 
   function loadIntoForm(d, name){
@@ -708,6 +755,8 @@
       currentProjectId = np.id;
     }
     saveProjects(projects);
+    try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
+    if (document.getElementById("autosaveStatus")) document.getElementById("autosaveStatus").textContent = "—";
     showToast("保存しました");
   });
 
@@ -979,31 +1028,9 @@
   }
 
   /* ---------------- 初期化 ---------------- */
-  // ①案件管理から「?caseId=...」付きで開かれた場合、案件名・宛先などを反映した状態で開く
-  function applyCaseLink(){
-    try{
-      var params = new URLSearchParams(window.location.search);
-      var caseId = params.get("caseId");
-      if(!caseId) return false;
-      var caseName = params.get("caseName") || "";
-      var customerName = params.get("customerName") || "";
-      var honorific = params.get("honorific") || "";
-      var buildingName = params.get("buildingName") || "";
-      var buildingAddress = params.get("buildingAddress") || "";
-      var d = emptyData();
-      d.client = customerName || "";
-      d.honorific = honorific || "御中";
-      d.kojimei = caseName || "";
-      d.place = buildingAddress || buildingName || "";
-      loadIntoForm(d, caseName || "無題の見積");
-      return true;
-    }catch(e){ console.warn("案件連携エラー", e); return false; }
-  }
-
   bindHeaderEvents();
-  if(!applyCaseLink()){
-    loadIntoForm(emptyData(), "無題の見積");
-  }
+  loadIntoForm(emptyData(), "無題の見積");
+  checkDraftOnLoad();
 })();
 </script>
 </body>
