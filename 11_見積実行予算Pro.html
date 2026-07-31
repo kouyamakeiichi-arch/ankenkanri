@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="app-build" content="2026-07-31-4">
+<meta name="app-build" content="2026-07-31-5">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Construction Estimate Pro</title>
 <style>
@@ -1013,10 +1013,10 @@ function renderDetail(){
         onfocus="this.value=this.value.replace(/,/g,'')"
         onblur="this.value=formatNum(this.value);updDecUnit(${idx},this.value)"
         style="text-align:right;color:inherit;font-size:13px;width:100%" title="通常は単価(実行)×掛率で自動計算されますが、ここに直接金額を入力すると掛率が逆算されます"></td>
-      <td style="font-weight:600;color:var(--accent)"><input type="text" value="${(it.decOverride!=null&&it.decOverride!=='')?fmt(it.decOverride):(hv?fmt(c.dec):'')}"
+      <td style="font-weight:600;color:var(--accent)"><input type="text" data-auto="${Math.round(c.exec*it.rate)}" value="${(it.decOverride!=null&&it.decOverride!=='')?fmt(it.decOverride):(hv?fmt(c.dec):'')}"
         title="通常は実行金額×掛率で自動計算されます。直接金額を入力すると、その金額で上書きされます(例:実行費用を伴わない事務所経費など)。空欄に戻すと自動計算に戻ります。"
         onfocus="this.value=this.value.replace(/,/g,'')"
-        onblur="this.value=this.value?formatNum(this.value):'';updItem(${idx},'decOverride',this.value===''?null:(parseFloat(this.value.replace(/,/g,''))||0))"
+        onblur="var nv=this.value?(parseFloat(this.value.replace(/,/g,''))||0):null;var auto=parseFloat(this.getAttribute('data-auto'))||0;this.value=nv===null?'':formatNum(nv);updItem(${idx},'decOverride',(nv===null||nv===auto)?null:nv)"
         style="text-align:right;width:100%;border:none;background:transparent;font:inherit;color:inherit;font-weight:inherit;padding:0"></td>
       <td style="color:var(--green)">${hv||(it.decOverride!=null&&it.decOverride!=='')?fmt(c.margin):''}</td>
       <td><button class="ins-btn" onclick="insItemAfter(${idx})" title="この下に行を挿入">➕</button><button class="del-btn" onclick="delItem(${idx})" title="この行を削除">✕</button></td>
