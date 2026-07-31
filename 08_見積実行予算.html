@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="app-build" content="2026-07-31-3">
+<meta name="app-build" content="2026-07-31-4">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Construction Estimate Pro</title>
 <style>
@@ -925,7 +925,7 @@ function renderDetail(){
       <td style="font-weight:600">${hv?fmt(c.exec):''}</td>
       <td class="cell-x" data-r="${idx}" data-c="5" onmousedown="cellDown(${idx},5)" onmouseenter="cellEnter(${idx},5)" oncontextmenu="openCtxMenu(event,${idx},5)"><input type="text" value="${it.rate}"
         onfocus="this.value=this.value.replace(/,/g,'')"
-        onblur="updItem(${idx},'rate',parseFloat(this.value.replace(/,/g,''))||1)"
+        onblur="updItem(${idx},'rate',(function(v){return isNaN(v)?1:v;})(parseFloat(this.value.replace(/,/g,''))))"
         style="text-align:right;width:50px"></td>
       <td class="gr">${it.price?fmt(Math.round(it.price*it.rate)):''}</td>
       <td style="font-weight:600;color:var(--accent)"><input type="text" value="${(it.decOverride!=null&&it.decOverride!=='')?fmt(it.decOverride):(hv?fmt(c.dec):'')}"
