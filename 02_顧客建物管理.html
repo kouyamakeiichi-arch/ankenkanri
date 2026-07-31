@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-5" />
+<meta name="app-build" content="2026-07-27-6" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>顧客・建物管理 | 太豊建設アプリ</title>
 <style>
@@ -509,12 +509,13 @@
     list.forEach(function (c) {
       var t = custTypeOf(c.typeId);
       rows += '<tr><td><button class="cell-name" data-cedit="' + c.id + '">' + esc(c.name) + '</button></td>' +
+        '<td>' + esc(c.honorific || "-") + '</td>' +
         '<td><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span></td>' +
-        '<td>' + esc(c.manager || "-") + '</td><td>' + esc(c.honorific || "-") + '</td>' +
+        '<td>' + esc(c.manager || "-") + '</td>' +
         '<td>' + esc(c.zip || "-") + '</td><td>' + esc(c.address || "-") + '</td><td>' + esc(c.phone || "-") + '</td>' +
         '<td class="cell-actions"><button class="icon-btn" data-cedit="' + c.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td></tr>';
       cards += '<div class="data-card" style="--bar-color:' + t.color + '">' +
-        '<div class="data-card__top"><div class="data-card__name">' + esc(c.name) + '</div>' +
+        '<div class="data-card__top"><div class="data-card__name">' + esc(c.name) + (c.honorific ? '　' + esc(c.honorific) : '') + '</div>' +
         '<button class="icon-btn" data-cedit="' + c.id + '" aria-label="編集">' + ICON_PENCIL + '</button></div>' +
         '<div class="data-card__meta"><span class="type-tag" style="--tag-color:' + t.color + '">' + esc(t.label) + '</span>' +
         (c.manager ? '<span>' + esc(c.manager) + '</span>' : '') + '</div>' +
@@ -522,7 +523,7 @@
         (c.address ? '<span>' + ICON_PIN + esc(c.address) + '</span>' : '') + '</div></div>';
     });
     area.innerHTML =
-      '<div class="table-wrap"><table class="data-table"><thead><tr><th>顧客名</th><th>顧客タイプ</th><th>担当者</th><th>敬称</th><th>郵便番号</th><th>顧客住所</th><th>電話番号</th><th></th></tr></thead>' +
+      '<div class="table-wrap"><table class="data-table"><thead><tr><th>顧客名</th><th>敬称</th><th>顧客タイプ</th><th>担当者</th><th>郵便番号</th><th>顧客住所</th><th>電話番号</th><th></th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div><div class="card-list">' + cards + '</div>';
     area.querySelectorAll("[data-cedit]").forEach(function (el) {
       el.addEventListener("click", function () {
@@ -596,10 +597,10 @@
       '<div class="modal-overlay" id="modalOverlay"><div class="modal" role="dialog" aria-modal="true">' +
       '<div class="modal__header"><h2>' + (isEdit ? "顧客を編集" : "顧客を作成") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
       '<div class="modal__body">' +
+      '<div class="field-row"><div class="field"><label>顧客名 <span class="req">*</span></label><input type="text" id="f_name" placeholder="例: 山田太郎" value="' + esc(d.name) + '" /><p class="field__error" id="err_name" style="display:none"></p></div>' +
+      '<div class="field" style="max-width:110px"><label>敬称</label><input type="text" id="f_honorific" value="' + esc(d.honorific) + '" /></div></div>' +
       '<div class="field"><label>顧客タイプ</label><select id="f_typeId">' + typeOptions + '</select></div>' +
-      '<div class="field"><label>顧客名 <span class="req">*</span></label><input type="text" id="f_name" placeholder="例: 山田太郎" value="' + esc(d.name) + '" /><p class="field__error" id="err_name" style="display:none"></p></div>' +
-      '<div class="field-row"><div class="field"><label>担当者</label><input type="text" id="f_manager" list="managerSuggestions" placeholder="社内担当者" value="' + esc(d.manager) + '" /></div>' +
-      '<div class="field" style="max-width:110px"><label>帳票敬称</label><input type="text" id="f_honorific" value="' + esc(d.honorific) + '" /></div></div>' +
+      '<div class="field"><label>担当者</label><input type="text" id="f_manager" list="managerSuggestions" placeholder="社内担当者" value="' + esc(d.manager) + '" /></div>' +
       '<datalist id="managerSuggestions">' + managerOptions + '</datalist>' +
       '<div class="field-row"><div class="field" style="max-width:160px"><label>郵便番号</label><input type="text" id="f_zip" placeholder="000-0000" value="' + esc(d.zip) + '" /></div>' +
       '<div class="field"><label>顧客住所</label><input type="text" id="f_address" placeholder="都道府県から入力" value="' + esc(d.address) + '" /></div></div>' +
