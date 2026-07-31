@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="app-build" content="2026-07-31-2">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Construction Estimate Pro</title>
 <style>
@@ -399,8 +400,10 @@ table.pq-table tr.total-row td.l{text-align:left}
     <div class="f-row"><label>大項目にまとめる工種</label><input class="f-inp" id="s-groupUpTo" type="number" min="0" step="1" placeholder="例：12"></div>
     <div style="font-size:11px;color:var(--text3);margin:-6px 0 10px 138px;line-height:1.6">
       工種番号がこの数値以下のものを「大項目名称」1行にまとめ、これより大きい工種は個別行のまま表紙に表示します（初期値12）。<br>
-      ※ 内訳表（表紙）を確実に1ページに収めるため、表紙に表示される種別（大項目＋個別工種）は6〜8業種前後を目安にこの数値を設定して下さい。備考欄が長い場合はさらに少なめにして下さい。
+      ※ 内訳表（表紙）を確実に1ページに収めるため、表紙に表示される種別（大項目＋個別工種）は6〜8業種前後を目安にこの数値を設定して下さい。備考欄が長い場合はさらに少なめにして下さい。<br>
+      ※ <b>「0」を入力すると大項目にまとめず、全ての工種を個別行のまま表紙に表示します。</b>
     </div>
+    <div class="f-row"><button class="btn" style="font-size:11px;padding:4px 10px;" onclick="document.getElementById('s-groupUpTo').value=0;document.getElementById('s-groupUpTo').dispatchEvent(new Event('change'))">大項目を使わない(0にする)</button></div>
     <div class="modal-btns">
       <button class="btn" onclick="closeSettings()">キャンセル</button>
       <button class="btn pri" onclick="saveSettings()">保存して閉じる</button>
@@ -653,6 +656,13 @@ function fsPullToLocal(key){
 const PROJ_LIST_KEY='cep9_projects';
 const PROJ_CUR_KEY='cep9_current';
 const TC=['#3b82f6','#ef4444','#f59e0b','#10b981','#8b5cf6','#ec4899','#06b6d4','#f97316','#6366f1','#14b8a6','#a855f7','#84cc16','#d946ef','#22c55e','#2563eb','#dc2626','#7c3aed','#0891b2','#c2410c'];
+function contrastText(hex){
+  hex=(hex||'').replace('#','');
+  if(hex.length!==6)return'#fff';
+  const r=parseInt(hex.substr(0,2),16),g=parseInt(hex.substr(2,2),16),b=parseInt(hex.substr(4,2),16);
+  const lum=(0.299*r+0.587*g+0.114*b)/255;
+  return lum>0.6?'#1a1a1a':'#fff';
+}
 const MAX=21;
 
 let projects=[];
@@ -936,13 +946,13 @@ function renderMetrics(){
 
 function renderTabs(){
   document.getElementById('cat-tabs').innerHTML=curData().map((c,i)=>{
-    const col=TC[i%TC.length];const on=i===curCat;
+    const col=TC[i%TC.length];const on=i===curCat;const tcol=contrastText(col);
     return `<div class="tab${on?' on':''}"
       id="tab-${i}"
-      style="${on?'background:'+col+';color:#fff;border-color:'+col+';border-bottom-color:'+col+';':'color:'+col+';border-color:'+col+';'}"
+      style="${on?'background:'+col+';color:'+tcol+';border-color:'+col+';border-bottom-color:'+col+';':'color:'+col+';border-color:'+col+';'}"
       onclick="selCat(${i})"
       ondblclick="startEditTab(${i},event)">
-      <span class="tab-label" style="color:${on?'#fff':col}">★ ${c.name}</span>
+      <span class="tab-label" style="color:${on?tcol:col}">★ ${c.name}</span>
       <input class="tab-edit" id="tab-inp-${i}" value="${c.name}"
         onclick="event.stopPropagation()"
         onblur="finishEditTab(${i},this)"
@@ -1074,7 +1084,9 @@ function buildCoverHtml(){
   // 種別が多い場合、表紙の内訳が2ページに渡ってしまうため、
   // 工種1～14（仮設～設備機器工事など建築主体部分）は「建築工事」1式にまとめ、
   // 工種15以降（電気工事・設備工事・雑工事・設計及び申請料・運搬諸経費等）は個別の行のまま表示する。
-  const groupUpTo=parseInt(s.groupUpTo,10)||14;
+  // ※設定欄を空欄のままにした場合のみ初期値14を使う。「0」を入力した場合は大項目を使わない(全工種を個別表示)。
+  const rawGroupUpTo=s.groupUpTo;
+  const groupUpTo=(rawGroupUpTo===''||rawGroupUpTo===null||rawGroupUpTo===undefined)?14:(parseInt(rawGroupUpTo,10)||0);
   const mainCats=curData().filter(cat=>cat.id<=groupUpTo);
   const otherCats=curData().filter(cat=>cat.id>groupUpTo).sort((a,b)=>a.id-b.id);
   let coverRows='';
@@ -1091,6 +1103,14 @@ function buildCoverHtml(){
     const note=cat.id===15?'別途予算取して下さい':'';
     return `<tr><td class="l">${cat.name}</td><td class="l"></td><td class="num">1</td><td class="c">式</td><td class="num"></td><td class="num">${t.dec>0?fmt(t.dec):''}</td><td class="l">${note}</td></tr>`;
   }).join('');
+
+  // 種別行(項目数)が少ないと表紙の見た目が寂しくなるため、種別ヘッダー行〜合計行までが常に13行になるよう空行で埋める
+  const dataRowsUsed=(mainCats.length?1:0)+otherCats.length;
+  const totalRowsCount=3+(discRow?1:0); // 小計・[値引き]・消費税・合計
+  const padCount=Math.max(0,13-1-totalRowsCount-dataRowsUsed);
+  for(let i=0;i<padCount;i++){
+    coverRows+=`<tr><td class="l">&nbsp;</td><td class="l"></td><td class="num"></td><td class="c"></td><td class="num"></td><td class="num"></td><td class="l"></td></tr>`;
+  }
 
   return `
     <div class="pq-title-wrap"><span class="pq-title">御見積書</span></div>
