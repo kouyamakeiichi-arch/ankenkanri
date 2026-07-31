@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="app-build" content="2026-07-31-2">
+<meta name="app-build" content="2026-07-31-3">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Construction Estimate Pro</title>
 <style>
@@ -817,7 +817,7 @@ function deleteProj(id){
 }
 
 // ===== CALC =====
-function ci(it){const e=Math.round(it.qty*it.price);const d=Math.round(e*it.rate);return{exec:e,dec:d,margin:d-e};}
+function ci(it){const e=Math.round(it.qty*it.price);const d=(it.decOverride!=null&&it.decOverride!=='')?Math.round(it.decOverride):Math.round(e*it.rate);return{exec:e,dec:d,margin:d-e};}
 function cc(cat){let e=0,d=0,m=0;cat.items.forEach(it=>{const c=ci(it);e+=c.exec;d+=c.dec;m+=c.margin;});return{exec:e,dec:d,margin:m};}
 function ca(){
   let e=0,d=0,m=0;
@@ -928,8 +928,12 @@ function renderDetail(){
         onblur="updItem(${idx},'rate',parseFloat(this.value.replace(/,/g,''))||1)"
         style="text-align:right;width:50px"></td>
       <td class="gr">${it.price?fmt(Math.round(it.price*it.rate)):''}</td>
-      <td style="font-weight:600;color:var(--accent)">${hv?fmt(c.dec):''}</td>
-      <td style="color:var(--green)">${hv?fmt(c.margin):''}</td>
+      <td style="font-weight:600;color:var(--accent)"><input type="text" value="${(it.decOverride!=null&&it.decOverride!=='')?fmt(it.decOverride):(hv?fmt(c.dec):'')}"
+        title="通常は実行金額×掛率で自動計算されます。直接金額を入力すると、その金額で上書きされます(例:実行費用を伴わない事務所経費など)。空欄に戻すと自動計算に戻ります。"
+        onfocus="this.value=this.value.replace(/,/g,'')"
+        onblur="this.value=this.value?formatNum(this.value):'';updItem(${idx},'decOverride',this.value===''?null:(parseFloat(this.value.replace(/,/g,''))||0))"
+        style="text-align:right;width:100%;border:none;background:transparent;font:inherit;color:inherit;font-weight:inherit;padding:0"></td>
+      <td style="color:var(--green)">${hv||( it.decOverride!=null&&it.decOverride!=='')?fmt(c.margin):''}</td>
       <td><button class="ins-btn" onclick="insItemAfter(${idx})" title="この下に行を挿入">➕</button><button class="del-btn" onclick="delItem(${idx})" title="この行を削除">✕</button></td>
     </tr>`;
   }).join('');
@@ -1608,14 +1612,14 @@ function buildPrint(){
   curData().forEach(cat=>{
     const tot=cc(cat);
     const rows=cat.items.map(it=>{
-      const c=ci(it);const hv=it.qty>0&&it.price>0;
+      const c=ci(it);const hv=it.qty>0&&it.price>0;const hasDec=hv||(it.decOverride!=null&&it.decOverride!=='');
       return `<tr>
         <td style="text-align:center;border-left:1px solid #888">${it.no}</td>
         <td style="text-align:left">${it.name}</td>
         <td style="text-align:center">${it.qty||''}</td>
         <td style="text-align:center">${it.unit}</td>
         <td style="text-align:right">${it.price&&it.rate?fmt(Math.round(it.price*it.rate)):''}</td>
-        <td style="text-align:right">${hv?fmt(c.dec):''}</td>
+        <td style="text-align:right">${hasDec?fmt(c.dec):''}</td>
         <td style="text-align:left;border-right:1px solid #888">${it.kei}</td>
       </tr>`;
     }).join('');
