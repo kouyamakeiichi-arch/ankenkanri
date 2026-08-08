@@ -229,6 +229,15 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         <input type="text" id="searchInput" placeholder="名称・仕様で検索" />
       </div>
+      <button class="btn btn--ghost" id="btnImportEstimate" style="display:none;" title="⑪見積・実行予算Proで書き出した見積データ(.json)から、工事タブ＝ジャンルとして単価表に一括登録します">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        見積データから一括登録
+      </button>
+      <input type="file" id="importEstimateInput" accept=".json" style="display:none">
+      <button class="btn btn--danger-ghost" id="btnDeleteAll" style="display:none;" title="単価表・単位設定に登録されている単価をすべて削除します">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/><path d="M10 11v6M14 11v6"/></svg>
+        全件削除
+      </button>
       <button class="btn btn--primary" id="btnCreate">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
         単価を追加
@@ -246,6 +255,7 @@
   </div>
 
   <div class="module-tabs" id="typeSubTabs" style="display:none"></div>
+  <div class="module-tabs" id="priceGenreTabs" style="display:flex;flex-wrap:wrap;"></div>
   <div id="resultsArea"></div>
 </div>
 </div>
@@ -365,6 +375,16 @@
   }
   var UNITS_KEY = "taiho_units_v1";
 
+  // 単価表のジャンル一覧（⑪見積・実行予算Proの工種(工事タブ)と同じ名称・順序）
+  var PRICE_GENRES = [
+    "仮設工事","土工事","杭打工事","コンクリート工事","木工事","屋根・板金工事",
+    "外装工事","断熱防水工事","左官工事","塗装工事","サッシ工事","建具工事",
+    "内装工事","設備機器工事","電気工事","設備工事","雑工事","設計及び申請料","運搬・諸経費"
+  ];
+  function genreOptions(selected) {
+    return PRICE_GENRES.map(function (g) { return '<option value="' + esc(g) + '"' + (selected===g?" selected":"") + '>' + esc(g) + '</option>'; }).join("");
+  }
+
   function esc(str) {
     return String(str == null ? "" : str).replace(/[&<>"']/g, function (s) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s];
@@ -399,6 +419,11 @@
     return ["式","人工","枚","坪","本","m","m²","m³","台","回","個","ヶ所","kg","ケース","基","系統","時間","日","その他"];
   }
   function seedPriceItems() {
+    // ご要望により、初期サンプルの単価データは登録しない状態にしています。
+    // 「単価を追加」からジャンルごとに新規登録してください。
+    return [];
+  }
+  function seedPriceItemsOld_unused() {
     return [
       { id: "u-1", name: "玄関ポスト", spec: "", qty: 1, unit: "台", sellPrice: 18000, costPrice: 15000 },
       { id: "u-2", name: "天井点検口", spec: "", qty: 1, unit: "台", sellPrice: 18216, costPrice: 15180 },
@@ -501,7 +526,7 @@
   var ICON_LIST40 = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>';
   var ICON_PLUS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
 
-  var state = { tab: "priceList", items: [], units: [], bizInfo: null, members: [], typeSettings: {}, activeTypeCategory: "projectStatus", loading: true, search: "" };
+  var state = { tab: "priceList", items: [], units: [], bizInfo: null, members: [], typeSettings: {}, activeTypeCategory: "projectStatus", activeGenre: "all", loading: true, search: "" };
   var editModal = null;
   var confirmDeleteId = null;
   var bizEditing = false;
@@ -655,6 +680,9 @@
     document.getElementById("tabBackup").classList.toggle("is-active", tab === "backup");
     document.getElementById("searchInput").parentElement.style.display = tab === "priceList" ? "" : "none";
     document.getElementById("typeSubTabs").style.display = tab === "typeSettings" ? "flex" : "none";
+    document.getElementById("priceGenreTabs").style.display = tab === "priceList" ? "flex" : "none";
+    document.getElementById("btnImportEstimate").style.display = tab === "priceList" ? "inline-flex" : "none";
+    document.getElementById("btnDeleteAll").style.display = tab === "priceList" ? "inline-flex" : "none";
     document.getElementById("btnCreate").style.display = (tab === "priceList" || tab === "members" || tab === "typeSettings") ? "inline-flex" : "none";
     document.getElementById("btnCreate").innerHTML = tab === "members"
       ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> メンバーを追加'
@@ -662,6 +690,7 @@
         ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> 項目を追加'
         : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> 単価を追加');
     if (tab === "typeSettings") renderTypeSubTabs();
+    if (tab === "priceList") renderPriceGenreTabs();
     renderResults();
   }
   document.getElementById("tabPriceList").addEventListener("click", function () { setTab("priceList"); });
@@ -685,14 +714,34 @@
     });
   }
 
+  function renderPriceGenreTabs() {
+    var el = document.getElementById("priceGenreTabs");
+    if (!el) return;
+    var chips = [{ id: "all", label: "すべて" }].concat(PRICE_GENRES.map(function (g) { return { id: g, label: g }; }));
+    el.innerHTML = chips.map(function (c) {
+      return '<button class="module-tab' + (state.activeGenre===c.id?" is-active":"") + '" data-genre="' + esc(c.id) + '" style="font-size:12px;">' + esc(c.label) + '</button>';
+    }).join("");
+    el.querySelectorAll("[data-genre]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.activeGenre = btn.getAttribute("data-genre");
+        renderPriceGenreTabs();
+        renderResults();
+      });
+    });
+  }
+
   function unitOptions(selected) {
     return state.units.map(function (u) { return '<option value="' + esc(u) + '"' + (selected===u?" selected":"") + '>' + esc(u) + '</option>'; }).join("");
   }
 
   function filteredItems() {
     var q = state.search.trim().toLowerCase();
-    if (!q) return state.items;
-    return state.items.filter(function (it) {
+    var list = state.items;
+    if (state.activeGenre && state.activeGenre !== "all") {
+      list = list.filter(function (it) { return it.genre === state.activeGenre; });
+    }
+    if (!q) return list;
+    return list.filter(function (it) {
       return (it.name||"").toLowerCase().indexOf(q) >= 0 || (it.spec||"").toLowerCase().indexOf(q) >= 0;
     });
   }
@@ -723,25 +772,27 @@
       return;
     }
 
+    var GENRE_BADGE = 'display:inline-block;padding:2px 8px;border-radius:10px;background:#eef2ff;color:#4338ca;font-size:11px;font-weight:600;white-space:nowrap;';
     var rows = "", cards = "";
     list.forEach(function (it) {
       rows += '<tr>' +
         '<td><button class="cell-name" data-edit="' + it.id + '">' + esc(it.name) + '</button></td>' +
+        '<td><span style="' + GENRE_BADGE + '">' + esc(it.genre || "未設定") + '</span></td>' +
         '<td>' + esc(it.spec || "-") + '</td>' +
-        '<td>' + esc(it.qty) + ' ' + esc(it.unit) + '</td>' +
+        '<td>' + esc(it.unit) + '</td>' +
         '<td class="amount-text">' + fmtYen(it.sellPrice) + (it.coef ? '<span class="tax-note">×' + esc(it.coef==="custom"?it.coefCustom:it.coef) + '</span>' : '') + '</td>' +
         '<td class="amount-text">' + fmtYen(it.costPrice) + '</td>' +
         '<td class="cell-actions"><button class="icon-btn" data-edit="' + it.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td></tr>';
       cards += '<div class="data-card">' +
         '<div class="data-card__top"><div class="data-card__name">' + esc(it.name) + '</div>' +
         '<button class="icon-btn" data-edit="' + it.id + '" aria-label="編集">' + ICON_PENCIL + '</button></div>' +
-        '<div class="data-card__meta"><span>' + esc(it.qty) + ' ' + esc(it.unit) + '</span></div>' +
+        '<div class="data-card__meta"><span style="' + GENRE_BADGE + '">' + esc(it.genre || "未設定") + '</span><span>' + esc(it.unit) + '</span></div>' +
         '<div class="data-card__meta"><span class="amount-text">販売 ' + fmtYen(it.sellPrice) + '</span><span class="amount-text">原価 ' + fmtYen(it.costPrice) + '</span></div></div>';
     });
 
     area.innerHTML =
       '<div class="table-wrap"><table class="data-table"><thead><tr>' +
-      '<th>名称</th><th>仕様・摘要</th><th>数量</th><th>販売価格</th><th>予定原価</th><th></th>' +
+      '<th>名称</th><th>ジャンル</th><th>仕様・摘要</th><th>単位</th><th>販売価格</th><th>予定原価</th><th></th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div><div class="card-list">' + cards + '</div>';
 
     area.querySelectorAll("[data-edit]").forEach(function (el) {
@@ -1016,7 +1067,8 @@
   }
 
   function openModal(isEdit, data) {
-    editModal = { isEdit: isEdit, data: data ? Object.assign({}, data) : { name: "", spec: "", qty: 1, unit: state.units[0] || "式", sellPrice: "", costPrice: "", coef: "" } };
+    var defaultGenre = (state.activeGenre && state.activeGenre !== "all") ? state.activeGenre : PRICE_GENRES[0];
+    editModal = { isEdit: isEdit, data: data ? Object.assign({}, data) : { name: "", genre: defaultGenre, spec: "", qty: 1, unit: state.units[0] || "式", sellPrice: "", costPrice: "", coef: "" } };
     renderModal();
   }
   function closeModal() { editModal = null; document.getElementById("modalRoot").innerHTML = ""; }
@@ -1031,10 +1083,10 @@
       '<div class="modal__header"><h2>' + (isEdit ? "単価を編集" : "単価を追加") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
       '<div class="modal__body">' +
       '<div class="field"><label>名称 <span class="req">*</span></label><input type="text" id="f_name" placeholder="例: 玄関ポスト" value="' + esc(d.name) + '" /><p class="field__error" id="err_name" style="display:none"></p></div>' +
+      '<div class="field"><label>ジャンル <span class="req">*</span></label><select id="f_genre">' + genreOptions(d.genre) + '</select></div>' +
       '<div class="field"><label>仕様・摘要</label><input type="text" id="f_spec" placeholder="例: 天井、壁500番" value="' + esc(d.spec) + '" /></div>' +
       '<div class="field-row">' +
-      '<div class="field" style="max-width:110px"><label>数量</label><input type="number" id="f_qty" value="' + esc(d.qty) + '" /></div>' +
-      '<div class="field"><label>単位</label><div class="unit-row">' +
+      '<div class="field"><label>単位 <span class="hint" style="font-size:11px;color:var(--text-tertiary);font-weight:400;">1' + esc(d.unit||"式") + 'あたりの単価として登録します</span></label><div class="unit-row">' +
       '<select id="f_unit">' + unitOptions(d.unit) + '</select>' +
       '<button type="button" class="btn btn--ghost btn--sm" id="addUnitBtn">' + ICON_PLUS + '</button>' +
       '</div></div>' +
@@ -1104,8 +1156,9 @@
       if (!name) { document.getElementById("err_name").textContent = "名称を入力してください"; document.getElementById("err_name").style.display = "block"; document.getElementById("f_name").classList.add("is-error"); return; }
       var form = {
         id: d.id, name: name,
+        genre: document.getElementById("f_genre").value,
         spec: document.getElementById("f_spec").value.trim(),
-        qty: document.getElementById("f_qty").value,
+        qty: 1,
         unit: document.getElementById("f_unit").value,
         sellPrice: document.getElementById("f_sellPrice").value,
         costPrice: document.getElementById("f_costPrice").value,
@@ -1168,6 +1221,81 @@
     else if (state.tab === "typeSettings") openTypeModal(false, null);
     else openModal(false, null);
   });
+  document.getElementById("btnDeleteAll").addEventListener("click", function () {
+    if (state.items.length === 0) { showToast("削除する単価がありません"); return; }
+    if (!confirm("単価表に登録されている " + state.items.length + " 件をすべて削除します。\nこの操作は元に戻せません。よろしいですか？")) return;
+    persistItems([]);
+    showToast("単価表を全件削除しました");
+    renderResults();
+  });
+  document.getElementById("btnImportEstimate").addEventListener("click", function () {
+    document.getElementById("importEstimateInput").click();
+  });
+  document.getElementById("importEstimateInput").addEventListener("change", function () { importEstimateAsPriceItems(this); });
+
+  // ⑪見積・実行予算Proで書き出した見積データ(.json)を読み込み、
+  // 工事タブ(cats[].name)＝ジャンル、明細(items[])＝単価候補として単価表に一括登録する。
+  // 同じ名称・同じジャンルの単価が既にある場合は上書き更新する。
+  function importEstimateAsPriceItems(input) {
+    var file = input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        var obj = JSON.parse(e.target.result);
+        var projectsArr = Array.isArray(obj.projects) ? obj.projects : (obj.cats ? [obj] : null);
+        if (!projectsArr) {
+          alert("この形式のファイルは読み込めません。⑪見積・実行予算Proで書き出した見積データ(.json)を選んでください。");
+          input.value = ""; return;
+        }
+        var candidates = [];
+        projectsArr.forEach(function (proj) {
+          (proj.cats || []).forEach(function (cat) {
+            (cat.items || []).forEach(function (it) {
+              if (!it || !it.name) return;
+              var costPrice = Number(it.price) || 0;
+              if (costPrice <= 0) return;
+              var rate = Number(it.rate) || 1;
+              candidates.push({
+                name: String(it.name).trim(),
+                genre: cat.name,
+                spec: it.kei || "",
+                unit: it.unit || "式",
+                costPrice: costPrice,
+                sellPrice: Math.round(costPrice * rate)
+              });
+            });
+          });
+        });
+        if (candidates.length === 0) {
+          alert("登録できる単価データが見つかりませんでした。");
+          input.value = ""; return;
+        }
+        if (!confirm(candidates.length + "件の単価候補が見つかりました。ジャンル別に単価表へ登録しますか？\n※同じ名称・同じジャンルの単価が既にある場合は上書き更新されます。")) {
+          input.value = ""; return;
+        }
+        var next = state.items.slice();
+        var added = 0, updated = 0;
+        candidates.forEach(function (c, i) {
+          var idx = next.findIndex(function (x) { return x.genre === c.genre && x.name === c.name; });
+          if (idx >= 0) {
+            next[idx] = Object.assign({}, next[idx], { spec: c.spec, unit: c.unit, costPrice: c.costPrice, sellPrice: c.sellPrice });
+            updated++;
+          } else {
+            next.push({ id: "u-" + Date.now() + "-" + i, name: c.name, genre: c.genre, spec: c.spec, qty: 1, unit: c.unit, sellPrice: c.sellPrice, costPrice: c.costPrice, coef: "" });
+            added++;
+          }
+        });
+        persistItems(next);
+        showToast("単価表に登録しました（新規" + added + "件・更新" + updated + "件）");
+        renderResults();
+      } catch (ex) {
+        alert("読み込みに失敗しました。正しい見積データファイルか確認してください。\n" + ex.message);
+      }
+      input.value = "";
+    };
+    reader.readAsText(file, "UTF-8");
+  }
 
   function setSidebar(open) {
     document.getElementById("sidebar").classList.toggle("is-open", open);
