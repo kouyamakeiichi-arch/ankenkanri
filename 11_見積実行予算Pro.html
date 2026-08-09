@@ -438,6 +438,10 @@ table.pq-table tr.total-row td.l{text-align:left}
       ※ <b>「0」を入力すると大項目にまとめず、全ての工種を個別行のまま表紙に表示します。</b>
     </div>
     <div class="f-row"><button class="btn" style="font-size:11px;padding:4px 10px;" onclick="document.getElementById('s-groupUpTo').value=0;document.getElementById('s-groupUpTo').dispatchEvent(new Event('change'))">大項目を使わない(0にする)</button></div>
+    <div class="f-row"><label>値引き項目</label><label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;cursor:pointer"><input type="checkbox" id="s-noDiscount" style="width:16px;height:16px"> 値引き項目を使わない（市役所工事など）</label></div>
+    <div style="font-size:11px;color:var(--text3);margin:-6px 0 10px 138px;line-height:1.6">
+      チェックすると、見積鏡・見積鏡Ⅱの「値引き」欄が非表示になり、御見積書・御見積書Ⅱの内訳にも値引き行が出なくなります（この物件だけの設定です）。
+    </div>
     <div class="modal-btns">
       <button class="btn" onclick="closeSettings()">キャンセル</button>
       <button class="btn pri" onclick="saveSettings()">保存して閉じる</button>
@@ -803,7 +807,11 @@ document.addEventListener('keydown',function(e){
 function curProj(){return projects.find(p=>p.id===curProjId)||null;}
 function curData(){return curProj()?curProj().cats:[];}
 function curCfg(){return curProj()?curProj().cfg:{};}
-function curDiscount(){return curProj()?curProj().discount:0;}
+function curDiscount(){
+  if(!curProj())return 0;
+  if(curCfg().noDiscount)return 0;
+  return curProj().discount||0;
+}
 
 function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 
@@ -1171,7 +1179,7 @@ function renderDetail(){
 }
 
 function renderSummary(){
-  const all=ca();const disc=curDiscount();
+  const all=ca();const disc=curDiscount();const s=curCfg();
   document.getElementById('sum-body').innerHTML=curData().map(cat=>{
     const t=cc(cat);
     return `<tr>
@@ -1184,10 +1192,10 @@ function renderSummary(){
   }).join('');
   document.getElementById('sum-tots').innerHTML=`
     <div class="tot-row"><span class="tot-lbl">小　計</span><span class="tot-val">¥${fmt(all.dec)}</span></div>
-    <div class="tot-row">
+    ${s.noDiscount?'':`<div class="tot-row">
       <span class="tot-lbl">値引き　▲</span>
       <input class="disc-inp" type="number" value="${disc}" min="0" onchange="setDiscount(parseInt(this.value)||0)"> 円
-    </div>
+    </div>`}
     <div class="tot-row">
       <span class="tot-lbl">値引後 小計</span><span class="tot-val">¥${fmt(all.ad)}</span>
       <span class="badge ${all.pr>=20?'good':'bad'}" style="margin-left:8px;font-size:11px">利益率 ${all.pr}%</span>
@@ -1233,6 +1241,7 @@ function renderSummary2(){
   const cat=curData()[0];
   const disc=curDiscount();
   const all=ca();
+  const s=curCfg();
   body.innerHTML=cat.items.map(it=>{
     const c=ci(it);
     const hv=it.qty>0&&it.price>0;
@@ -1245,10 +1254,10 @@ function renderSummary2(){
   }).join('');
   tots.innerHTML=`
     <div class="tot-row"><span class="tot-lbl">小　計</span><span class="tot-val">¥${fmt(all.dec)}</span></div>
-    <div class="tot-row">
+    ${s.noDiscount?'':`<div class="tot-row">
       <span class="tot-lbl">値引き　▲</span>
       <input class="disc-inp" type="number" value="${disc}" min="0" onchange="setDiscount(parseInt(this.value)||0)"> 円
-    </div>
+    </div>`}
     <div class="tot-row"><span class="tot-lbl">値引後 小計</span><span class="tot-val">¥${fmt(all.ad)}</span></div>
     <div class="tot-row"><span class="tot-lbl">消費税（10%）</span><span class="tot-val">¥${fmt(all.tax)}</span></div>
     <div class="tot-row grand"><span class="tot-lbl">合　計</span><span class="tot-val blue">¥${fmt(all.total)}</span></div>`;
@@ -1742,6 +1751,7 @@ function showSettings(){
   ['co1','co2','rep','zip','addr1','addr2','tel','fax','inv','no','date','valid','pay','client','honorific','proj','loc','ovr','period','remarks','estimator','mainLabel','groupUpTo'].forEach(k=>{
     const el=document.getElementById('s-'+k);if(el)el.value=s[k]||'';
   });
+  const noDiscEl=document.getElementById('s-noDiscount');if(noDiscEl)noDiscEl.checked=!!s.noDiscount;
   document.getElementById('smodal').className='modal-ov on';
 }
 function closeSettings(){document.getElementById('smodal').className='modal-ov';}
@@ -1750,6 +1760,7 @@ function saveSettings(){
   ['co1','co2','rep','zip','addr1','addr2','tel','fax','inv','no','date','valid','pay','client','honorific','proj','loc','ovr','period','remarks','estimator','mainLabel','groupUpTo'].forEach(k=>{
     const el=document.getElementById('s-'+k);if(el)p.cfg[k]=el.value;
   });
+  const noDiscEl=document.getElementById('s-noDiscount');p.cfg.noDiscount=noDiscEl?noDiscEl.checked:false;
   document.getElementById('co-sub').textContent=p.cfg.co1||'';
   closeSettings();saveNow();renderAll();
 }
