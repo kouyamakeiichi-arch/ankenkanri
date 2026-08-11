@@ -46,6 +46,12 @@
   .module-tab.is-active { background: var(--primary); color: white; }
   .module-tab.is-disabled { color: var(--text-tertiary); cursor: default; }
   .module-tab .soon { font-size: 9px; font-weight: 700; background: var(--bg); border: 1px solid var(--border); color: var(--text-tertiary); padding: 1px 6px; border-radius: 999px; }
+  #trashCountBadge { font-size:11px; font-weight:700; background:#F0525C; color:#fff; border-radius:100px; padding:1px 7px; }
+  .trash-row { display:flex; align-items:center; gap:12px; padding:14px 16px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background:var(--surface); }
+  .trash-row__info { flex:1; min-width:0; }
+  .trash-row__name { font-weight:700; font-size:14.5px; }
+  .trash-row__meta { font-size:12px; color:var(--text-tertiary); margin-top:2px; }
+  .trash-row__actions { display:flex; gap:8px; flex-shrink:0; }
 
   .type-tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; scrollbar-width: none; }
   .type-tabs::-webkit-scrollbar { display: none; }
@@ -239,6 +245,10 @@
     <button class="module-tab" id="tabOrders">発注</button>
     <button class="module-tab" id="tabPayments">支払い</button>
     <button class="module-tab" id="tabBillings">請求</button>
+    <button class="module-tab" id="tabTrash">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/><path d="M10 11v6M14 11v6"/></svg>
+      ゴミ箱<span id="trashCountBadge" style="display:none;"></span>
+    </button>
   </div>
 
   <div class="type-tabs" id="occupationTabs"></div>
@@ -455,7 +465,7 @@
       .reduce(function (sum, o) { return sum + (Number(o.orderAmount) || 0); }, 0);
   }
   function contractorOptions(selectedId) {
-    return '<option value="">選択してください</option>' + state.contractors.map(function (c) {
+    return '<option value="">選択してください</option>' + state.contractors.filter(function (c) { return !c.deletedAt; }).map(function (c) {
       return '<option value="' + c.id + '"' + (selectedId===c.id?" selected":"") + '>' + esc(c.name) + '</option>';
     }).join("");
   }
@@ -485,6 +495,7 @@
   function filteredContractors() {
     var q = state.search.trim().toLowerCase();
     return state.contractors
+      .filter(function (c) { return !c.deletedAt; })
       .filter(function (c) { return state.activeOcc === "all" ? true : c.occupation === state.activeOcc; })
       .filter(function (c) {
         if (!q) return true;
@@ -502,14 +513,17 @@
     document.getElementById("tabOrders").classList.toggle("is-active", tab === "orders");
     document.getElementById("tabPayments").classList.toggle("is-active", tab === "payments");
     document.getElementById("tabBillings").classList.toggle("is-active", tab === "billings");
+    document.getElementById("tabTrash").classList.toggle("is-active", tab === "trash");
     document.getElementById("occupationTabs").style.display = tab === "contractors" ? "" : "none";
     document.getElementById("orderStatusTabs").style.display = tab === "orders" ? "" : "none";
     document.getElementById("paymentStatusTabs").style.display = tab === "payments" ? "" : "none";
     document.getElementById("billingStatusTabs").style.display = tab === "billings" ? "" : "none";
     var labels = { contractors: "協力業者を登録", orders: "発注を追加", payments: "支払いを追加", billings: "請求を追加" };
     var placeholders = { contractors: "事業者名・職種で検索", orders: "発注名・案件名で検索", payments: "事業者名で検索", billings: "案件名で検索" };
-    document.getElementById("btnCreateLabel").textContent = labels[tab];
-    document.getElementById("searchInput").placeholder = placeholders[tab];
+    document.getElementById("btnCreate").style.display = tab === "trash" ? "none" : "";
+    document.getElementById("searchInput").style.display = tab === "trash" ? "none" : "";
+    document.getElementById("btnCreateLabel").textContent = labels[tab] || "";
+    document.getElementById("searchInput").placeholder = placeholders[tab] || "";
     if (tab === "orders") renderOrderStatusTabs();
     if (tab === "payments") renderPaymentStatusTabs();
     if (tab === "billings") renderBillingStatusTabs();
@@ -519,6 +533,7 @@
   document.getElementById("tabOrders").addEventListener("click", function () { setTab("orders"); });
   document.getElementById("tabPayments").addEventListener("click", function () { setTab("payments"); });
   document.getElementById("tabBillings").addEventListener("click", function () { setTab("billings"); });
+  document.getElementById("tabTrash").addEventListener("click", function () { setTab("trash"); });
 
   function renderOrderStatusTabs() {
     var el = document.getElementById("orderStatusTabs");
@@ -539,6 +554,7 @@
   function filteredOrders() {
     var q = state.search.trim().toLowerCase();
     return state.orders
+      .filter(function (o) { return !o.deletedAt; })
       .filter(function (o) { return state.activeOrderStatus === "all" ? true : o.status === state.activeOrderStatus; })
       .filter(function (o) {
         if (!q) return true;
@@ -568,6 +584,7 @@
   function filteredPayments() {
     var q = state.search.trim().toLowerCase();
     return state.payments
+      .filter(function (p) { return !p.deletedAt; })
       .filter(function (p) { return state.activePaymentStatus === "all" ? true : p.status === state.activePaymentStatus; })
       .filter(function (p) {
         if (!q) return true;
@@ -595,6 +612,7 @@
   function filteredBillings() {
     var q = state.search.trim().toLowerCase();
     return state.billings
+      .filter(function (b) { return !b.deletedAt; })
       .filter(function (b) { return state.activeBillingStatus === "all" ? true : b.status === state.activeBillingStatus; })
       .filter(function (b) {
         if (!q) return true;
@@ -613,7 +631,90 @@
     if (state.tab === "contractors") renderContractorResults(area);
     else if (state.tab === "orders") renderOrderResults(area);
     else if (state.tab === "payments") renderPaymentResults(area);
-    else renderBillingResults(area);
+    else if (state.tab === "billings") renderBillingResults(area);
+    else renderTrashResults(area);
+    updateTrashBadge();
+  }
+
+  function updateTrashBadge() {
+    var n = state.contractors.filter(function (x) { return x.deletedAt; }).length +
+            state.orders.filter(function (x) { return x.deletedAt; }).length +
+            state.payments.filter(function (x) { return x.deletedAt; }).length +
+            state.billings.filter(function (x) { return x.deletedAt; }).length;
+    var badge = document.getElementById("trashCountBadge");
+    if (n > 0) { badge.style.display = "inline-block"; badge.textContent = n; }
+    else { badge.style.display = "none"; }
+  }
+
+  function fmtDeletedAt(ts) {
+    if (!ts) return "-";
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return "-";
+    return d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate() + " " + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+  }
+
+  function trashItemLabel(kind, item) {
+    if (kind === "contractor") return item.name || "(名称未設定)";
+    if (kind === "order") return item.title || "(名称未設定)";
+    if (kind === "payment") return contractorName(item.contractorId) + "への支払い";
+    return projectName(item.projectId) + "の請求";
+  }
+
+  function renderTrashResults(area) {
+    var kindLabelMap = { contractor: "協力業者", order: "発注", payment: "支払い", billing: "請求" };
+    var items = []
+      .concat(state.contractors.filter(function (x) { return x.deletedAt; }).map(function (x) { return { kind: "contractor", item: x }; }))
+      .concat(state.orders.filter(function (x) { return x.deletedAt; }).map(function (x) { return { kind: "order", item: x }; }))
+      .concat(state.payments.filter(function (x) { return x.deletedAt; }).map(function (x) { return { kind: "payment", item: x }; }))
+      .concat(state.billings.filter(function (x) { return x.deletedAt; }).map(function (x) { return { kind: "billing", item: x }; }))
+      .sort(function (a, b) { return (b.item.deletedAt||0) - (a.item.deletedAt||0); });
+    document.getElementById("countBadge").textContent = items.length + "件";
+
+    if (items.length === 0) {
+      area.innerHTML =
+        '<div class="empty-state">' + ICON_TRASH +
+        '<p class="empty-state__title">ゴミ箱は空です</p><p class="empty-state__desc">削除した協力業者・発注・支払い・請求はここに一時的に保管され、後から元に戻せます。</p></div>';
+      return;
+    }
+    area.innerHTML =
+      '<p style="font-size:12.5px;color:var(--text-tertiary);margin:0 0 14px;">削除したデータはここに保管されます。「元に戻す」でいつでも復元できます。「完全に削除」を押すと復元できなくなります。</p>' +
+      items.map(function (row, idx) {
+        return '<div class="trash-row">' +
+          '<div class="trash-row__info">' +
+            '<div class="trash-row__name">' + esc(trashItemLabel(row.kind, row.item)) + '</div>' +
+            '<div class="trash-row__meta">' + kindLabelMap[row.kind] + '・削除日時: ' + fmtDeletedAt(row.item.deletedAt) + '</div>' +
+          '</div>' +
+          '<div class="trash-row__actions">' +
+            '<button class="btn btn--ghost btn--sm" data-restore="' + row.kind + ':' + row.item.id + '">元に戻す</button>' +
+            '<button class="btn btn--danger-ghost btn--sm" data-purge="' + row.kind + ':' + row.item.id + '">完全に削除</button>' +
+          '</div>' +
+        '</div>';
+      }).join("");
+
+    function transformFor(kind) {
+      if (kind === "contractor") return persistContractorsTransform;
+      if (kind === "order") return persistOrdersTransform;
+      if (kind === "payment") return persistPaymentsTransform;
+      return persistBillingsTransform;
+    }
+
+    area.querySelectorAll("[data-restore]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var parts = btn.getAttribute("data-restore").split(":");
+        var kind = parts[0], id = parts[1];
+        transformFor(kind)(function (fresh) { return fresh.map(function (x) { return x.id === id ? Object.assign({}, x, { deletedAt: null }) : x; }); }).then(function () { renderResults(); });
+        showToast(kindLabelMap[kind] + "を元に戻しました");
+      });
+    });
+    area.querySelectorAll("[data-purge]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var parts = btn.getAttribute("data-purge").split(":");
+        var kind = parts[0], id = parts[1];
+        if (!confirm("この" + kindLabelMap[kind] + "を完全に削除します。この操作は元に戻せません。よろしいですか？")) return;
+        transformFor(kind)(function (fresh) { return fresh.filter(function (x) { return x.id !== id; }); }).then(function () { renderResults(); });
+        showToast(kindLabelMap[kind] + "を完全に削除しました");
+      });
+    });
   }
 
   function renderContractorResults(area) {
@@ -1146,7 +1247,7 @@
     var labelMap = { contractor: "協力業者", order: "発注", payment: "支払い", billing: "請求" };
     root.innerHTML =
       '<div class="modal-overlay" id="confirmOverlay"><div class="confirm-box">' + ICON_ALERT +
-      '<h3>この' + labelMap[confirmDelete.kind] + 'を削除しますか?</h3><p>削除すると元に戻せません。</p>' +
+      '<h3>この' + labelMap[confirmDelete.kind] + 'を削除しますか?</h3><p>ゴミ箱に移動します。後から「ゴミ箱」タブで元に戻せます。</p>' +
       '<div class="confirm-box__actions"><button class="btn btn--ghost btn--sm" id="confirmCancelBtn">キャンセル</button>' +
       '<button class="btn btn--danger-ghost btn--sm" id="confirmDeleteBtn">削除する</button></div></div></div>';
     document.getElementById("confirmOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "confirmOverlay") { confirmDelete = null; renderConfirm(); } });
@@ -1155,21 +1256,20 @@
       var kindToDelete = confirmDelete.kind;
       var idToDelete = confirmDelete.id;
       if (kindToDelete === "contractor") {
-        persistContractorsTransform(function (fresh) { return fresh.filter(function (c) { return c.id !== idToDelete; }); });
-        showToast("協力業者を削除しました");
+        persistContractorsTransform(function (fresh) { return fresh.map(function (c) { return c.id === idToDelete ? Object.assign({}, c, { deletedAt: Date.now() }) : c; }); }).then(function () { renderResults(); });
+        showToast("協力業者をゴミ箱に移動しました");
       } else if (kindToDelete === "order") {
-        persistOrdersTransform(function (fresh) { return fresh.filter(function (o) { return o.id !== idToDelete; }); });
-        showToast("発注を削除しました");
+        persistOrdersTransform(function (fresh) { return fresh.map(function (o) { return o.id === idToDelete ? Object.assign({}, o, { deletedAt: Date.now() }) : o; }); }).then(function () { renderResults(); });
+        showToast("発注をゴミ箱に移動しました");
       } else if (kindToDelete === "payment") {
-        persistPaymentsTransform(function (fresh) { return fresh.filter(function (p) { return p.id !== idToDelete; }); });
-        showToast("支払いを削除しました");
+        persistPaymentsTransform(function (fresh) { return fresh.map(function (p) { return p.id === idToDelete ? Object.assign({}, p, { deletedAt: Date.now() }) : p; }); }).then(function () { renderResults(); });
+        showToast("支払いをゴミ箱に移動しました");
       } else {
-        persistBillingsTransform(function (fresh) { return fresh.filter(function (bl) { return bl.id !== idToDelete; }); });
-        showToast("請求を削除しました");
+        persistBillingsTransform(function (fresh) { return fresh.map(function (bl) { return bl.id === idToDelete ? Object.assign({}, bl, { deletedAt: Date.now() }) : bl; }); }).then(function () { renderResults(); });
+        showToast("請求をゴミ箱に移動しました");
       }
       confirmDelete = null;
       renderConfirm();
-      renderResults();
     });
   }
 

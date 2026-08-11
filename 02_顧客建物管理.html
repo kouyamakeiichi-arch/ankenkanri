@@ -44,6 +44,12 @@
   .module-tabs { display: flex; gap: 6px; margin-bottom: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 5px; width: fit-content; }
   .module-tab { display:flex; align-items:center; gap:6px; font-family: inherit; font-weight: 700; font-size: 14px; padding: 9px 18px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; transition: all .15s; }
   .module-tab.is-active { background: var(--primary); color: white; }
+  #trashCountBadge { font-size:11px; font-weight:700; background:#F0525C; color:#fff; border-radius:100px; padding:1px 7px; }
+  .trash-row { display:flex; align-items:center; gap:12px; padding:14px 16px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background:var(--surface); }
+  .trash-row__info { flex:1; min-width:0; }
+  .trash-row__name { font-weight:700; font-size:14.5px; }
+  .trash-row__meta { font-size:12px; color:var(--text-tertiary); margin-top:2px; }
+  .trash-row__actions { display:flex; gap:8px; flex-shrink:0; }
 
   .type-tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; scrollbar-width: none; }
   .type-tabs::-webkit-scrollbar { display: none; }
@@ -233,6 +239,10 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v18M4 22h16M4 22H2M20 22h2M14 22V11a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v11M9 6h1M9 10h1M9 14h1M14 6h1M9 18h1"/></svg>
       建物
     </button>
+    <button class="module-tab" id="tabTrash">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/><path d="M10 11v6M14 11v6"/></svg>
+      ゴミ箱<span id="trashCountBadge" style="display:none;"></span>
+    </button>
   </div>
 
   <div class="type-tabs" id="typeTabs"></div>
@@ -420,14 +430,19 @@
     document.getElementById("searchInput").value = "";
     document.getElementById("tabCustomers").classList.toggle("is-active", tab === "customers");
     document.getElementById("tabBuildings").classList.toggle("is-active", tab === "buildings");
-    document.getElementById("pageTitle").firstChild.textContent = tab === "customers" ? "顧客・建物管理" : "顧客・建物管理";
+    document.getElementById("tabTrash").classList.toggle("is-active", tab === "trash");
+    document.getElementById("pageTitle").firstChild.textContent = "顧客・建物管理";
+    document.getElementById("searchInput").style.display = tab === "trash" ? "none" : "";
+    document.getElementById("btnCreate").style.display = tab === "trash" ? "none" : "";
     document.getElementById("searchInput").placeholder = tab === "customers" ? "顧客名・住所・担当者で検索" : "建物名・住所で検索";
     document.getElementById("btnCreateLabel").textContent = tab === "customers" ? "顧客を作成" : "建物を作成";
+    document.getElementById("typeTabs").style.display = tab === "trash" ? "none" : "";
     renderTypeTabs();
     renderResults();
   }
   document.getElementById("tabCustomers").addEventListener("click", function () { setTab("customers"); });
   document.getElementById("tabBuildings").addEventListener("click", function () { setTab("buildings"); });
+  document.getElementById("tabTrash").addEventListener("click", function () { setTab("trash"); });
 
   /* ---------------- タイプタブ ---------------- */
   function renderTypeTabs() {
@@ -453,6 +468,7 @@
   function filteredCustomers() {
     var q = state.search.trim().toLowerCase();
     return state.customers
+      .filter(function (c) { return !c.deletedAt; })
       .filter(function (c) { return state.activeCustType === "all" ? true : c.typeId === state.activeCustType; })
       .filter(function (c) {
         if (!q) return true;
@@ -462,6 +478,7 @@
   function filteredBuildings() {
     var q = state.search.trim().toLowerCase();
     return state.buildings
+      .filter(function (b) { return !b.deletedAt; })
       .filter(function (b) { return state.activeBldType === "all" ? true : b.typeId === state.activeBldType; })
       .filter(function (b) {
         if (!q) return true;
@@ -477,7 +494,83 @@
       document.getElementById("countBadge").textContent = "0件";
       return;
     }
-    if (state.tab === "customers") renderCustomerResults(area); else renderBuildingResults(area);
+    if (state.tab === "customers") renderCustomerResults(area);
+    else if (state.tab === "buildings") renderBuildingResults(area);
+    else renderTrashResults(area);
+    updateTrashBadge();
+  }
+
+  function updateTrashBadge() {
+    var n = state.customers.filter(function (c) { return c.deletedAt; }).length +
+            state.buildings.filter(function (b) { return b.deletedAt; }).length;
+    var badge = document.getElementById("trashCountBadge");
+    if (n > 0) { badge.style.display = "inline-block"; badge.textContent = n; }
+    else { badge.style.display = "none"; }
+  }
+
+  function fmtDeletedAt(ts) {
+    if (!ts) return "-";
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return "-";
+    return d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate() + " " + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+  }
+
+  function renderTrashResults(area) {
+    var trashedCustomers = state.customers.filter(function (c) { return c.deletedAt; })
+      .map(function (c) { return { kind: "customer", id: c.id, name: c.name, typeLabel: "顧客", deletedAt: c.deletedAt }; });
+    var trashedBuildings = state.buildings.filter(function (b) { return b.deletedAt; })
+      .map(function (b) { return { kind: "building", id: b.id, name: b.name, typeLabel: "建物", deletedAt: b.deletedAt }; });
+    var items = trashedCustomers.concat(trashedBuildings).sort(function (a, b) { return (b.deletedAt||0) - (a.deletedAt||0); });
+    document.getElementById("countBadge").textContent = items.length + "件";
+
+    if (items.length === 0) {
+      area.innerHTML =
+        '<div class="empty-state">' + ICON_TRASH +
+        '<p class="empty-state__title">ゴミ箱は空です</p><p class="empty-state__desc">削除した顧客・建物はここに一時的に保管され、後から元に戻せます。</p></div>';
+      return;
+    }
+    area.innerHTML =
+      '<p style="font-size:12.5px;color:var(--text-tertiary);margin:0 0 14px;">削除した顧客・建物はここに保管されます。「元に戻す」でいつでも復元できます。「完全に削除」を押すと復元できなくなります。</p>' +
+      items.map(function (it) {
+        return '<div class="trash-row">' +
+          '<div class="trash-row__info">' +
+            '<div class="trash-row__name">' + esc(it.name) + '</div>' +
+            '<div class="trash-row__meta">' + it.typeLabel + '・削除日時: ' + fmtDeletedAt(it.deletedAt) + '</div>' +
+          '</div>' +
+          '<div class="trash-row__actions">' +
+            '<button class="btn btn--ghost btn--sm" data-restore="' + it.kind + ':' + it.id + '">元に戻す</button>' +
+            '<button class="btn btn--danger-ghost btn--sm" data-purge="' + it.kind + ':' + it.id + '">完全に削除</button>' +
+          '</div>' +
+        '</div>';
+      }).join("");
+
+    area.querySelectorAll("[data-restore]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var parts = btn.getAttribute("data-restore").split(":");
+        var kind = parts[0], id = parts[1];
+        if (kind === "customer") {
+          persistCustomersTransform(function (fresh) { return fresh.map(function (c) { return c.id === id ? Object.assign({}, c, { deletedAt: null }) : c; }); }).then(function () { renderResults(); });
+          showToast("顧客を元に戻しました");
+        } else {
+          persistBuildingsTransform(function (fresh) { return fresh.map(function (b) { return b.id === id ? Object.assign({}, b, { deletedAt: null }) : b; }); }).then(function () { renderResults(); });
+          showToast("建物を元に戻しました");
+        }
+      });
+    });
+    area.querySelectorAll("[data-purge]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var parts = btn.getAttribute("data-purge").split(":");
+        var kind = parts[0], id = parts[1];
+        var label = kind === "customer" ? "顧客" : "建物";
+        if (!confirm("この" + label + "を完全に削除します。この操作は元に戻せません。よろしいですか？")) return;
+        if (kind === "customer") {
+          persistCustomersTransform(function (fresh) { return fresh.filter(function (c) { return c.id !== id; }); }).then(function () { renderResults(); });
+        } else {
+          persistBuildingsTransform(function (fresh) { return fresh.filter(function (b) { return b.id !== id; }); }).then(function () { renderResults(); });
+        }
+        showToast(label + "を完全に削除しました");
+      });
+    });
   }
 
   function renderCustomerResults(area) {
@@ -642,7 +735,7 @@
     if (!bldModal) { root.innerHTML = ""; return; }
     var d = bldModal.data, isEdit = bldModal.isEdit;
     var typeOptions = BUILDING_TYPES.map(function (t) { return '<option value="' + t.id + '"' + (d.typeId===t.id?" selected":"") + '>' + esc(t.label) + '</option>'; }).join("");
-    var custOptions = '<option value="">選択してください</option>' + state.customers.map(function (c) { return '<option value="' + c.id + '"' + (d.customerId===c.id?" selected":"") + '>' + esc(c.name) + '</option>'; }).join("");
+    var custOptions = '<option value="">選択してください</option>' + state.customers.filter(function (c) { return !c.deletedAt; }).map(function (c) { return '<option value="' + c.id + '"' + (d.customerId===c.id?" selected":"") + '>' + esc(c.name) + '</option>'; }).join("");
 
     root.innerHTML =
       '<div class="modal-overlay" id="modalOverlay"><div class="modal" role="dialog" aria-modal="true">' +
@@ -693,24 +786,23 @@
     var isCust = confirmDelete.kind === "customer";
     root.innerHTML =
       '<div class="modal-overlay" id="confirmOverlay"><div class="confirm-box">' + ICON_ALERT +
-      '<h3>' + (isCust ? "この顧客を削除しますか?" : "この建物を削除しますか?") + '</h3><p>削除すると元に戻せません。</p>' +
+      '<h3>' + (isCust ? "この顧客を削除しますか?" : "この建物を削除しますか?") + '</h3><p>ゴミ箱に移動します。後から「ゴミ箱」タブで元に戻せます。</p>' +
       '<div class="confirm-box__actions"><button class="btn btn--ghost btn--sm" id="confirmCancelBtn">キャンセル</button>' +
       '<button class="btn btn--danger-ghost btn--sm" id="confirmDeleteBtn">削除する</button></div></div></div>';
     document.getElementById("confirmOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "confirmOverlay") { confirmDelete = null; renderConfirm(); } });
     document.getElementById("confirmCancelBtn").addEventListener("click", function () { confirmDelete = null; renderConfirm(); });
     document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
       if (isCust) {
-        var used = state.buildings.some(function (b) { return b.customerId === confirmDelete.id; });
+        var used = state.buildings.some(function (b) { return b.customerId === confirmDelete.id && !b.deletedAt; });
         if (used) { showToast("この顧客は建物に紐付いているため削除できません"); confirmDelete = null; renderConfirm(); return; }
-        persistCustomersTransform(function (fresh) { return fresh.filter(function (c) { return c.id !== confirmDelete.id; }); });
-        showToast("顧客を削除しました");
+        persistCustomersTransform(function (fresh) { return fresh.map(function (c) { return c.id === confirmDelete.id ? Object.assign({}, c, { deletedAt: Date.now() }) : c; }); }).then(function () { renderResults(); });
+        showToast("顧客をゴミ箱に移動しました");
       } else {
-        persistBuildingsTransform(function (fresh) { return fresh.filter(function (b) { return b.id !== confirmDelete.id; }); });
-        showToast("建物を削除しました");
+        persistBuildingsTransform(function (fresh) { return fresh.map(function (b) { return b.id === confirmDelete.id ? Object.assign({}, b, { deletedAt: Date.now() }) : b; }); }).then(function () { renderResults(); });
+        showToast("建物をゴミ箱に移動しました");
       }
       confirmDelete = null;
       renderConfirm();
-      renderResults();
     });
   }
 
