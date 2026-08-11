@@ -792,13 +792,16 @@
     document.getElementById("confirmOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "confirmOverlay") { confirmDelete = null; renderConfirm(); } });
     document.getElementById("confirmCancelBtn").addEventListener("click", function () { confirmDelete = null; renderConfirm(); });
     document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
-      if (isCust) {
-        var used = state.buildings.some(function (b) { return b.customerId === confirmDelete.id && !b.deletedAt; });
+      var kindToDelete = confirmDelete.kind;
+      var idToDelete = confirmDelete.id;
+      var isCustDelete = kindToDelete === "customer";
+      if (isCustDelete) {
+        var used = state.buildings.some(function (b) { return b.customerId === idToDelete && !b.deletedAt; });
         if (used) { showToast("この顧客は建物に紐付いているため削除できません"); confirmDelete = null; renderConfirm(); return; }
-        persistCustomersTransform(function (fresh) { return fresh.map(function (c) { return c.id === confirmDelete.id ? Object.assign({}, c, { deletedAt: Date.now() }) : c; }); }).then(function () { renderResults(); });
+        persistCustomersTransform(function (fresh) { return fresh.map(function (c) { return c.id === idToDelete ? Object.assign({}, c, { deletedAt: Date.now() }) : c; }); }).then(function () { renderResults(); });
         showToast("顧客をゴミ箱に移動しました");
       } else {
-        persistBuildingsTransform(function (fresh) { return fresh.map(function (b) { return b.id === confirmDelete.id ? Object.assign({}, b, { deletedAt: Date.now() }) : b; }); }).then(function () { renderResults(); });
+        persistBuildingsTransform(function (fresh) { return fresh.map(function (b) { return b.id === idToDelete ? Object.assign({}, b, { deletedAt: Date.now() }) : b; }); }).then(function () { renderResults(); });
         showToast("建物をゴミ箱に移動しました");
       }
       confirmDelete = null;
