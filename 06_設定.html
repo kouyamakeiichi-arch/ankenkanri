@@ -371,10 +371,10 @@
   }
   function seedPriceMajorCategoryList() {
     return [
-      { id: "septic",       label: "浄化槽用", color: "#38BDF8" },
-      { id: "civil",        label: "土木用",   color: "#F59E0B" },
-      { id: "city",         label: "市役所用", color: "#A78BFA" },
-      { id: "construction", label: "建築用",   color: "#34D399" }
+      { id: "septic",       label: "浄化槽用", color: "#0284C7" },
+      { id: "civil",        label: "土木用",   color: "#D97706" },
+      { id: "city",         label: "市役所用", color: "#7C3AED" },
+      { id: "construction", label: "建築用",   color: "#059669" }
     ];
   }
   function seedForCategory(catId) {
@@ -388,25 +388,25 @@
 
   // 単価表のジャンル一覧（⑪見積・実行予算Proの工種(工事タブ)と同じ名称・順序）
   var PRICE_GENRES_DATA = [
-    { label: "仮設工事",       color: "#94A3B8" },
-    { label: "土工事",         color: "#A78BFA" },
-    { label: "杭打工事",       color: "#8B5CF6" },
+    { label: "仮設工事",       color: "#64748B" },
+    { label: "土工事",         color: "#8B5CF6" },
+    { label: "杭打工事",       color: "#7C3AED" },
     { label: "コンクリート工事", color: "#6C47FF" },
-    { label: "木工事",         color: "#C99A5B" },
-    { label: "屋根・板金工事", color: "#F59E0B" },
-    { label: "外装工事",       color: "#FB923C" },
-    { label: "断熱防水工事",   color: "#38BDF8" },
-    { label: "左官工事",       color: "#A3A380" },
-    { label: "塗装工事",       color: "#F472B6" },
-    { label: "サッシ工事",     color: "#22D3EE" },
-    { label: "建具工事",       color: "#60A5FA" },
-    { label: "内装工事",       color: "#34D399" },
-    { label: "設備機器工事",   color: "#2DD4BF" },
-    { label: "電気工事",       color: "#FBBF24" },
-    { label: "設備工事",       color: "#0EA5E9" },
-    { label: "雑工事",         color: "#9CA3AF" },
-    { label: "設計及び申請料", color: "#F87171" },
-    { label: "運搬・諸経費",   color: "#818CF8" }
+    { label: "木工事",         color: "#B08968" },
+    { label: "屋根・板金工事", color: "#D97706" },
+    { label: "外装工事",       color: "#EA580C" },
+    { label: "断熱防水工事",   color: "#0284C7" },
+    { label: "左官工事",       color: "#78716C" },
+    { label: "塗装工事",       color: "#DB2777" },
+    { label: "サッシ工事",     color: "#0891B2" },
+    { label: "建具工事",       color: "#2563EB" },
+    { label: "内装工事",       color: "#059669" },
+    { label: "設備機器工事",   color: "#0D9488" },
+    { label: "電気工事",       color: "#CA8A04" },
+    { label: "設備工事",       color: "#0369A1" },
+    { label: "雑工事",         color: "#6B7280" },
+    { label: "設計及び申請料", color: "#DC2626" },
+    { label: "運搬・諸経費",   color: "#4F46E5" }
   ];
   var PRICE_GENRES = PRICE_GENRES_DATA.map(function (g) { return g.label; });
   function genreColorOf(label) {
@@ -427,6 +427,14 @@
     return String(str == null ? "" : str).replace(/[&<>"']/g, function (s) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s];
     });
+  }
+  // 背景色の明るさに応じて、読みやすい文字色(黒/白)を自動選択する(⑪見積実行予算Proの工種タブと同じ仕組み)
+  function contrastText(hex) {
+    hex = (hex || "").replace("#", "");
+    if (hex.length !== 6) return "#fff";
+    var r = parseInt(hex.substr(0,2),16), g = parseInt(hex.substr(2,2),16), b = parseInt(hex.substr(4,2),16);
+    var lum = (0.299*r + 0.587*g + 0.114*b) / 255;
+    return lum > 0.6 ? "#1a1a1a" : "#fff";
   }
   function fmtYen(v) {
     if (v === "" || v === null || v === undefined || isNaN(Number(v))) return "-";
@@ -806,9 +814,10 @@
     if (!el) return;
     var cats = priceMajorCategories();
     el.className = "status-chips";
-    var allChip = '<button class="status-chip' + (state.activeMajorCategory==="all" ? " is-active" : "") + '" style="--chip-color:#6C47FF" data-major="all">すべて</button>';
+    var allChip = '<button class="status-chip' + (state.activeMajorCategory==="all" ? " is-active" : "") + '" style="--chip-color:#6C47FF' + (state.activeMajorCategory==="all" ? ";color:" + contrastText("#6C47FF") : "") + '" data-major="all">すべて</button>';
     var catChips = cats.map(function (c) {
-      return '<button class="status-chip' + (state.activeMajorCategory===c.id ? " is-active" : "") + '" style="--chip-color:' + esc(c.color) + '" data-major="' + esc(c.id) + '">' + esc(c.label) + '</button>';
+      var isOn = state.activeMajorCategory===c.id;
+      return '<button class="status-chip' + (isOn ? " is-active" : "") + '" style="--chip-color:' + esc(c.color) + (isOn ? ";color:" + contrastText(c.color) : "") + '" data-major="' + esc(c.id) + '">' + esc(c.label) + '</button>';
     }).join("");
     el.innerHTML = allChip + catChips;
     el.querySelectorAll("[data-major]").forEach(function (btn) {
@@ -832,9 +841,10 @@
     }
     el.style.display = "flex";
     el.className = "status-chips";
-    var allChip = '<button class="status-chip' + (state.activeGenre==="all" ? " is-active" : "") + '" style="--chip-color:#6C47FF" data-genre="all">すべて</button>';
+    var allChip = '<button class="status-chip' + (state.activeGenre==="all" ? " is-active" : "") + '" style="--chip-color:#6C47FF' + (state.activeGenre==="all" ? ";color:" + contrastText("#6C47FF") : "") + '" data-genre="all">すべて</button>';
     var genreChips = PRICE_GENRES_DATA.map(function (g) {
-      return '<button class="status-chip' + (state.activeGenre===g.label ? " is-active" : "") + '" style="--chip-color:' + esc(g.color) + '" data-genre="' + esc(g.label) + '">' + esc(g.label) + '</button>';
+      var isOn = state.activeGenre===g.label;
+      return '<button class="status-chip' + (isOn ? " is-active" : "") + '" style="--chip-color:' + esc(g.color) + (isOn ? ";color:" + contrastText(g.color) : "") + '" data-genre="' + esc(g.label) + '">' + esc(g.label) + '</button>';
     }).join("");
     el.innerHTML = allChip + genreChips;
     el.querySelectorAll("[data-genre]").forEach(function (btn) {
