@@ -46,6 +46,9 @@
   .module-tab.is-disabled { color: var(--text-tertiary); cursor: default; }
   .module-tab .soon { font-size: 9px; font-weight: 700; background: var(--bg); border: 1px solid var(--border); color: var(--text-tertiary); padding: 1px 6px; border-radius: 999px; }
   #trashCountBadge { font-size:11px; font-weight:700; background:#F0525C; color:#fff; border-radius:100px; padding:1px 7px; margin-left:2px; }
+  .status-chip { font-family: inherit; font-size: 12.5px; font-weight: 700; padding: 6px 13px; border-radius: 999px; cursor: pointer; border: 1.5px solid var(--chip-color); color: var(--chip-color); background: color-mix(in srgb, var(--chip-color) 10%, white); transition: all .15s; display:inline-flex; align-items:center; }
+  .status-chip.is-active { background: var(--chip-color); color: white; }
+  .status-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
   .trash-row { display:flex; align-items:center; gap:12px; padding:14px 16px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background:var(--surface); }
   .trash-row__info { flex:1; min-width:0; }
   .trash-row__name { font-weight:700; font-size:14.5px; }
@@ -242,7 +245,7 @@
     <button class="module-tab is-active" id="tabPriceList">単価表・単位設定</button>
     <button class="module-tab" id="tabBizInfo">事業者情報</button>
     <button class="module-tab" id="tabMembers">メンバー管理</button>
-    <button class="module-tab" id="tabTypeSettings">案件/顧客/建物タイプ設定</button>
+    <button class="module-tab" id="tabTypeSettings">タイプ・大項目設定</button>
     <button class="module-tab" id="tabDisplayPrefs">表示設定</button>
     <button class="module-tab" id="tabBackup">データバックアップ</button>
     <button class="module-tab" id="tabTrash">
@@ -252,6 +255,7 @@
   </div>
 
   <div class="module-tabs" id="typeSubTabs" style="display:none"></div>
+  <div class="module-tabs" id="priceMajorTabs" style="display:flex;flex-wrap:wrap;"></div>
   <div class="module-tabs" id="priceGenreTabs" style="display:flex;flex-wrap:wrap;"></div>
   <div id="resultsArea"></div>
 </div>
@@ -317,7 +321,8 @@
     { id: "projectStatus", label: "案件ステータス設定", key: "taiho_settings_project_status_v1", hasDone: true, hasHonorific: false },
     { id: "projectType",   label: "案件タイプ設定",     key: "taiho_settings_project_types_v1",  hasDone: false, hasHonorific: false },
     { id: "customerType",  label: "顧客タイプ設定",     key: "taiho_settings_customer_types_v1", hasDone: false, hasHonorific: true },
-    { id: "buildingType",  label: "建物タイプ設定",     key: "taiho_settings_building_types_v1", hasDone: false, hasHonorific: false }
+    { id: "buildingType",  label: "建物タイプ設定",     key: "taiho_settings_building_types_v1", hasDone: false, hasHonorific: false },
+    { id: "priceMajorCategory", label: "単価表 大項目設定", key: "taiho_settings_price_major_categories_v1", hasDone: false, hasHonorific: false }
   ];
   function typeCategoryOf(id) { for (var i=0;i<TYPE_SETTINGS_CATEGORIES.length;i++) if (TYPE_SETTINGS_CATEGORIES[i].id===id) return TYPE_SETTINGS_CATEGORIES[i]; return TYPE_SETTINGS_CATEGORIES[0]; }
 
@@ -364,22 +369,58 @@
       { id: "office",    label: "事務所、テナント", color: "#FB923C" }
     ];
   }
+  function seedPriceMajorCategoryList() {
+    return [
+      { id: "septic",       label: "浄化槽用", color: "#38BDF8" },
+      { id: "civil",        label: "土木用",   color: "#F59E0B" },
+      { id: "city",         label: "市役所用", color: "#A78BFA" },
+      { id: "construction", label: "建築用",   color: "#34D399" }
+    ];
+  }
   function seedForCategory(catId) {
     if (catId === "projectStatus") return seedProjectStatusList();
     if (catId === "projectType") return seedProjectTypeList();
     if (catId === "customerType") return seedCustomerTypeList();
+    if (catId === "priceMajorCategory") return seedPriceMajorCategoryList();
     return seedBuildingTypeList();
   }
   var UNITS_KEY = "taiho_units_v1";
 
   // 単価表のジャンル一覧（⑪見積・実行予算Proの工種(工事タブ)と同じ名称・順序）
-  var PRICE_GENRES = [
-    "仮設工事","土工事","杭打工事","コンクリート工事","木工事","屋根・板金工事",
-    "外装工事","断熱防水工事","左官工事","塗装工事","サッシ工事","建具工事",
-    "内装工事","設備機器工事","電気工事","設備工事","雑工事","設計及び申請料","運搬・諸経費"
+  var PRICE_GENRES_DATA = [
+    { label: "仮設工事",       color: "#94A3B8" },
+    { label: "土工事",         color: "#A78BFA" },
+    { label: "杭打工事",       color: "#8B5CF6" },
+    { label: "コンクリート工事", color: "#6C47FF" },
+    { label: "木工事",         color: "#C99A5B" },
+    { label: "屋根・板金工事", color: "#F59E0B" },
+    { label: "外装工事",       color: "#FB923C" },
+    { label: "断熱防水工事",   color: "#38BDF8" },
+    { label: "左官工事",       color: "#A3A380" },
+    { label: "塗装工事",       color: "#F472B6" },
+    { label: "サッシ工事",     color: "#22D3EE" },
+    { label: "建具工事",       color: "#60A5FA" },
+    { label: "内装工事",       color: "#34D399" },
+    { label: "設備機器工事",   color: "#2DD4BF" },
+    { label: "電気工事",       color: "#FBBF24" },
+    { label: "設備工事",       color: "#0EA5E9" },
+    { label: "雑工事",         color: "#9CA3AF" },
+    { label: "設計及び申請料", color: "#F87171" },
+    { label: "運搬・諸経費",   color: "#818CF8" }
   ];
+  var PRICE_GENRES = PRICE_GENRES_DATA.map(function (g) { return g.label; });
+  function genreColorOf(label) {
+    var g = PRICE_GENRES_DATA.find(function (x) { return x.label === label; });
+    return g ? g.color : "#94A3B8";
+  }
   function genreOptions(selected) {
     return PRICE_GENRES.map(function (g) { return '<option value="' + esc(g) + '"' + (selected===g?" selected":"") + '>' + esc(g) + '</option>'; }).join("");
+  }
+  function genreFieldHtml(majorId, currentGenre) {
+    if (majorId === "construction") {
+      return '<label>ジャンル <span class="req">*</span></label><select id="f_genre">' + genreOptions(currentGenre) + '</select>';
+    }
+    return '<label>ジャンル(任意)</label><input type="text" id="f_genre" placeholder="例: 汚水処理・掘削" value="' + esc(currentGenre && PRICE_GENRES.indexOf(currentGenre) === -1 ? currentGenre : "") + '" />';
   }
 
   function esc(str) {
@@ -523,7 +564,7 @@
   var ICON_LIST40 = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>';
   var ICON_PLUS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
 
-  var state = { tab: "priceList", items: [], units: [], bizInfo: null, members: [], typeSettings: {}, activeTypeCategory: "projectStatus", activeGenre: "all", loading: true, search: "" };
+  var state = { tab: "priceList", items: [], units: [], bizInfo: null, members: [], typeSettings: {}, activeTypeCategory: "projectStatus", activeGenre: "all", activeMajorCategory: "all", loading: true, search: "" };
   var editModal = null;
   var confirmDeleteId = null;
   var bizEditing = false;
@@ -711,6 +752,7 @@
     document.getElementById("tabTrash").classList.toggle("is-active", tab === "trash");
     document.getElementById("searchInput").parentElement.style.display = tab === "priceList" ? "" : "none";
     document.getElementById("typeSubTabs").style.display = tab === "typeSettings" ? "flex" : "none";
+    document.getElementById("priceMajorTabs").style.display = tab === "priceList" ? "flex" : "none";
     document.getElementById("priceGenreTabs").style.display = tab === "priceList" ? "flex" : "none";
     document.getElementById("btnImportEstimate").style.display = tab === "priceList" ? "inline-flex" : "none";
     document.getElementById("btnDeleteAll").style.display = tab === "priceList" ? "inline-flex" : "none";
@@ -721,7 +763,7 @@
         ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> 項目を追加'
         : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> 単価を追加');
     if (tab === "typeSettings") renderTypeSubTabs();
-    if (tab === "priceList") renderPriceGenreTabs();
+    if (tab === "priceList") { renderPriceMajorTabs(); renderPriceGenreTabs(); }
     renderResults();
   }
   document.getElementById("tabPriceList").addEventListener("click", function () { setTab("priceList"); });
@@ -746,13 +788,55 @@
     });
   }
 
+  function priceMajorCategories() {
+    return (state.typeSettings["priceMajorCategory"] || []).filter(function (c) { return !c.deletedAt; });
+  }
+  function priceMajorCategoryOf(id) {
+    var list = priceMajorCategories();
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+  function itemMajorCategoryId(it) {
+    // 大項目未設定の既存データは「建築用」として扱う(今までの単価表はすべて建築関係のため)
+    return it.majorCategoryId || "construction";
+  }
+
+  function renderPriceMajorTabs() {
+    var el = document.getElementById("priceMajorTabs");
+    if (!el) return;
+    var cats = priceMajorCategories();
+    el.className = "status-chips";
+    var allChip = '<button class="status-chip' + (state.activeMajorCategory==="all" ? " is-active" : "") + '" style="--chip-color:#6C47FF" data-major="all">すべて</button>';
+    var catChips = cats.map(function (c) {
+      return '<button class="status-chip' + (state.activeMajorCategory===c.id ? " is-active" : "") + '" style="--chip-color:' + esc(c.color) + '" data-major="' + esc(c.id) + '">' + esc(c.label) + '</button>';
+    }).join("");
+    el.innerHTML = allChip + catChips;
+    el.querySelectorAll("[data-major]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.activeMajorCategory = btn.getAttribute("data-major");
+        renderPriceMajorTabs();
+        renderPriceGenreTabs();
+        renderResults();
+      });
+    });
+  }
+
   function renderPriceGenreTabs() {
     var el = document.getElementById("priceGenreTabs");
     if (!el) return;
-    var chips = [{ id: "all", label: "すべて" }].concat(PRICE_GENRES.map(function (g) { return { id: g, label: g }; }));
-    el.innerHTML = chips.map(function (c) {
-      return '<button class="module-tab' + (state.activeGenre===c.id?" is-active":"") + '" data-genre="' + esc(c.id) + '" style="font-size:12px;">' + esc(c.label) + '</button>';
+    // ジャンル一覧は「建築用」向けの分類のため、大項目が建築用/すべての時だけ表示する
+    if (state.activeMajorCategory !== "all" && state.activeMajorCategory !== "construction") {
+      el.style.display = "none";
+      el.innerHTML = "";
+      return;
+    }
+    el.style.display = "flex";
+    el.className = "status-chips";
+    var allChip = '<button class="status-chip' + (state.activeGenre==="all" ? " is-active" : "") + '" style="--chip-color:#6C47FF" data-genre="all">すべて</button>';
+    var genreChips = PRICE_GENRES_DATA.map(function (g) {
+      return '<button class="status-chip' + (state.activeGenre===g.label ? " is-active" : "") + '" style="--chip-color:' + esc(g.color) + '" data-genre="' + esc(g.label) + '">' + esc(g.label) + '</button>';
     }).join("");
+    el.innerHTML = allChip + genreChips;
     el.querySelectorAll("[data-genre]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         state.activeGenre = btn.getAttribute("data-genre");
@@ -769,6 +853,9 @@
   function filteredItems() {
     var q = state.search.trim().toLowerCase();
     var list = state.items.filter(function (it) { return !it.deletedAt; });
+    if (state.activeMajorCategory && state.activeMajorCategory !== "all") {
+      list = list.filter(function (it) { return itemMajorCategoryId(it) === state.activeMajorCategory; });
+    }
     if (state.activeGenre && state.activeGenre !== "all") {
       list = list.filter(function (it) { return it.genre === state.activeGenre; });
     }
@@ -807,11 +894,21 @@
     }
 
     var GENRE_BADGE = 'display:inline-block;padding:2px 8px;border-radius:10px;background:#eef2ff;color:#4338ca;font-size:11px;font-weight:600;white-space:nowrap;';
+    function genreBadgeHtml(genre) {
+      if (!genre) return '<span style="' + GENRE_BADGE + '">未設定</span>';
+      var color = genreColorOf(genre);
+      return '<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:' + esc(color) + '22;color:' + esc(color) + ';font-size:11px;font-weight:600;white-space:nowrap;">' + esc(genre) + '</span>';
+    }
     var rows = "", cards = "";
     list.forEach(function (it) {
+      var majorCat = priceMajorCategoryOf(itemMajorCategoryId(it));
+      var majorBadge = majorCat
+        ? '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;background:' + esc(majorCat.color) + '22;color:' + esc(majorCat.color) + ';font-size:11px;font-weight:700;white-space:nowrap;"><span style="width:7px;height:7px;border-radius:50%;background:' + esc(majorCat.color) + ';display:inline-block;"></span>' + esc(majorCat.label) + '</span>'
+        : '<span style="' + GENRE_BADGE + '">未設定</span>';
       rows += '<tr>' +
         '<td><button class="cell-name" data-edit="' + it.id + '">' + esc(it.name) + '</button></td>' +
-        '<td><span style="' + GENRE_BADGE + '">' + esc(it.genre || "未設定") + '</span></td>' +
+        '<td>' + majorBadge + '</td>' +
+        '<td>' + genreBadgeHtml(it.genre) + '</td>' +
         '<td>' + esc(it.spec || "-") + '</td>' +
         '<td>' + esc(it.unit) + '</td>' +
         '<td class="amount-text">' + fmtYen(it.sellPrice) + (it.coef ? '<span class="tax-note">×' + esc(it.coef==="custom"?it.coefCustom:it.coef) + '</span>' : '') + '</td>' +
@@ -820,13 +917,13 @@
       cards += '<div class="data-card">' +
         '<div class="data-card__top"><div class="data-card__name">' + esc(it.name) + '</div>' +
         '<button class="icon-btn" data-edit="' + it.id + '" aria-label="編集">' + ICON_PENCIL + '</button></div>' +
-        '<div class="data-card__meta"><span style="' + GENRE_BADGE + '">' + esc(it.genre || "未設定") + '</span><span>' + esc(it.unit) + '</span></div>' +
+        '<div class="data-card__meta">' + majorBadge + (it.genre ? genreBadgeHtml(it.genre) : '') + '<span>' + esc(it.unit) + '</span></div>' +
         '<div class="data-card__meta"><span class="amount-text">販売 ' + fmtYen(it.sellPrice) + '</span><span class="amount-text">原価 ' + fmtYen(it.costPrice) + '</span></div></div>';
     });
 
     area.innerHTML =
       '<div class="table-wrap"><table class="data-table"><thead><tr>' +
-      '<th>名称</th><th>ジャンル</th><th>仕様・摘要</th><th>単位</th><th>販売価格</th><th>予定原価</th><th></th>' +
+      '<th>名称</th><th>大項目</th><th>ジャンル</th><th>仕様・摘要</th><th>単位</th><th>販売価格</th><th>予定原価</th><th></th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div><div class="card-list">' + cards + '</div>';
 
     area.querySelectorAll("[data-edit]").forEach(function (el) {
@@ -1101,7 +1198,8 @@
 
   function openModal(isEdit, data) {
     var defaultGenre = (state.activeGenre && state.activeGenre !== "all") ? state.activeGenre : PRICE_GENRES[0];
-    editModal = { isEdit: isEdit, data: data ? Object.assign({}, data) : { name: "", genre: defaultGenre, spec: "", qty: 1, unit: state.units[0] || "式", sellPrice: "", costPrice: "", coef: "" } };
+    var defaultMajor = (state.activeMajorCategory && state.activeMajorCategory !== "all") ? state.activeMajorCategory : "construction";
+    editModal = { isEdit: isEdit, data: data ? Object.assign({}, data) : { name: "", majorCategoryId: defaultMajor, genre: defaultGenre, spec: "", qty: 1, unit: state.units[0] || "式", sellPrice: "", costPrice: "", coef: "" } };
     renderModal();
   }
   function closeModal() { editModal = null; document.getElementById("modalRoot").innerHTML = ""; }
@@ -1110,13 +1208,18 @@
     var root = document.getElementById("modalRoot");
     if (!editModal) { root.innerHTML = ""; return; }
     var d = editModal.data, isEdit = editModal.isEdit;
+    var curMajor = d.majorCategoryId || "construction";
+    var majorOptions = priceMajorCategories().map(function (c) {
+      return '<option value="' + esc(c.id) + '"' + (curMajor===c.id?" selected":"") + '>' + esc(c.label) + '</option>';
+    }).join("");
 
     root.innerHTML =
       '<div class="modal-overlay" id="modalOverlay"><div class="modal" role="dialog" aria-modal="true">' +
       '<div class="modal__header"><h2>' + (isEdit ? "単価を編集" : "単価を追加") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
       '<div class="modal__body">' +
       '<div class="field"><label>名称 <span class="req">*</span></label><input type="text" id="f_name" placeholder="例: 玄関ポスト" value="' + esc(d.name) + '" /><p class="field__error" id="err_name" style="display:none"></p></div>' +
-      '<div class="field"><label>ジャンル <span class="req">*</span></label><select id="f_genre">' + genreOptions(d.genre) + '</select></div>' +
+      '<div class="field"><label>大項目 <span class="req">*</span></label><select id="f_majorCategory">' + majorOptions + '</select></div>' +
+      '<div class="field" id="f_genre_field">' + genreFieldHtml(curMajor, d.genre) + '</div>' +
       '<div class="field"><label>仕様・摘要</label><input type="text" id="f_spec" placeholder="例: 天井、壁500番" value="' + esc(d.spec) + '" /></div>' +
       '<div class="field-row">' +
       '<div class="field"><label>単位 <span class="hint" style="font-size:11px;color:var(--text-tertiary);font-weight:400;">1' + esc(d.unit||"式") + 'あたりの単価として登録します</span></label><div class="unit-row">' +
@@ -1172,6 +1275,10 @@
     document.getElementById("f_name").focus();
     if (isEdit) document.getElementById("modalDeleteBtn").addEventListener("click", function () { confirmDeleteId = { kind: "item", id: d.id }; closeModal(); renderConfirm(); });
 
+    document.getElementById("f_majorCategory").addEventListener("change", function () {
+      document.getElementById("f_genre_field").innerHTML = genreFieldHtml(this.value, "");
+    });
+
     document.getElementById("addUnitBtn").addEventListener("click", function () {
       var newUnit = window.prompt("追加する単位名を入力してください(例: セット)");
       if (!newUnit) return;
@@ -1189,6 +1296,7 @@
       if (!name) { document.getElementById("err_name").textContent = "名称を入力してください"; document.getElementById("err_name").style.display = "block"; document.getElementById("f_name").classList.add("is-error"); return; }
       var form = {
         id: d.id, name: name,
+        majorCategoryId: document.getElementById("f_majorCategory").value,
         genre: document.getElementById("f_genre").value,
         spec: document.getElementById("f_spec").value.trim(),
         qty: 1,
@@ -1397,7 +1505,7 @@
               next[idx] = Object.assign({}, next[idx], { spec: c.spec, unit: c.unit, costPrice: c.costPrice, sellPrice: c.sellPrice });
               updated++;
             } else {
-              next.push({ id: "u-" + Date.now() + "-" + i, name: c.name, genre: c.genre, spec: c.spec, qty: 1, unit: c.unit, sellPrice: c.sellPrice, costPrice: c.costPrice, coef: "" });
+              next.push({ id: "u-" + Date.now() + "-" + i, name: c.name, majorCategoryId: "construction", genre: c.genre, spec: c.spec, qty: 1, unit: c.unit, sellPrice: c.sellPrice, costPrice: c.costPrice, coef: "" });
               added++;
             }
           });
@@ -1463,6 +1571,7 @@
       });
 
       state.loading = false;
+      if (state.tab === "priceList") { renderPriceMajorTabs(); renderPriceGenreTabs(); }
       renderResults();
     }).catch(function () {
       state.items = seedPriceItems();
@@ -1471,6 +1580,7 @@
       state.members = seedMembers();
       TYPE_SETTINGS_CATEGORIES.forEach(function (c) { state.typeSettings[c.id] = seedForCategory(c.id); });
       state.loading = false;
+      if (state.tab === "priceList") { renderPriceMajorTabs(); renderPriceGenreTabs(); }
       renderResults();
     });
   }
