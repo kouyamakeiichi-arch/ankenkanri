@@ -246,7 +246,7 @@
           catch (e) { resolve(null); }
         });
       } else if (window.storage && typeof window.storage.get === "function") {
-        window.storage.get(key, false).then(resolve).catch(function () { resolve(null); });
+        window.storage.get(key, true).then(resolve).catch(function () { resolve(null); });
       } else {
         try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
         catch (e) { resolve(null); }
@@ -263,7 +263,7 @@
           catch (e2) { reject(e2); }
         });
       } else if (window.storage && typeof window.storage.set === "function") {
-        window.storage.set(key, value, false).then(resolve).catch(function () {
+        window.storage.set(key, value, true).then(resolve).catch(function () {
           try { window.localStorage.setItem(key, value); resolve({ value: value }); }
           catch (e2) { reject(e2); }
         });
@@ -348,6 +348,25 @@
     state.files = next;
     return storageSet(FILES_KEY, JSON.stringify(next));
   }
+
+  // 保存の直前にクラウドから最新データを取得し直し、そこに変更を適用してから保存する(他の人の更新を上書きしないための安全策)
+  function makePersistTransform(key, stateField) {
+    return function (transformFn) {
+      return storageGet(key).then(function (res) {
+        var fresh = null;
+        try { fresh = res && res.value ? JSON.parse(res.value) : null; } catch (e) { fresh = null; }
+        if (!Array.isArray(fresh)) fresh = state[stateField];
+        var next = transformFn(fresh);
+        state[stateField] = next;
+        return storageSet(key, JSON.stringify(next)).then(function () { return next; });
+      }).catch(function () {
+        var next = transformFn(state[stateField]);
+        state[stateField] = next;
+        return storageSet(key, JSON.stringify(next)).then(function () { return next; });
+      });
+    };
+  }
+  var persistFilesTransform = makePersistTransform(FILES_KEY, "files");
 
   /* ---------------- 案件セレクター ---------------- */
   function renderProjectSelect() {
@@ -510,8 +529,9 @@
     document.getElementById("previewOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "previewOverlay") closePreview(); });
     document.getElementById("previewFolderSelect").addEventListener("change", function () {
       var newFolderId = this.value;
-      var next = state.files.map(function (f) { return f.id === file.id ? Object.assign({}, f, { folderId: newFolderId }) : f; });
-      persistFiles(next).then(function () {
+      persistFilesTransform(function (fresh) {
+        return fresh.map(function (f) { return f.id === file.id ? Object.assign({}, f, { folderId: newFolderId }) : f; });
+      }).then(function () {
         showToast("種別を「" + folderOf(newFolderId).label + "」に変更しました");
         renderFolderTabs();
         renderResults();
@@ -546,7 +566,9 @@
     document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
       var id = confirmDeleteId;
       var target = state.files.find(function (f) { return f.id === id; });
-      persistFiles(state.files.filter(function (f) { return f.id !== id; })).then(function () {
+      persistFilesTransform(function (fresh) {
+        return fresh.filter(function (f) { return f.id !== id; });
+      }).then(function () {
         if (target && target.storagePath && window.fbStorage) {
           window.fbStorage.ref().child(target.storagePath).delete().catch(function () {});
         }
@@ -634,7 +656,6 @@
     Promise.all(uploadPromises).then(function (results) {
       var newFiles = results.filter(function (r) { return r && !r.__error; });
       var errors = results.filter(function (r) { return r && r.__error; });
-      var next = newFiles.concat(state.files);
       var finish = function () {
         var msg = "";
         if (newFiles.length) msg += newFiles.length + "件アップロードしました";
@@ -647,7 +668,7 @@
         renderResults();
       };
       if (!newFiles.length) { finish(); return; }
-      persistFiles(next).then(finish).catch(function (err) {
+      persistFilesTransform(function (fresh) { return newFiles.concat(fresh); }).then(finish).catch(function (err) {
         console.error("ファイル情報の保存に失敗:", err);
         showToast("ファイル情報の保存に失敗しました: " + (err && err.message ? err.message : ""));
       });

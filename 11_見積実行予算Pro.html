@@ -709,6 +709,7 @@ let curView='detail';
 let curCat=0;
 let autoTimer=null;
 let appBooted=false;
+let deletedProjIds=[]; // このセッション中に削除した物件のID(クラウドの最新データとマージする際、削除済みの物件が復活しないようにするため)
 
 // ===== ⑥設定「単価表・単位設定」との連携（同じFirebaseプロジェクトのデータを読み込んで候補に使う） =====
 const PRICE_ITEMS_KEY_SHARED='taiho_price_items_v2';
@@ -732,6 +733,34 @@ function loadPriceItems(){
   });
 }
 // 単価表に新規登録（⑪プロの明細から）
+// 保存直前にクラウドの単価表を取得し直し、そこに新規項目を追加してから保存する(他の人が追加した単価項目を消さないための安全策)
+function saveSharedPriceItemsTransform(transformFn){
+  return new Promise(function(resolve){
+    if(!window.db){
+      priceItems=transformFn(priceItems);
+      const json=JSON.stringify(priceItems);
+      try{localStorage.setItem(PRICE_ITEMS_KEY_SHARED,json);}catch(e){}
+      resolve();
+      return;
+    }
+    window.db.collection('taiho_app_data').doc(PRICE_ITEMS_KEY_SHARED).get().then(function(doc){
+      var fresh=null;
+      try{ fresh = doc.exists ? JSON.parse(doc.data().value) : null; }catch(e){ fresh=null; }
+      if(!Array.isArray(fresh)) fresh=priceItems;
+      priceItems=transformFn(fresh);
+      const json=JSON.stringify(priceItems);
+      try{localStorage.setItem(PRICE_ITEMS_KEY_SHARED,json);}catch(e){}
+      window.db.collection('taiho_app_data').doc(PRICE_ITEMS_KEY_SHARED).set({value:json,updatedAt:Date.now()}).catch(function(){});
+      resolve();
+    }).catch(function(){
+      priceItems=transformFn(priceItems);
+      const json=JSON.stringify(priceItems);
+      try{localStorage.setItem(PRICE_ITEMS_KEY_SHARED,json);}catch(e){}
+      resolve();
+    });
+  });
+}
+// 互換用(単純な差し替えのみ・マージなし)
 function saveSharedPriceItems(next){
   priceItems=next;
   const json=JSON.stringify(next);
@@ -861,7 +890,7 @@ function loadAll(){
   document.getElementById('co-sub').textContent=curCfg().co1||'';
 }
 
-function persistAll(){
+function persistAllLocal(){
   try{
     const projJson=JSON.stringify(projects);
     localStorage.setItem(PROJ_LIST_KEY,projJson);
@@ -871,10 +900,44 @@ function persistAll(){
   }catch(e){console.warn('保存失敗',e);}
 }
 
+// 保存の直前にクラウドから最新の物件一覧を取得し直し、自分が編集した物件だけをそこに反映してから保存する
+// (他の人が別の物件を同時に編集していても、その物件を上書きして消してしまわないための安全策)
+function persistAll(){
+  return fsGet(PROJ_LIST_KEY).then(function(remote){
+    var fresh=null;
+    try{ fresh = remote ? JSON.parse(remote) : null; }catch(e){ fresh=null; }
+    if(!Array.isArray(fresh)){ persistAllLocal(); return; }
+
+    // クラウド最新版をベースに、ローカルで編集/追加した物件だけを上書きし、
+    // このセッションで削除した物件は除外する。他人が追加・編集した物件はそのまま残る。
+    var merged = fresh
+      .filter(function(fp){ return deletedProjIds.indexOf(fp.id)===-1; })
+      .map(function(fp){
+        var localMatch = projects.find(function(lp){ return lp.id===fp.id; });
+        return localMatch || fp;
+      });
+    projects.forEach(function(lp){
+      if(!merged.find(function(mp){ return mp.id===lp.id; })) merged.push(lp);
+    });
+    projects = merged;
+
+    try{
+      const projJson=JSON.stringify(projects);
+      localStorage.setItem(PROJ_LIST_KEY,projJson);
+      localStorage.setItem(PROJ_CUR_KEY,curProjId);
+      fsSet(PROJ_LIST_KEY,projJson);
+      fsSet(PROJ_CUR_KEY,curProjId);
+    }catch(e){console.warn('保存失敗',e);}
+  }).catch(function(){
+    persistAllLocal(); // クラウド取得に失敗した場合は、従来通りローカルの内容でそのまま保存する
+  });
+}
+
 function saveNow(){
-  persistAll();
-  const n=new Date();
-  document.getElementById('save-st').textContent='💾 保存済 '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+  Promise.resolve(persistAll()).then(function(){
+    const n=new Date();
+    document.getElementById('save-st').textContent='💾 保存済 '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+  });
 }
 function sched(){
   clearTimeout(autoTimer);
@@ -953,6 +1016,7 @@ function deleteProj(id){
   const p=projects.find(x=>x.id===id);if(!p)return;
   if(!confirm(`「${p.name}」を削除しますか？\nこの操作は元に戻せません。`))return;
   projects=projects.filter(x=>x.id!==id);
+  deletedProjIds.push(id);
   if(curProjId===id){curProjId=projects[0].id;curCat=0;}
   saveNow();
   renderProjList();
@@ -1477,8 +1541,7 @@ function maybeOfferRegisterPriceItem(idx){
   if(exists)return;
   if(confirm(`「${it.name}」は単価表（⑥設定）にまだ登録されていません。\n単位「${it.unit||'式'}」・単価「¥${fmt(it.price)}」で単価表に新規登録しますか？\n（登録すると次回から⑪プロの明細入力で候補として使えるようになります）`)){
     const newItem={id:'u-'+Date.now(),name:it.name,genre:cat.name,spec:it.kei||'',qty:1,unit:it.unit||'式',sellPrice:'',costPrice:it.price};
-    saveSharedPriceItems([newItem].concat(priceItems));
-    renderDetail();
+    saveSharedPriceItemsTransform(function(fresh){ return [newItem].concat(fresh); }).then(function(){ renderDetail(); });
   }
 }
 

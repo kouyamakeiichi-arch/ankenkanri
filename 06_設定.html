@@ -264,7 +264,7 @@
           catch (e) { resolve(null); }
         });
       } else if (window.storage && typeof window.storage.get === "function") {
-        window.storage.get(key, false).then(resolve).catch(function () { resolve(null); });
+        window.storage.get(key, true).then(resolve).catch(function () { resolve(null); });
       } else {
         try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
         catch (e) { resolve(null); }
@@ -281,7 +281,7 @@
           resolve({ value: value });
         });
       } else if (window.storage && typeof window.storage.set === "function") {
-        window.storage.set(key, value, false).then(resolve).catch(function () {
+        window.storage.set(key, value, true).then(resolve).catch(function () {
           try { window.localStorage.setItem(key, value); } catch (e) {}
           resolve({ value: value });
         });
@@ -540,6 +540,39 @@
   function persistMembers(next) {
     state.members = next;
     storageSet(MEMBERS_KEY, JSON.stringify(next)).catch(function () { showToast("保存に失敗しました"); });
+  }
+
+  // 保存の直前にクラウドから最新データを取得し直し、そこに変更を適用してから保存する(他の人の更新を上書きしないための安全策)
+  function transformArrayInStorage(key, getCurrent, setCurrent, transformFn) {
+    return storageGet(key).then(function (res) {
+      var fresh = null;
+      try { fresh = res && res.value ? JSON.parse(res.value) : null; } catch (e) { fresh = null; }
+      if (!Array.isArray(fresh)) fresh = getCurrent();
+      var next = transformFn(fresh);
+      setCurrent(next);
+      return storageSet(key, JSON.stringify(next)).then(function () { return next; });
+    }).catch(function () {
+      var next = transformFn(getCurrent());
+      setCurrent(next);
+      return storageSet(key, JSON.stringify(next)).then(function () { return next; });
+    }).catch(function () { showToast("保存に失敗しました"); });
+  }
+  function makePersistTransform(key, stateField) {
+    return function (transformFn) {
+      return transformArrayInStorage(key, function () { return state[stateField]; }, function (v) { state[stateField] = v; }, transformFn);
+    };
+  }
+  var persistItemsTransform = makePersistTransform(PRICE_ITEMS_KEY, "items");
+  var persistUnitsTransform = makePersistTransform(UNITS_KEY, "units");
+  var persistMembersTransform = makePersistTransform(MEMBERS_KEY, "members");
+  function persistTypeListTransform(catId, transformFn) {
+    var key = typeCategoryOf(catId).key;
+    return transformArrayInStorage(
+      key,
+      function () { return state.typeSettings[catId]; },
+      function (v) { state.typeSettings[catId] = v; },
+      transformFn
+    );
   }
 
   /* =====================================================================
@@ -912,15 +945,14 @@
       if (!ok) return;
       var form = { id: d.id, name: name, email: email, role: document.getElementById("f_mrole").value };
       if (isEdit) {
-        persistMembers(state.members.map(function (m) { return m.id === form.id ? Object.assign({}, m, form) : m; }));
+        persistMembersTransform(function (fresh) { return fresh.map(function (m) { return m.id === form.id ? Object.assign({}, m, form) : m; }); }).then(function () { renderResults(); });
         showToast("メンバーを更新しました");
       } else {
         form.id = "m-" + Date.now();
-        persistMembers([form].concat(state.members));
+        persistMembersTransform(function (fresh) { return [form].concat(fresh); }).then(function () { renderResults(); });
         showToast("メンバーを追加しました");
       }
       closeMemberModal();
-      renderResults();
     });
   }
 
@@ -1039,17 +1071,15 @@
       var form = { id: d.id, label: label, color: document.getElementById("f_tcolor").value };
       if (cat.hasHonorific) form.honorific = document.getElementById("f_thonorific").value.trim();
       if (cat.hasDone) form.done = document.getElementById("f_tdone").checked;
-      var list = state.typeSettings[cat.id] || [];
       if (isEdit) {
-        persistTypeList(cat.id, list.map(function (t) { return t.id === form.id ? Object.assign({}, t, form) : t; }));
+        persistTypeListTransform(cat.id, function (fresh) { return fresh.map(function (t) { return t.id === form.id ? Object.assign({}, t, form) : t; }); }).then(function () { renderResults(); });
         showToast(cat.label + "を更新しました");
       } else {
         form.id = cat.id + "-" + Date.now();
-        persistTypeList(cat.id, list.concat([form]));
+        persistTypeListTransform(cat.id, function (fresh) { return fresh.concat([form]); }).then(function () { renderResults(); });
         showToast(cat.label + "を追加しました");
       }
       closeTypeModal();
-      renderResults();
     });
   }
 
@@ -1132,7 +1162,7 @@
       newUnit = newUnit.trim();
       if (!newUnit) return;
       if (state.units.indexOf(newUnit) === -1) {
-        persistUnits(state.units.concat([newUnit]));
+        persistUnitsTransform(function (fresh) { return fresh.indexOf(newUnit) === -1 ? fresh.concat([newUnit]) : fresh; });
       }
       var sel = document.getElementById("f_unit");
       sel.innerHTML = unitOptions(newUnit);
@@ -1153,15 +1183,14 @@
         coefCustom: document.getElementById("f_coefCustom").value
       };
       if (isEdit) {
-        persistItems(state.items.map(function (it) { return it.id === form.id ? Object.assign({}, it, form) : it; }));
+        persistItemsTransform(function (fresh) { return fresh.map(function (it) { return it.id === form.id ? Object.assign({}, it, form) : it; }); }).then(function () { renderResults(); });
         showToast("単価を更新しました");
       } else {
         form.id = "u-" + Date.now();
-        persistItems([form].concat(state.items));
+        persistItemsTransform(function (fresh) { return [form].concat(fresh); }).then(function () { renderResults(); });
         showToast("単価を追加しました");
       }
       closeModal();
-      renderResults();
     });
   }
 
@@ -1177,21 +1206,20 @@
     document.getElementById("confirmOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "confirmOverlay") { confirmDeleteId = null; renderConfirm(); } });
     document.getElementById("confirmCancelBtn").addEventListener("click", function () { confirmDeleteId = null; renderConfirm(); });
     document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
+      var delId = confirmDeleteId.id;
       if (confirmDeleteId.kind === "item") {
-        persistItems(state.items.filter(function (it) { return it.id !== confirmDeleteId.id; }));
+        persistItemsTransform(function (fresh) { return fresh.filter(function (it) { return it.id !== delId; }); }).then(function () { renderResults(); });
         showToast("単価項目を削除しました");
       } else if (confirmDeleteId.kind === "member") {
-        persistMembers(state.members.filter(function (m) { return m.id !== confirmDeleteId.id; }));
+        persistMembersTransform(function (fresh) { return fresh.filter(function (m) { return m.id !== delId; }); }).then(function () { renderResults(); });
         showToast("メンバーを削除しました");
       } else {
         var catId = state.activeTypeCategory;
-        var list = state.typeSettings[catId] || [];
-        persistTypeList(catId, list.filter(function (t) { return t.id !== confirmDeleteId.id; }));
+        persistTypeListTransform(catId, function (fresh) { return fresh.filter(function (t) { return t.id !== delId; }); }).then(function () { renderResults(); });
         showToast("項目を削除しました");
       }
       confirmDeleteId = null;
       renderConfirm();
-      renderResults();
     });
   }
 
@@ -1261,21 +1289,24 @@
         if (!confirm(candidates.length + "件の単価候補が見つかりました。ジャンル別に単価表へ登録しますか？\n※同じ名称・同じジャンルの単価が既にある場合は上書き更新されます。")) {
           input.value = ""; return;
         }
-        var next = state.items.slice();
         var added = 0, updated = 0;
-        candidates.forEach(function (c, i) {
-          var idx = next.findIndex(function (x) { return x.genre === c.genre && x.name === c.name; });
-          if (idx >= 0) {
-            next[idx] = Object.assign({}, next[idx], { spec: c.spec, unit: c.unit, costPrice: c.costPrice, sellPrice: c.sellPrice });
-            updated++;
-          } else {
-            next.push({ id: "u-" + Date.now() + "-" + i, name: c.name, genre: c.genre, spec: c.spec, qty: 1, unit: c.unit, sellPrice: c.sellPrice, costPrice: c.costPrice, coef: "" });
-            added++;
-          }
+        persistItemsTransform(function (fresh) {
+          var next = fresh.slice();
+          candidates.forEach(function (c, i) {
+            var idx = next.findIndex(function (x) { return x.genre === c.genre && x.name === c.name; });
+            if (idx >= 0) {
+              next[idx] = Object.assign({}, next[idx], { spec: c.spec, unit: c.unit, costPrice: c.costPrice, sellPrice: c.sellPrice });
+              updated++;
+            } else {
+              next.push({ id: "u-" + Date.now() + "-" + i, name: c.name, genre: c.genre, spec: c.spec, qty: 1, unit: c.unit, sellPrice: c.sellPrice, costPrice: c.costPrice, coef: "" });
+              added++;
+            }
+          });
+          return next;
+        }).then(function () {
+          showToast("単価表に登録しました（新規" + added + "件・更新" + updated + "件）");
+          renderResults();
         });
-        persistItems(next);
-        showToast("単価表に登録しました（新規" + added + "件・更新" + updated + "件）");
-        renderResults();
       } catch (ex) {
         alert("読み込みに失敗しました。正しい見積データファイルか確認してください。\n" + ex.message);
       }

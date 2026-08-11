@@ -296,7 +296,7 @@
           catch (e) { resolve(null); }
         });
       } else if (window.storage && typeof window.storage.get === "function") {
-        window.storage.get(key, false).then(resolve).catch(function () { resolve(null); });
+        window.storage.get(key, true).then(resolve).catch(function () { resolve(null); });
       } else {
         try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
         catch (e) { resolve(null); }
@@ -313,7 +313,7 @@
           resolve({ value: value });
         });
       } else if (window.storage && typeof window.storage.set === "function") {
-        window.storage.set(key, value, false).then(resolve).catch(function () {
+        window.storage.set(key, value, true).then(resolve).catch(function () {
           try { window.localStorage.setItem(key, value); } catch (e) {}
           resolve({ value: value });
         });
@@ -397,6 +397,26 @@
   }
   function persistWorklogs(next) { state.worklogs = next; storageSet(WORKLOGS_KEY, JSON.stringify(next)).catch(function(){ showToast("保存に失敗しました"); }); }
   function persistRequests(next) { state.requests = next; storageSet(REQUESTS_KEY, JSON.stringify(next)).catch(function(){ showToast("保存に失敗しました"); }); }
+
+  // 保存の直前にクラウドから最新データを取得し直し、そこに変更を適用してから保存する(他の人の更新を上書きしないための安全策)
+  function makePersistTransform(key, stateField) {
+    return function (transformFn) {
+      return storageGet(key).then(function (res) {
+        var fresh = null;
+        try { fresh = res && res.value ? JSON.parse(res.value) : null; } catch (e) { fresh = null; }
+        if (!Array.isArray(fresh)) fresh = state[stateField];
+        var next = transformFn(fresh);
+        state[stateField] = next;
+        return storageSet(key, JSON.stringify(next)).then(function () { return next; });
+      }).catch(function () {
+        var next = transformFn(state[stateField]);
+        state[stateField] = next;
+        return storageSet(key, JSON.stringify(next)).then(function () { return next; });
+      }).catch(function () { showToast("保存に失敗しました"); });
+    };
+  }
+  var persistWorklogsTransform = makePersistTransform(WORKLOGS_KEY, "worklogs");
+  var persistRequestsTransform = makePersistTransform(REQUESTS_KEY, "requests");
 
   function projectName(id) { var p = state.projects.find(function (x) { return x.id === id; }); return p ? p.name : ""; }
   function projectOptions(selectedId) {
@@ -589,12 +609,13 @@
       el.addEventListener("change", function () {
         var id = el.getAttribute("data-status-change");
         var newStatus = el.value;
-        persistRequests(state.requests.map(function (r) {
-          if (r.id !== id) return r;
-          var approvedAt = (newStatus === "approved" || newStatus === "rejected") ? Date.now() : null;
-          return Object.assign({}, r, { status: newStatus, approvedAt: approvedAt });
-        }));
-        renderResults();
+        persistRequestsTransform(function (fresh) {
+          return fresh.map(function (r) {
+            if (r.id !== id) return r;
+            var approvedAt = (newStatus === "approved" || newStatus === "rejected") ? Date.now() : null;
+            return Object.assign({}, r, { status: newStatus, approvedAt: approvedAt });
+          });
+        }).then(function () { renderResults(); });
       });
     });
   }
@@ -682,15 +703,18 @@
           note: document.getElementById("f_note").value.trim()
         };
         if (isEdit) {
-          persistWorklogs(state.worklogs.map(function (w) { return w.id === form.id ? Object.assign({}, w, form) : w; }));
+          persistWorklogsTransform(function (fresh) {
+            return fresh.map(function (w) { return w.id === form.id ? Object.assign({}, w, form) : w; });
+          }).then(function () { renderResults(); });
           showToast("日報を更新しました");
         } else {
           form.id = "w-" + Date.now();
-          persistWorklogs([form].concat(state.worklogs));
+          persistWorklogsTransform(function (fresh) {
+            return [form].concat(fresh);
+          }).then(function () { renderResults(); });
           showToast("日報を追加しました");
         }
         closeEditModal();
-        renderResults();
       });
 
     } else {
@@ -730,15 +754,18 @@
           status: d.status || "pending", requestedAt: d.requestedAt || Date.now(), approvedAt: d.approvedAt || null
         };
         if (isEdit) {
-          persistRequests(state.requests.map(function (r) { return r.id === form.id ? Object.assign({}, r, form) : r; }));
+          persistRequestsTransform(function (fresh) {
+            return fresh.map(function (r) { return r.id === form.id ? Object.assign({}, r, form) : r; });
+          }).then(function () { renderResults(); });
           showToast("申請を更新しました");
         } else {
           form.id = "r-" + Date.now();
-          persistRequests([form].concat(state.requests));
+          persistRequestsTransform(function (fresh) {
+            return [form].concat(fresh);
+          }).then(function () { renderResults(); });
           showToast("申請を追加しました");
         }
         closeEditModal();
-        renderResults();
       });
     }
   }
@@ -755,16 +782,16 @@
     document.getElementById("confirmOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "confirmOverlay") { confirmDelete = null; renderConfirm(); } });
     document.getElementById("confirmCancelBtn").addEventListener("click", function () { confirmDelete = null; renderConfirm(); });
     document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
+      var delId = confirmDelete.id;
       if (isWorklog) {
-        persistWorklogs(state.worklogs.filter(function (w) { return w.id !== confirmDelete.id; }));
+        persistWorklogsTransform(function (fresh) { return fresh.filter(function (w) { return w.id !== delId; }); }).then(function () { renderResults(); });
         showToast("日報を削除しました");
       } else {
-        persistRequests(state.requests.filter(function (r) { return r.id !== confirmDelete.id; }));
+        persistRequestsTransform(function (fresh) { return fresh.filter(function (r) { return r.id !== delId; }); }).then(function () { renderResults(); });
         showToast("申請を削除しました");
       }
       confirmDelete = null;
       renderConfirm();
-      renderResults();
     });
   }
 

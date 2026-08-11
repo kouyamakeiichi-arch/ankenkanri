@@ -258,7 +258,7 @@
           catch (e) { resolve(null); }
         });
       } else if (window.storage && typeof window.storage.get === "function") {
-        window.storage.get(key, false).then(resolve).catch(function () { resolve(null); });
+        window.storage.get(key, true).then(resolve).catch(function () { resolve(null); });
       } else {
         try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
         catch (e) { resolve(null); }
@@ -275,7 +275,7 @@
           resolve({ value: value });
         });
       } else if (window.storage && typeof window.storage.set === "function") {
-        window.storage.set(key, value, false).then(resolve).catch(function () {
+        window.storage.set(key, value, true).then(resolve).catch(function () {
           try { window.localStorage.setItem(key, value); } catch (e) {}
           resolve({ value: value });
         });
