@@ -277,20 +277,7 @@
   <a class="sidebar__link" href="07_工程表カレンダー.html">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
     工程表・カレンダー
-  </a>
-  <a class="sidebar__link" href="08_見積実行予算.html" data-pref-key="sidebar_estimate_exec">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 13h6M9 17h4"/></svg>
-    見積・実行予算
-  </a>
-  <a class="sidebar__link" href="09_見積予算.html" data-pref-key="sidebar_estimate_budget">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-    見積・予算(表計算式)
-  </a>
-  <a class="sidebar__link" href="10_簡易見積書.html" data-pref-key="sidebar_quick_estimate">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M9 13h6M9 17h4"/></svg>
-    簡易見積書(1枚)
-  </a>
-  <a class="sidebar__link" href="11_見積実行予算Pro.html" data-pref-key="sidebar_quote3">
+  </a>  <a class="sidebar__link" href="11_見積実行予算Pro.html" data-pref-key="sidebar_quote3">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 12h6M9 16h6M9 20h3"/></svg>
     見積・実行予算Pro
   </a>
@@ -1403,24 +1390,6 @@
       "&buildingName=" + encodeURIComponent((b && b.name) || p.buildingName || "") +
       "&buildingAddress=" + encodeURIComponent((b && b.address) || "");
     panel.innerHTML =
-      '<div class="detail-section-title">見積・実行予算</div>' +
-      '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 10px;">' +
-      '工事種別ごとの明細入力、実行金額・見積金額・粗利の自動計算、印刷用の御見積書作成ができるツールです。' +
-      '下のボタンから開くと、「' + esc(p.name) + '」専用の物件が自動で選択され、宛先・工事件名なども基本情報から反映された状態で開きます。' +
-      '</p>' +
-      '<p style="margin-bottom:20px;"><a class="link-jump" href="08_見積実行予算.html?' + qp + '" target="_blank" rel="noopener">⑧見積・実行予算アプリを開く ' + ICON_CHEV_R + '</a></p>' +
-      '<div class="detail-section-title">見積・予算(表計算式)</div>' +
-      '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 10px;">' +
-      'Excel感覚でセル選択・コピペ・列幅調整ができる、表計算タイプの見積ツールです。バージョン管理もできます。この書式に慣れている方はこちらをお使いください。' +
-      '下のボタンから開くと、こちらも同様に案件専用の物件が自動選択され、宛先などが反映されます。' +
-      '</p>' +
-      '<p style="margin-bottom:20px;"><a class="link-jump" href="09_見積予算.html?' + qp + '" target="_blank" rel="noopener">⑨見積・予算(表計算式)アプリを開く ' + ICON_CHEV_R + '</a></p>' +
-      '<div class="detail-section-title">簡易見積書(1枚)</div>' +
-      '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 10px;">' +
-      '種別・規格寸法・数量・単位・単価・金額・備考だけのシンプルな明細で、A4一枚に収まる見積書をサッと作れるツールです。役所向けなど、シンプルな見積書1枚で済む案件におすすめです。' +
-      '下のボタンから開くと、宛先・工事件名が反映された状態の白紙シートで始められます(このツールは案件との自動連携はまだ無く、都度「保存」が必要です)。' +
-      '</p>' +
-      '<p><a class="link-jump" href="10_簡易見積書.html?' + qp + '" target="_blank" rel="noopener">⑩簡易見積書アプリを開く ' + ICON_CHEV_R + '</a></p>' +
       '<div class="detail-section-title">見積・実行予算Pro</div>' +
       '<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 10px;">' +
       '工種タブ・Excel風のセル操作・見積鏡（工事別の実行金額/見積金額/粗利集計）・御見積書印刷までまとめた高機能版です。クラウド(Firebase)に保存されます。' +
