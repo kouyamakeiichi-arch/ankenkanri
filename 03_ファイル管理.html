@@ -21,6 +21,12 @@
   .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
   .page-header__title { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 22px; letter-spacing: 0.01em; }
   .page-header__title .badge-count { font-family: 'Courier New', monospace; font-size: 12px; font-weight: 600; color: var(--primary); background: var(--primary-soft); padding: 3px 9px; border-radius: 100px; }
+  #trashCountBadge { font-size:11px; font-weight:700; background:#F0525C; color:#fff; border-radius:100px; padding:1px 7px; margin-left:4px; }
+  .trash-row { display:flex; align-items:center; gap:12px; padding:14px 16px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background:var(--surface); }
+  .trash-row__info { flex:1; min-width:0; }
+  .trash-row__name { font-weight:700; font-size:14.5px; }
+  .trash-row__meta { font-size:12px; color:var(--text-tertiary); margin-top:2px; }
+  .trash-row__actions { display:flex; gap:8px; flex-shrink:0; }
   .page-header__actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
   .search-box { position: relative; flex: 1; min-width: 180px; max-width: 280px; }
@@ -209,6 +215,10 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12 4 4m-4-4-4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
         アップロード
       </button>
+      <button class="btn btn--ghost" id="btnTrash">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/><path d="M10 11v6M14 11v6"/></svg>
+        ゴミ箱<span id="trashCountBadge" style="display:none;"></span>
+      </button>
       <input type="file" id="fileInput" accept="image/*,application/pdf,.jww,.dxf,.doc,.docx,.xls,.xlsx,.txt" multiple style="display:none" />
     </div>
   </div>
@@ -331,7 +341,7 @@
   var ICON_DOWNLOAD = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>';
 
   /* ---------------- 状態 ---------------- */
-  var state = { projects: [], files: [], loading: true, activeProjectId: "", activeFolder: "shared", search: "" };
+  var state = { projects: [], files: [], loading: true, activeProjectId: "", activeFolder: "shared", search: "", viewMode: "list" };
   var confirmDeleteId = null;
   var previewFileId = null;
 
@@ -388,6 +398,7 @@
   }
   document.getElementById("projectSelect").addEventListener("change", function (e) {
     state.activeProjectId = e.target.value;
+    if (state.viewMode === "trash") { setViewMode("list"); return; }
     renderResults();
   });
 
@@ -408,7 +419,82 @@
   }
 
   function filesInFolder(folderId) {
-    return state.files.filter(function (f) { return f.projectId === state.activeProjectId && f.folderId === folderId; });
+    return state.files.filter(function (f) { return f.projectId === state.activeProjectId && f.folderId === folderId && !f.deletedAt; });
+  }
+
+  /* ---------------- ゴミ箱 ---------------- */
+  function updateTrashBadge() {
+    var n = state.files.filter(function (f) { return f.projectId === state.activeProjectId && f.deletedAt; }).length;
+    var badge = document.getElementById("trashCountBadge");
+    if (n > 0) { badge.style.display = "inline-block"; badge.textContent = n; }
+    else { badge.style.display = "none"; }
+  }
+
+  function setViewMode(mode) {
+    state.viewMode = mode;
+    var isTrash = mode === "trash";
+    document.getElementById("btnTrash").classList.toggle("btn--primary", isTrash);
+    document.getElementById("btnTrash").classList.toggle("btn--ghost", !isTrash);
+    document.getElementById("btnUpload").style.display = isTrash ? "none" : "";
+    document.getElementById("searchInput").parentElement.style.display = isTrash ? "none" : "";
+    document.getElementById("folderTabs").style.display = isTrash ? "none" : "";
+    renderResults();
+  }
+  document.getElementById("btnTrash").addEventListener("click", function () {
+    setViewMode(state.viewMode === "trash" ? "list" : "trash");
+  });
+
+  function renderTrashResults(area) {
+    var items = state.files.filter(function (f) { return f.projectId === state.activeProjectId && f.deletedAt; })
+      .sort(function (a, b) { return (b.deletedAt||0) - (a.deletedAt||0); });
+    document.getElementById("countBadge").textContent = items.length + "件";
+
+    if (items.length === 0) {
+      area.innerHTML =
+        '<div class="empty-state">' + ICON_FOLDER40 +
+        '<p class="empty-state__title">ゴミ箱は空です</p><p class="empty-state__desc">削除したファイルはここに一時的に保管され、後から元に戻せます。</p></div>';
+      return;
+    }
+    area.innerHTML =
+      '<p style="font-size:12.5px;color:var(--text-tertiary);margin:0 0 14px;">削除したファイルはここに保管されます。「元に戻す」でいつでも復元できます。「完全に削除」を押すと復元できなくなります。</p>' +
+      items.map(function (file) {
+        return '<div class="trash-row">' +
+          '<div class="trash-row__info">' +
+            '<div class="trash-row__name">' + esc(file.name) + '</div>' +
+            '<div class="trash-row__meta">' + esc(folderOf(file.folderId).label) + '・' + fmtSize(file.sizeBytes) + '・削除日時: ' + fmtDateTime(file.deletedAt) + '</div>' +
+          '</div>' +
+          '<div class="trash-row__actions">' +
+            '<button class="btn btn--ghost btn--sm" data-restore="' + file.id + '">元に戻す</button>' +
+            '<button class="btn btn--danger-ghost btn--sm" data-purge="' + file.id + '">完全に削除</button>' +
+          '</div>' +
+        '</div>';
+      }).join("");
+
+    area.querySelectorAll("[data-restore]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-restore");
+        persistFilesTransform(function (fresh) { return fresh.map(function (f) { return f.id === id ? Object.assign({}, f, { deletedAt: null }) : f; }); }).then(function () {
+          renderFolderTabs();
+          renderResults();
+        });
+        showToast("ファイルを元に戻しました");
+      });
+    });
+    area.querySelectorAll("[data-purge]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-purge");
+        var target = state.files.find(function (f) { return f.id === id; });
+        if (!confirm("このファイルを完全に削除します。この操作は元に戻せません。よろしいですか？")) return;
+        persistFilesTransform(function (fresh) { return fresh.filter(function (f) { return f.id !== id; }); }).then(function () {
+          if (target && target.storagePath && window.fbStorage) {
+            window.fbStorage.ref().child(target.storagePath).delete().catch(function () {});
+          }
+          renderFolderTabs();
+          renderResults();
+        });
+        showToast("ファイルを完全に削除しました");
+      });
+    });
   }
 
   /* ---------------- 保存容量メーター ---------------- */
@@ -437,6 +523,13 @@
         '<p class="empty-state__title">先に案件を選択してください</p>' +
         '<p class="empty-state__desc">案件がまだ無い場合は、①案件管理から先に作成してください。</p></div>';
       document.getElementById("countBadge").textContent = "0件";
+      updateTrashBadge();
+      return;
+    }
+
+    if (state.viewMode === "trash") {
+      renderTrashResults(area);
+      updateTrashBadge();
       return;
     }
 
@@ -456,6 +549,7 @@
         '<button class="btn btn--primary" id="emptyUploadBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12 4 4m-4-4-4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg> アップロード</button></div>';
       var b = document.getElementById("emptyUploadBtn");
       if (b) b.addEventListener("click", function () { document.getElementById("fileInput").click(); });
+      updateTrashBadge();
       return;
     }
 
@@ -474,6 +568,7 @@
     });
     html += '</div>';
     area.innerHTML = html;
+    updateTrashBadge();
 
     area.querySelectorAll("[data-open]").forEach(function (el) {
       el.addEventListener("click", function (e) {
@@ -558,21 +653,17 @@
     if (!confirmDeleteId) { root.innerHTML = ""; return; }
     root.innerHTML =
       '<div class="modal-overlay" id="confirmOverlay"><div class="confirm-box">' + ICON_ALERT +
-      '<h3>このファイルを削除しますか?</h3><p>削除すると元に戻せません。</p>' +
+      '<h3>このファイルを削除しますか?</h3><p>ゴミ箱に移動します。後から「ゴミ箱」から元に戻せます。</p>' +
       '<div class="confirm-box__actions"><button class="btn btn--ghost btn--sm" id="confirmCancelBtn">キャンセル</button>' +
       '<button class="btn btn--danger-ghost btn--sm" id="confirmDeleteBtn">削除する</button></div></div></div>';
     document.getElementById("confirmOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "confirmOverlay") { confirmDeleteId = null; renderConfirm(); } });
     document.getElementById("confirmCancelBtn").addEventListener("click", function () { confirmDeleteId = null; renderConfirm(); });
     document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
       var id = confirmDeleteId;
-      var target = state.files.find(function (f) { return f.id === id; });
       persistFilesTransform(function (fresh) {
-        return fresh.filter(function (f) { return f.id !== id; });
+        return fresh.map(function (f) { return f.id === id ? Object.assign({}, f, { deletedAt: Date.now() }) : f; });
       }).then(function () {
-        if (target && target.storagePath && window.fbStorage) {
-          window.fbStorage.ref().child(target.storagePath).delete().catch(function () {});
-        }
-        showToast("ファイルを削除しました");
+        showToast("ファイルをゴミ箱に移動しました");
         confirmDeleteId = null;
         renderConfirm();
         renderFolderTabs();

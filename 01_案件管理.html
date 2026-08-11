@@ -21,6 +21,12 @@
   .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
   .page-header__title { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 22px; letter-spacing: 0.01em; }
   .page-header__title .badge-count { font-family: 'Courier New', monospace; font-size: 12px; font-weight: 600; color: var(--primary); background: var(--primary-soft); padding: 3px 9px; border-radius: 100px; }
+  #trashCountBadge { font-size:11px; font-weight:700; background:#F0525C; color:#fff; border-radius:100px; padding:1px 7px; margin-left:4px; }
+  .trash-row { display:flex; align-items:center; gap:12px; padding:14px 16px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background:var(--surface); }
+  .trash-row__info { flex:1; min-width:0; }
+  .trash-row__name { font-weight:700; font-size:14.5px; }
+  .trash-row__meta { font-size:12px; color:var(--text-tertiary); margin-top:2px; }
+  .trash-row__actions { display:flex; gap:8px; flex-shrink:0; }
   .page-header__actions { display: flex; gap: 10px; align-items: center; }
 
   .search-box { position: relative; flex: 1; min-width: 200px; max-width: 340px; }
@@ -308,10 +314,14 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
         作成
       </button>
+      <button class="btn btn--ghost" id="btnTrash">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/><path d="M10 11v6M14 11v6"/></svg>
+        ゴミ箱<span id="trashCountBadge" style="display:none;"></span>
+      </button>
     </div>
   </div>
 
-  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;" id="typeFilterModeRow">
     <button class="link-reset" id="btnTypeFilterMode" style="margin-right:2px;" title="案件タイプ絞り込みの初期状態を切り替えます(このブラウザだけの設定です)"></button>
   </div>
   <div class="type-tabs" id="typeTabs"></div>
@@ -578,6 +588,7 @@
 
   var state = {
     projects: [], customers: [], buildings: [], nextActions: [], loading: true, search: "", activeType: [], activeStatus: [], hideDone: false, managerFilter: "",
+    viewMode: "list", // "list" | "trash"
     /* 案件詳細ハブ用 */
     files: [], scheduleTasks: [], contractors: [], orders: [], billings: [], worklogs: [], requests: [], workTime: [],
     secondaryLoaded: false, detailProjectId: null, detailTab: "info"
@@ -660,6 +671,7 @@
   function computeFiltered() {
     var q = state.search.trim().toLowerCase();
     return state.projects
+      .filter(function (p) { return !p.deletedAt; })
       .filter(function (p) {
         if (getTypeFilterMode() === "exclude") return state.activeType.indexOf(p.typeId) === -1;
         return state.activeType.length ? state.activeType.indexOf(p.typeId) !== -1 : true;
@@ -801,13 +813,20 @@
 
   function renderResults() {
     var area = document.getElementById("resultsArea");
-    document.getElementById("countBadge").textContent = computeFiltered().length + "件";
 
     if (state.loading) {
+      document.getElementById("countBadge").textContent = "0件";
       area.innerHTML = '<div class="loading-wrap"><span class="spinner"></span> 読み込み中...</div>';
       return;
     }
 
+    if (state.viewMode === "trash") {
+      renderTrashResults(area);
+      updateTrashBadge();
+      return;
+    }
+
+    document.getElementById("countBadge").textContent = computeFiltered().length + "件";
     var filtered = computeFiltered();
 
     if (filtered.length === 0) {
@@ -876,6 +895,81 @@
       '<div class="card-list">' + cardItems + '</div>';
 
     bindResultsEvents();
+    updateTrashBadge();
+  }
+
+  function updateTrashBadge() {
+    var n = state.projects.filter(function (p) { return p.deletedAt; }).length;
+    var badge = document.getElementById("trashCountBadge");
+    if (n > 0) { badge.style.display = "inline-block"; badge.textContent = n; }
+    else { badge.style.display = "none"; }
+  }
+
+  function fmtDeletedAt(ts) {
+    if (!ts) return "-";
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return "-";
+    return d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate() + " " + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+  }
+
+  function setViewMode(mode) {
+    state.viewMode = mode;
+    var isTrash = mode === "trash";
+    document.getElementById("btnTrash").classList.toggle("btn--primary", isTrash);
+    document.getElementById("btnTrash").classList.toggle("btn--ghost", !isTrash);
+    document.getElementById("btnCreate").style.display = isTrash ? "none" : "";
+    document.getElementById("searchInput").parentElement.style.display = isTrash ? "none" : "";
+    document.getElementById("managerFilter").style.display = isTrash ? "none" : "";
+    document.getElementById("typeTabs").style.display = isTrash ? "none" : "";
+    document.querySelector(".filter-bar").style.display = isTrash ? "none" : "";
+    document.getElementById("typeFilterModeRow").style.display = isTrash ? "none" : "";
+    renderResults();
+  }
+  document.getElementById("btnTrash").addEventListener("click", function () {
+    setViewMode(state.viewMode === "trash" ? "list" : "trash");
+  });
+
+  function renderTrashResults(area) {
+    var items = state.projects.filter(function (p) { return p.deletedAt; })
+      .sort(function (a, b) { return (b.deletedAt||0) - (a.deletedAt||0); });
+    document.getElementById("countBadge").textContent = items.length + "件";
+
+    if (items.length === 0) {
+      area.innerHTML =
+        '<div class="empty-state">' + ICON_TRASH +
+        '<p class="empty-state__title">ゴミ箱は空です</p><p class="empty-state__desc">削除した案件はここに一時的に保管され、後から元に戻せます。</p></div>';
+      return;
+    }
+    area.innerHTML =
+      '<p style="font-size:12.5px;color:var(--text-tertiary);margin:0 0 14px;">削除した案件はここに保管されます。「元に戻す」でいつでも復元できます。「完全に削除」を押すと復元できなくなります。</p>' +
+      items.map(function (p) {
+        return '<div class="trash-row">' +
+          '<div class="trash-row__info">' +
+            '<div class="trash-row__name">No.' + esc(p.no) + ' ' + esc(p.name) + '</div>' +
+            '<div class="trash-row__meta">' + esc(p.customerName || "-") + '・削除日時: ' + fmtDeletedAt(p.deletedAt) + '</div>' +
+          '</div>' +
+          '<div class="trash-row__actions">' +
+            '<button class="btn btn--ghost btn--sm" data-restore="' + p.id + '">元に戻す</button>' +
+            '<button class="btn btn--danger-ghost btn--sm" data-purge="' + p.id + '">完全に削除</button>' +
+          '</div>' +
+        '</div>';
+      }).join("");
+
+    area.querySelectorAll("[data-restore]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-restore");
+        persistTransform(function (fresh) { return fresh.map(function (p) { return p.id === id ? Object.assign({}, p, { deletedAt: null }) : p; }); }).then(function () { renderResults(); });
+        showToast("案件を元に戻しました");
+      });
+    });
+    area.querySelectorAll("[data-purge]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-purge");
+        if (!confirm("この案件を完全に削除します。この操作は元に戻せません。よろしいですか？")) return;
+        persistTransform(function (fresh) { return fresh.filter(function (p) { return p.id !== id; }); }).then(function () { renderResults(); });
+        showToast("案件を完全に削除しました");
+      });
+    });
   }
 
   function statusPillHtml(id, statusId, size) {
@@ -1141,7 +1235,7 @@
     root.innerHTML =
       '<div class="modal-overlay" id="confirmOverlay">' +
         '<div class="confirm-box">' + ICON_ALERT +
-        '<h3>この案件を削除しますか?</h3><p>削除すると元に戻せません。関連するデータも表示されなくなります。</p>' +
+        '<h3>この案件を削除しますか?</h3><p>ゴミ箱に移動します。後から「ゴミ箱」から元に戻せます。</p>' +
         '<div class="confirm-box__actions">' +
         '<button class="btn btn--ghost btn--sm" id="confirmCancelBtn">キャンセル</button>' +
         '<button class="btn btn--danger-ghost btn--sm" id="confirmDeleteBtn">削除する</button>' +
@@ -1150,10 +1244,10 @@
     document.getElementById("confirmCancelBtn").addEventListener("click", function () { confirmDeleteId = null; renderConfirm(); });
     document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
       var idToDelete = confirmDeleteId;
-      persistTransform(function (fresh) { return fresh.filter(function (p) { return p.id !== idToDelete; }); });
+      persistTransform(function (fresh) { return fresh.map(function (p) { return p.id === idToDelete ? Object.assign({}, p, { deletedAt: Date.now() }) : p; }); }).then(function () { renderResults(); });
       confirmDeleteId = null;
       renderConfirm();
-      showToast("案件を削除しました");
+      showToast("案件をゴミ箱に移動しました");
     });
   }
 
