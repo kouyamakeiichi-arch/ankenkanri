@@ -44,6 +44,12 @@
   .module-tabs { display: flex; gap: 6px; margin-bottom: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 5px; width: fit-content; }
   .module-tab { display:flex; align-items:center; gap:6px; font-family: inherit; font-weight: 700; font-size: 14px; padding: 9px 18px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; transition: all .15s; }
   .module-tab.is-active { background: var(--primary); color: white; }
+  #trashCountBadge { font-size:11px; font-weight:700; background:#F0525C; color:#fff; border-radius:100px; padding:1px 7px; }
+  .trash-row { display:flex; align-items:center; gap:12px; padding:14px 16px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background:var(--surface); }
+  .trash-row__info { flex:1; min-width:0; }
+  .trash-row__name { font-weight:700; font-size:14.5px; }
+  .trash-row__meta { font-size:12px; color:var(--text-tertiary); margin-top:2px; }
+  .trash-row__actions { display:flex; gap:8px; flex-shrink:0; }
 
   .month-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
   .month-nav__label { font-weight: 900; font-size: 15px; min-width: 108px; text-align: center; }
@@ -246,6 +252,10 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
       社内申請
     </button>
+    <button class="module-tab" id="tabTrash">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/><path d="M10 11v6M14 11v6"/></svg>
+      ゴミ箱<span id="trashCountBadge" style="display:none;"></span>
+    </button>
   </div>
 
   <div id="worklogControls">
@@ -432,8 +442,11 @@
     document.getElementById("searchInput").value = "";
     document.getElementById("tabWorklogs").classList.toggle("is-active", tab === "worklogs");
     document.getElementById("tabRequests").classList.toggle("is-active", tab === "requests");
+    document.getElementById("tabTrash").classList.toggle("is-active", tab === "trash");
     document.getElementById("worklogControls").style.display = tab === "worklogs" ? "" : "none";
     document.getElementById("requestStatusTabs").style.display = tab === "requests" ? "" : "none";
+    document.getElementById("btnCreate").style.display = tab === "trash" ? "none" : "";
+    document.getElementById("searchInput").parentElement.style.display = tab === "trash" ? "none" : "";
     document.getElementById("btnCreateLabel").textContent = tab === "worklogs" ? "日報を追加" : "申請を追加";
     document.getElementById("searchInput").placeholder = tab === "worklogs" ? "作業者・案件・作業内容で検索" : "申請件名・申請者で検索";
     if (tab === "requests") renderRequestStatusTabs();
@@ -441,6 +454,7 @@
   }
   document.getElementById("tabWorklogs").addEventListener("click", function () { setTab("worklogs"); });
   document.getElementById("tabRequests").addEventListener("click", function () { setTab("requests"); });
+  document.getElementById("tabTrash").addEventListener("click", function () { setTab("trash"); });
 
   function renderMonthLabel() {
     document.getElementById("monthLabel").textContent = state.monthYear + "年" + (state.monthMonth+1) + "月";
@@ -476,7 +490,7 @@
 
   function filteredWorklogs() {
     var q = state.search.trim().toLowerCase();
-    return state.worklogs.filter(function (w) {
+    return state.worklogs.filter(function (w) { return !w.deletedAt; }).filter(function (w) {
       if (!w.workDate) return false;
       var d = new Date(w.workDate + "T00:00:00");
       return d.getFullYear() === state.monthYear && d.getMonth() === state.monthMonth;
@@ -490,6 +504,7 @@
   function filteredRequests() {
     var q = state.search.trim().toLowerCase();
     return state.requests
+      .filter(function (r) { return !r.deletedAt; })
       .filter(function (r) { return state.activeReqStatus === "all" ? true : r.status === state.activeReqStatus; })
       .filter(function (r) {
         if (!q) return true;
@@ -506,7 +521,83 @@
       document.getElementById("summaryBar").innerHTML = "";
       return;
     }
-    if (state.tab === "worklogs") renderWorklogResults(area); else renderRequestResults(area);
+    if (state.tab === "worklogs") renderWorklogResults(area);
+    else if (state.tab === "requests") renderRequestResults(area);
+    else renderTrashResults(area);
+    updateTrashBadge();
+  }
+
+  function updateTrashBadge() {
+    var n = state.worklogs.filter(function (w) { return w.deletedAt; }).length +
+            state.requests.filter(function (r) { return r.deletedAt; }).length;
+    var badge = document.getElementById("trashCountBadge");
+    if (n > 0) { badge.style.display = "inline-block"; badge.textContent = n; }
+    else { badge.style.display = "none"; }
+  }
+
+  function fmtDeletedAt(ts) {
+    if (!ts) return "-";
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return "-";
+    return d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate() + " " + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+  }
+
+  function renderTrashResults(area) {
+    var trashedWorklogs = state.worklogs.filter(function (w) { return w.deletedAt; })
+      .map(function (w) { return { kind: "worklog", id: w.id, name: (w.workerName||"(作業者未設定)") + "の日報(" + (w.workDate||"-") + ")", deletedAt: w.deletedAt }; });
+    var trashedRequests = state.requests.filter(function (r) { return r.deletedAt; })
+      .map(function (r) { return { kind: "request", id: r.id, name: r.title || "(件名未設定)", deletedAt: r.deletedAt }; });
+    var items = trashedWorklogs.concat(trashedRequests).sort(function (a, b) { return (b.deletedAt||0) - (a.deletedAt||0); });
+    document.getElementById("countBadge").textContent = items.length + "件";
+    document.getElementById("summaryBar").innerHTML = "";
+
+    if (items.length === 0) {
+      area.innerHTML =
+        '<div class="empty-state">' + ICON_TRASH +
+        '<p class="empty-state__title">ゴミ箱は空です</p><p class="empty-state__desc">削除した日報・申請はここに一時的に保管され、後から元に戻せます。</p></div>';
+      return;
+    }
+    var kindLabelMap = { worklog: "日報", request: "社内申請" };
+    area.innerHTML =
+      '<p style="font-size:12.5px;color:var(--text-tertiary);margin:0 0 14px;">削除した日報・申請はここに保管されます。「元に戻す」でいつでも復元できます。「完全に削除」を押すと復元できなくなります。</p>' +
+      items.map(function (it) {
+        return '<div class="trash-row">' +
+          '<div class="trash-row__info">' +
+            '<div class="trash-row__name">' + esc(it.name) + '</div>' +
+            '<div class="trash-row__meta">' + kindLabelMap[it.kind] + '・削除日時: ' + fmtDeletedAt(it.deletedAt) + '</div>' +
+          '</div>' +
+          '<div class="trash-row__actions">' +
+            '<button class="btn btn--ghost btn--sm" data-restore="' + it.kind + ':' + it.id + '">元に戻す</button>' +
+            '<button class="btn btn--danger-ghost btn--sm" data-purge="' + it.kind + ':' + it.id + '">完全に削除</button>' +
+          '</div>' +
+        '</div>';
+      }).join("");
+
+    area.querySelectorAll("[data-restore]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var parts = btn.getAttribute("data-restore").split(":");
+        var kind = parts[0], id = parts[1];
+        if (kind === "worklog") {
+          persistWorklogsTransform(function (fresh) { return fresh.map(function (w) { return w.id === id ? Object.assign({}, w, { deletedAt: null }) : w; }); }).then(function () { renderResults(); });
+        } else {
+          persistRequestsTransform(function (fresh) { return fresh.map(function (r) { return r.id === id ? Object.assign({}, r, { deletedAt: null }) : r; }); }).then(function () { renderResults(); });
+        }
+        showToast(kindLabelMap[kind] + "を元に戻しました");
+      });
+    });
+    area.querySelectorAll("[data-purge]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var parts = btn.getAttribute("data-purge").split(":");
+        var kind = parts[0], id = parts[1];
+        if (!confirm("この" + kindLabelMap[kind] + "を完全に削除します。この操作は元に戻せません。よろしいですか？")) return;
+        if (kind === "worklog") {
+          persistWorklogsTransform(function (fresh) { return fresh.filter(function (w) { return w.id !== id; }); }).then(function () { renderResults(); });
+        } else {
+          persistRequestsTransform(function (fresh) { return fresh.filter(function (r) { return r.id !== id; }); }).then(function () { renderResults(); });
+        }
+        showToast(kindLabelMap[kind] + "を完全に削除しました");
+      });
+    });
   }
 
   function renderWorklogResults(area) {
@@ -776,7 +867,7 @@
     var isWorklog = confirmDelete.kind === "worklog";
     root.innerHTML =
       '<div class="modal-overlay" id="confirmOverlay"><div class="confirm-box">' + ICON_ALERT +
-      '<h3>' + (isWorklog ? "この日報を削除しますか?" : "この申請を削除しますか?") + '</h3><p>削除すると元に戻せません。</p>' +
+      '<h3>' + (isWorklog ? "この日報を削除しますか?" : "この申請を削除しますか?") + '</h3><p>ゴミ箱に移動します。後から「ゴミ箱」タブで元に戻せます。</p>' +
       '<div class="confirm-box__actions"><button class="btn btn--ghost btn--sm" id="confirmCancelBtn">キャンセル</button>' +
       '<button class="btn btn--danger-ghost btn--sm" id="confirmDeleteBtn">削除する</button></div></div></div>';
     document.getElementById("confirmOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "confirmOverlay") { confirmDelete = null; renderConfirm(); } });
@@ -784,11 +875,11 @@
     document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
       var delId = confirmDelete.id;
       if (isWorklog) {
-        persistWorklogsTransform(function (fresh) { return fresh.filter(function (w) { return w.id !== delId; }); }).then(function () { renderResults(); });
-        showToast("日報を削除しました");
+        persistWorklogsTransform(function (fresh) { return fresh.map(function (w) { return w.id === delId ? Object.assign({}, w, { deletedAt: Date.now() }) : w; }); }).then(function () { renderResults(); });
+        showToast("日報をゴミ箱に移動しました");
       } else {
-        persistRequestsTransform(function (fresh) { return fresh.filter(function (r) { return r.id !== delId; }); }).then(function () { renderResults(); });
-        showToast("申請を削除しました");
+        persistRequestsTransform(function (fresh) { return fresh.map(function (r) { return r.id === delId ? Object.assign({}, r, { deletedAt: Date.now() }) : r; }); }).then(function () { renderResults(); });
+        showToast("申請をゴミ箱に移動しました");
       }
       confirmDelete = null;
       renderConfirm();

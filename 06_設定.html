@@ -45,6 +45,12 @@
   .module-tab.is-active { background: var(--primary); color: white; }
   .module-tab.is-disabled { color: var(--text-tertiary); cursor: default; }
   .module-tab .soon { font-size: 9px; font-weight: 700; background: var(--bg); border: 1px solid var(--border); color: var(--text-tertiary); padding: 1px 6px; border-radius: 999px; }
+  #trashCountBadge { font-size:11px; font-weight:700; background:#F0525C; color:#fff; border-radius:100px; padding:1px 7px; margin-left:2px; }
+  .trash-row { display:flex; align-items:center; gap:12px; padding:14px 16px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background:var(--surface); }
+  .trash-row__info { flex:1; min-width:0; }
+  .trash-row__name { font-weight:700; font-size:14.5px; }
+  .trash-row__meta { font-size:12px; color:var(--text-tertiary); margin-top:2px; }
+  .trash-row__actions { display:flex; gap:8px; flex-shrink:0; }
 
   .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; overflow-x: auto; }
   table.data-table { width: 100%; border-collapse: collapse; }
@@ -239,6 +245,10 @@
     <button class="module-tab" id="tabTypeSettings">案件/顧客/建物タイプ設定</button>
     <button class="module-tab" id="tabDisplayPrefs">表示設定</button>
     <button class="module-tab" id="tabBackup">データバックアップ</button>
+    <button class="module-tab" id="tabTrash">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/><path d="M10 11v6M14 11v6"/></svg>
+      ゴミ箱<span id="trashCountBadge" style="display:none;"></span>
+    </button>
   </div>
 
   <div class="module-tabs" id="typeSubTabs" style="display:none"></div>
@@ -698,6 +708,7 @@
     document.getElementById("tabTypeSettings").classList.toggle("is-active", tab === "typeSettings");
     document.getElementById("tabDisplayPrefs").classList.toggle("is-active", tab === "displayPrefs");
     document.getElementById("tabBackup").classList.toggle("is-active", tab === "backup");
+    document.getElementById("tabTrash").classList.toggle("is-active", tab === "trash");
     document.getElementById("searchInput").parentElement.style.display = tab === "priceList" ? "" : "none";
     document.getElementById("typeSubTabs").style.display = tab === "typeSettings" ? "flex" : "none";
     document.getElementById("priceGenreTabs").style.display = tab === "priceList" ? "flex" : "none";
@@ -719,6 +730,7 @@
   document.getElementById("tabTypeSettings").addEventListener("click", function () { setTab("typeSettings"); });
   document.getElementById("tabDisplayPrefs").addEventListener("click", function () { setTab("displayPrefs"); });
   document.getElementById("tabBackup").addEventListener("click", function () { setTab("backup"); });
+  document.getElementById("tabTrash").addEventListener("click", function () { setTab("trash"); });
 
   function renderTypeSubTabs() {
     var el = document.getElementById("typeSubTabs");
@@ -756,7 +768,7 @@
 
   function filteredItems() {
     var q = state.search.trim().toLowerCase();
-    var list = state.items;
+    var list = state.items.filter(function (it) { return !it.deletedAt; });
     if (state.activeGenre && state.activeGenre !== "all") {
       list = list.filter(function (it) { return it.genre === state.activeGenre; });
     }
@@ -773,11 +785,12 @@
       document.getElementById("countBadge").textContent = "0件";
       return;
     }
-    if (state.tab === "bizInfo") { renderBizInfoTab(area); return; }
-    if (state.tab === "members") { renderMembersTab(area); return; }
-    if (state.tab === "typeSettings") { renderTypeSettingsTab(area); return; }
-    if (state.tab === "displayPrefs") { renderDisplayPrefsTab(area); return; }
-    if (state.tab === "backup") { renderBackupTab(area); return; }
+    if (state.tab === "bizInfo") { renderBizInfoTab(area); updateTrashBadge(); return; }
+    if (state.tab === "members") { renderMembersTab(area); updateTrashBadge(); return; }
+    if (state.tab === "typeSettings") { renderTypeSettingsTab(area); updateTrashBadge(); return; }
+    if (state.tab === "displayPrefs") { renderDisplayPrefsTab(area); updateTrashBadge(); return; }
+    if (state.tab === "backup") { renderBackupTab(area); updateTrashBadge(); return; }
+    if (state.tab === "trash") { renderTrashResults(area); updateTrashBadge(); return; }
 
     var list = filteredItems();
     document.getElementById("countBadge").textContent = list.length + "件";
@@ -789,6 +802,7 @@
         '<button class="btn btn--primary" id="emptyCreateBtn">' + ICON_PLUS + ' 単価を追加</button></div>';
       var b = document.getElementById("emptyCreateBtn");
       if (b) b.addEventListener("click", function () { openModal(false, null); });
+      updateTrashBadge();
       return;
     }
 
@@ -821,6 +835,7 @@
         if (it) openModal(true, it);
       });
     });
+    updateTrashBadge();
   }
 
   function renderBizInfoTab(area) {
@@ -886,14 +901,15 @@
   }
 
   function renderMembersTab(area) {
-    document.getElementById("countBadge").textContent = state.members.length + "件";
-    if (state.members.length === 0) {
+    var activeMembers = state.members.filter(function (m) { return !m.deletedAt; });
+    document.getElementById("countBadge").textContent = activeMembers.length + "件";
+    if (activeMembers.length === 0) {
       area.innerHTML = '<div class="empty-state">' + ICON_LIST40 +
         '<p class="empty-state__title">メンバーがいません</p><p class="empty-state__desc">「メンバーを追加」から追加しましょう。</p></div>';
       return;
     }
     var rows = "";
-    state.members.forEach(function (m) {
+    activeMembers.forEach(function (m) {
       var r = roleOf(m.role);
       rows += '<tr><td><button class="cell-name" data-medit="' + m.id + '">' + esc(m.name) + '</button></td>' +
         '<td>' + (m.email ? esc(m.email) : '<span style="color:var(--text-tertiary);">未入力</span>') + '</td>' +
@@ -1007,7 +1023,7 @@
 
   function renderTypeSettingsTab(area) {
     var cat = typeCategoryOf(state.activeTypeCategory);
-    var list = state.typeSettings[cat.id] || [];
+    var list = (state.typeSettings[cat.id] || []).filter(function (t) { return !t.deletedAt; });
     document.getElementById("countBadge").textContent = list.length + "件";
 
     if (list.length === 0) {
@@ -1194,29 +1210,112 @@
     });
   }
 
+  /* ---------------- ゴミ箱 ---------------- */
+  function updateTrashBadge() {
+    var n = state.items.filter(function (x) { return x.deletedAt; }).length +
+            state.members.filter(function (x) { return x.deletedAt; }).length +
+            TYPE_SETTINGS_CATEGORIES.reduce(function (sum, c) {
+              return sum + (state.typeSettings[c.id] || []).filter(function (x) { return x.deletedAt; }).length;
+            }, 0);
+    var badge = document.getElementById("trashCountBadge");
+    if (n > 0) { badge.style.display = "inline-block"; badge.textContent = n; }
+    else { badge.style.display = "none"; }
+  }
+
+  function fmtDeletedAt(ts) {
+    if (!ts) return "-";
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return "-";
+    return d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate() + " " + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+  }
+
+  function renderTrashResults(area) {
+    var items = []
+      .concat(state.items.filter(function (x) { return x.deletedAt; }).map(function (x) { return { kind: "item", label: "単価項目", name: x.name || "(名称未設定)", id: x.id, deletedAt: x.deletedAt }; }))
+      .concat(state.members.filter(function (x) { return x.deletedAt; }).map(function (x) { return { kind: "member", label: "メンバー", name: x.name || "(名称未設定)", id: x.id, deletedAt: x.deletedAt }; }));
+    TYPE_SETTINGS_CATEGORIES.forEach(function (c) {
+      (state.typeSettings[c.id] || []).filter(function (x) { return x.deletedAt; }).forEach(function (x) {
+        items.push({ kind: "typeItem", catId: c.id, label: c.label, name: x.label || "(名称未設定)", id: x.id, deletedAt: x.deletedAt });
+      });
+    });
+    items.sort(function (a, b) { return (b.deletedAt||0) - (a.deletedAt||0); });
+    document.getElementById("countBadge").textContent = items.length + "件";
+
+    if (items.length === 0) {
+      area.innerHTML =
+        '<div class="empty-state">' + ICON_TRASH +
+        '<p class="empty-state__title">ゴミ箱は空です</p><p class="empty-state__desc">削除した単価項目・メンバー・タイプ設定項目はここに一時的に保管され、後から元に戻せます。</p></div>';
+      return;
+    }
+    area.innerHTML =
+      '<p style="font-size:12.5px;color:var(--text-tertiary);margin:0 0 14px;">削除したデータはここに保管されます。「元に戻す」でいつでも復元できます。「完全に削除」を押すと復元できなくなります。</p>' +
+      items.map(function (it, idx) {
+        return '<div class="trash-row">' +
+          '<div class="trash-row__info">' +
+            '<div class="trash-row__name">' + esc(it.name) + '</div>' +
+            '<div class="trash-row__meta">' + esc(it.label) + '・削除日時: ' + fmtDeletedAt(it.deletedAt) + '</div>' +
+          '</div>' +
+          '<div class="trash-row__actions">' +
+            '<button class="btn btn--ghost btn--sm" data-restore-idx="' + idx + '">元に戻す</button>' +
+            '<button class="btn btn--danger-ghost btn--sm" data-purge-idx="' + idx + '">完全に削除</button>' +
+          '</div>' +
+        '</div>';
+      }).join("");
+
+    function restoreItem(it) {
+      if (it.kind === "item") {
+        persistItemsTransform(function (fresh) { return fresh.map(function (x) { return x.id === it.id ? Object.assign({}, x, { deletedAt: null }) : x; }); }).then(function () { renderResults(); });
+      } else if (it.kind === "member") {
+        persistMembersTransform(function (fresh) { return fresh.map(function (x) { return x.id === it.id ? Object.assign({}, x, { deletedAt: null }) : x; }); }).then(function () { renderResults(); });
+      } else {
+        persistTypeListTransform(it.catId, function (fresh) { return fresh.map(function (x) { return x.id === it.id ? Object.assign({}, x, { deletedAt: null }) : x; }); }).then(function () { renderResults(); });
+      }
+      showToast(it.label + "を元に戻しました");
+    }
+    function purgeItem(it) {
+      if (!confirm("この" + it.label + "を完全に削除します。この操作は元に戻せません。よろしいですか？")) return;
+      if (it.kind === "item") {
+        persistItemsTransform(function (fresh) { return fresh.filter(function (x) { return x.id !== it.id; }); }).then(function () { renderResults(); });
+      } else if (it.kind === "member") {
+        persistMembersTransform(function (fresh) { return fresh.filter(function (x) { return x.id !== it.id; }); }).then(function () { renderResults(); });
+      } else {
+        persistTypeListTransform(it.catId, function (fresh) { return fresh.filter(function (x) { return x.id !== it.id; }); }).then(function () { renderResults(); });
+      }
+      showToast(it.label + "を完全に削除しました");
+    }
+
+    area.querySelectorAll("[data-restore-idx]").forEach(function (btn) {
+      btn.addEventListener("click", function () { restoreItem(items[parseInt(btn.getAttribute("data-restore-idx"), 10)]); });
+    });
+    area.querySelectorAll("[data-purge-idx]").forEach(function (btn) {
+      btn.addEventListener("click", function () { purgeItem(items[parseInt(btn.getAttribute("data-purge-idx"), 10)]); });
+    });
+  }
+
   function renderConfirm() {
     var root = document.getElementById("modalRoot");
     if (!confirmDeleteId) { root.innerHTML = ""; return; }
     var labelMap = { item: "単価項目", member: "メンバー", typeItem: "項目" };
     root.innerHTML =
       '<div class="modal-overlay" id="confirmOverlay"><div class="confirm-box">' + ICON_ALERT +
-      '<h3>この' + labelMap[confirmDeleteId.kind] + 'を削除しますか?</h3><p>削除すると元に戻せません。</p>' +
+      '<h3>この' + labelMap[confirmDeleteId.kind] + 'を削除しますか?</h3><p>ゴミ箱に移動します。後から「ゴミ箱」タブで元に戻せます。</p>' +
       '<div class="confirm-box__actions"><button class="btn btn--ghost btn--sm" id="confirmCancelBtn">キャンセル</button>' +
       '<button class="btn btn--danger-ghost btn--sm" id="confirmDeleteBtn">削除する</button></div></div></div>';
     document.getElementById("confirmOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "confirmOverlay") { confirmDeleteId = null; renderConfirm(); } });
     document.getElementById("confirmCancelBtn").addEventListener("click", function () { confirmDeleteId = null; renderConfirm(); });
     document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
       var delId = confirmDeleteId.id;
-      if (confirmDeleteId.kind === "item") {
-        persistItemsTransform(function (fresh) { return fresh.filter(function (it) { return it.id !== delId; }); }).then(function () { renderResults(); });
-        showToast("単価項目を削除しました");
-      } else if (confirmDeleteId.kind === "member") {
-        persistMembersTransform(function (fresh) { return fresh.filter(function (m) { return m.id !== delId; }); }).then(function () { renderResults(); });
-        showToast("メンバーを削除しました");
+      var delKind = confirmDeleteId.kind;
+      if (delKind === "item") {
+        persistItemsTransform(function (fresh) { return fresh.map(function (it) { return it.id === delId ? Object.assign({}, it, { deletedAt: Date.now() }) : it; }); }).then(function () { renderResults(); });
+        showToast("単価項目をゴミ箱に移動しました");
+      } else if (delKind === "member") {
+        persistMembersTransform(function (fresh) { return fresh.map(function (m) { return m.id === delId ? Object.assign({}, m, { deletedAt: Date.now() }) : m; }); }).then(function () { renderResults(); });
+        showToast("メンバーをゴミ箱に移動しました");
       } else {
         var catId = state.activeTypeCategory;
-        persistTypeListTransform(catId, function (fresh) { return fresh.filter(function (t) { return t.id !== delId; }); }).then(function () { renderResults(); });
-        showToast("項目を削除しました");
+        persistTypeListTransform(catId, function (fresh) { return fresh.map(function (t) { return t.id === delId ? Object.assign({}, t, { deletedAt: Date.now() }) : t; }); }).then(function () { renderResults(); });
+        showToast("項目をゴミ箱に移動しました");
       }
       confirmDeleteId = null;
       renderConfirm();

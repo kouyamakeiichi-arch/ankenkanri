@@ -863,14 +863,14 @@
       if (!Array.isArray(cData)) storageSet(CUSTOMERS_KEY, JSON.stringify(state.customers));
       if (!Array.isArray(bData)) storageSet(BUILDINGS_KEY, JSON.stringify(state.buildings));
 
-      // ⑥設定で編集された顧客タイプ・建物タイプがあれば、こちらにも反映する
+      // ⑥設定で編集された顧客タイプ・建物タイプがあれば、こちらにも反映する(ゴミ箱に入っている項目は除外)
       if (Array.isArray(ctData) && ctData.length) {
         CUSTOMER_TYPES.length = 0;
-        ctData.forEach(function (t) { CUSTOMER_TYPES.push(t); });
+        ctData.filter(function (t) { return !t.deletedAt; }).forEach(function (t) { CUSTOMER_TYPES.push(t); });
       }
       if (Array.isArray(btData) && btData.length) {
         BUILDING_TYPES.length = 0;
-        btData.forEach(function (t) { BUILDING_TYPES.push(t); });
+        btData.filter(function (t) { return !t.deletedAt; }).forEach(function (t) { BUILDING_TYPES.push(t); });
       }
 
       state.loading = false;

@@ -1928,14 +1928,14 @@
       state.buildings = Array.isArray(bData) ? bData : [];
       state.nextActions = Array.isArray(naData) ? naData : [];
 
-      // ⑥設定で編集された案件ステータス・案件タイプがあれば、こちらの一覧にも反映する
+      // ⑥設定で編集された案件ステータス・案件タイプがあれば、こちらの一覧にも反映する(ゴミ箱に入っている項目は除外)
       if (Array.isArray(sData) && sData.length) {
         STATUS_LIST.length = 0;
-        sData.forEach(function (s) { STATUS_LIST.push(s); });
+        sData.filter(function (s) { return !s.deletedAt; }).forEach(function (s) { STATUS_LIST.push(s); });
       }
       if (Array.isArray(tData) && tData.length) {
         TYPE_LIST.length = 0;
-        tData.forEach(function (t) { TYPE_LIST.push(t); });
+        tData.filter(function (t) { return !t.deletedAt; }).forEach(function (t) { TYPE_LIST.push(t); });
       }
 
       // ⑥メンバー管理の登録名 + 既存案件で使われている担当者名をあわせてプルダウンの選択肢にする
