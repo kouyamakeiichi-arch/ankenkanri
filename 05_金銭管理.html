@@ -347,6 +347,11 @@
   ];
 
   function occOf(id) { for (var i=0;i<OCCUPATIONS.length;i++) if (OCCUPATIONS[i].id===id) return OCCUPATIONS[i]; return OCCUPATIONS[OCCUPATIONS.length-1]; }
+  function occLabelOf(c) {
+    // 「その他」が選ばれていて具体的な職種名が入力されている場合は、そちらを優先して表示する
+    if (c.occupation === "other" && c.occupationOther && c.occupationOther.trim()) return c.occupationOther.trim();
+    return occOf(c.occupation).label;
+  }
   function rankColor(id) { for (var i=0;i<RANKS.length;i++) if (RANKS[i].id===id) return RANKS[i].color; return "#9C97AE"; }
 
   function esc(str) {
@@ -501,7 +506,8 @@
         if (!q) return true;
         return (c.name||"").toLowerCase().indexOf(q) >= 0 ||
                (c.contactName||"").toLowerCase().indexOf(q) >= 0 ||
-               (c.area||"").toLowerCase().indexOf(q) >= 0;
+               (c.area||"").toLowerCase().indexOf(q) >= 0 ||
+               (c.occupationOther||"").toLowerCase().indexOf(q) >= 0;
       });
   }
 
@@ -734,10 +740,11 @@
     var rows = "", cards = "";
     list.forEach(function (c) {
       var o = occOf(c.occupation);
+      var occLabel = occLabelOf(c);
       var rc = rankColor(c.rank);
       rows += '<tr><td><span class="rank-badge" style="--rank-color:' + rc + '">' + esc(c.rank||"-") + '</span></td>' +
         '<td><button class="cell-name" data-edit="' + c.id + '">' + esc(c.name) + '</button></td>' +
-        '<td><span class="type-tag" style="--tag-color:' + o.color + '">' + esc(o.label) + '</span></td>' +
+        '<td><span class="type-tag" style="--tag-color:' + o.color + '">' + esc(occLabel) + '</span></td>' +
         '<td>' + esc(c.area || "-") + '</td><td>' + esc(c.contactName || "-") + '</td>' +
         '<td>' + esc(c.phone || "-") + '</td><td>' + esc(c.email || "-") + '</td>' +
         '<td class="cell-actions"><button class="icon-btn" data-edit="' + c.id + '" aria-label="編集">' + ICON_PENCIL + '</button></td></tr>';
@@ -745,7 +752,7 @@
         '<div class="data-card__top"><div class="data-card__name">' + esc(c.name) + '</div>' +
         '<button class="icon-btn" data-edit="' + c.id + '" aria-label="編集">' + ICON_PENCIL + '</button></div>' +
         '<div class="data-card__meta"><span class="rank-badge" style="--rank-color:' + rc + '">' + esc(c.rank||"-") + '</span>' +
-        '<span class="type-tag" style="--tag-color:' + o.color + '">' + esc(o.label) + '</span></div>' +
+        '<span class="type-tag" style="--tag-color:' + o.color + '">' + esc(occLabel) + '</span></div>' +
         '<div class="data-card__meta">' + (c.phone ? '<span>' + ICON_PHONE + esc(c.phone) + '</span>' : '') + (c.area ? '<span>' + ICON_PIN + esc(c.area) + '</span>' : '') + '</div></div>';
     });
 
@@ -1003,6 +1010,7 @@
       '<div class="field"><label>職種</label><select id="f_occupation">' + occOptions + '</select></div>' +
       '<div class="field" style="max-width:100px"><label>ランク</label><select id="f_rank">' + rankOptions + '</select></div>' +
       '</div>' +
+      '<div class="field" id="f_occupationOther_field" style="display:' + (d.occupation==="other" ? "block" : "none") + '"><label>職種(具体的に)</label><input type="text" id="f_occupationOther" placeholder="例: 足場工事、solarパネル設置" value="' + esc(d.occupationOther || "") + '" /></div>' +
       '<div class="field"><label>対応地域</label><input type="text" id="f_area" placeholder="例: 苫小牧市・恵庭市" value="' + esc(d.area) + '" /></div>' +
       '<div class="field-row">' +
       '<div class="field"><label>担当者氏名</label><input type="text" id="f_contactName" value="' + esc(d.contactName) + '" /></div>' +
@@ -1021,12 +1029,17 @@
     document.getElementById("f_name").focus();
     if (isEdit) document.getElementById("modalDeleteBtn").addEventListener("click", function () { confirmDelete = { kind: "contractor", id: d.id }; closeModal(); renderConfirm(); });
 
+    document.getElementById("f_occupation").addEventListener("change", function () {
+      document.getElementById("f_occupationOther_field").style.display = this.value === "other" ? "block" : "none";
+    });
+
     document.getElementById("modalSaveBtn").addEventListener("click", function () {
       var name = document.getElementById("f_name").value.trim();
       if (!name) { document.getElementById("err_name").textContent = "事業者名を入力してください"; document.getElementById("err_name").style.display = "block"; document.getElementById("f_name").classList.add("is-error"); return; }
       var form = {
         id: d.id, name: name,
         occupation: document.getElementById("f_occupation").value,
+        occupationOther: document.getElementById("f_occupationOther").value.trim(),
         rank: document.getElementById("f_rank").value,
         area: document.getElementById("f_area").value.trim(),
         contactName: document.getElementById("f_contactName").value.trim(),
