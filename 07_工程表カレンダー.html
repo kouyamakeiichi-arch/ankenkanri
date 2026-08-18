@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-07-27-12" />
+<meta name="app-build" content="2026-08-18-1" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>工程表・カレンダー | 太豊建設アプリ</title>
 <style>
@@ -172,6 +172,12 @@
 
   /* ---------------- 印刷 ---------------- */
   @media print {
+    /* 背景色を印刷でも反映させる(これが無いとブラウザが背景色を省略して印刷してしまう) */
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
     .sidebar, .sidebar-overlay, .hamburger-btn, .module-tabs, .tab-row, .page-hint,
     .filter-panel, .no-print, .cal-toolbar button, .cal-toolbar select,
     .modal-overlay, .single-panel { display: none !important; }
