@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-08-18-1" />
+<meta name="app-build" content="2026-08-18-3" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>金銭管理 | 太豊建設アプリ</title>
 <style>
@@ -172,6 +172,130 @@
   } catch (e) { window.db = null; }
 </script>
 
+<script>
+(function () {
+  "use strict";
+  var BACKUP_COLLECTION = "taiho_app_data";
+  var LAST_BACKUP_KEY = "taiho_last_auto_backup_date_v1";
+  var AUTO_BACKUP_TIME_KEY = "taiho_auto_backup_time_v1"; // "HH:MM" 形式。この時刻以降、その日まだ自動バックアップしていなければ自動保存する
+  var DEFAULT_AUTO_BACKUP_TIME = "17:00";
+
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function todayStr(d) {
+    d = d || new Date();
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  }
+
+  function getAutoBackupTime() {
+    var raw = null;
+    try { raw = window.localStorage.getItem(AUTO_BACKUP_TIME_KEY); } catch (e) {}
+    if (raw && /^([01]?\d|2[0-3]):[0-5]\d$/.test(raw)) return raw;
+    return DEFAULT_AUTO_BACKUP_TIME;
+  }
+  function getAutoBackupMinutes() {
+    var t = getAutoBackupTime().split(":");
+    return parseInt(t[0], 10) * 60 + parseInt(t[1], 10);
+  }
+  window.__taihoGetAutoBackupTime = getAutoBackupTime;
+  window.__taihoSetAutoBackupTime = function (v) {
+    if (!/^([01]?\d|2[0-3]):[0-5]\d$/.test(v)) return false;
+    try { window.localStorage.setItem(AUTO_BACKUP_TIME_KEY, v); } catch (e) {}
+    return true;
+  };
+
+  function collectFromLocalStorage() {
+    var out = {};
+    try {
+      for (var i = 0; i < window.localStorage.length; i++) {
+        var k = window.localStorage.key(i);
+        if (k && k.indexOf("taiho_") === 0) out[k] = window.localStorage.getItem(k);
+      }
+    } catch (e) {}
+    return out;
+  }
+
+  function collectAllData() {
+    return new Promise(function (resolve) {
+      if (window.db) {
+        window.db.collection(BACKUP_COLLECTION).get().then(function (snap) {
+          var out = {};
+          snap.forEach(function (doc) {
+            var d = doc.data();
+            out[doc.id] = (d && Object.prototype.hasOwnProperty.call(d, "value")) ? d.value : d;
+          });
+          resolve(out);
+        }).catch(function () { resolve(collectFromLocalStorage()); });
+      } else {
+        resolve(collectFromLocalStorage());
+      }
+    });
+  }
+
+  function downloadBackup(data) {
+    try {
+      var payload = { app: "太豊建設アプリ", exportedAt: new Date().toISOString(), data: data };
+      var json = JSON.stringify(payload, null, 2);
+      var blob = new Blob([json], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "太豊建設アプリ_バックアップ_" + todayStr() + ".json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function runBackup(manual) {
+    collectAllData().then(function (data) {
+      var ok = downloadBackup(data);
+      try { window.localStorage.setItem(LAST_BACKUP_KEY, todayStr()); } catch (e) {}
+      if (manual) {
+        if (ok) alert("バックアップを保存しました。ダウンロードフォルダをご確認ください。");
+        else alert("バックアップの保存に失敗しました。お手数ですが、もう一度お試しください。");
+      }
+    });
+  }
+  window.__taihoRunBackup = runBackup;
+
+  function checkAutoBackup() {
+    try {
+      var now = new Date();
+      var last = window.localStorage.getItem(LAST_BACKUP_KEY);
+      if (last === todayStr(now)) return; // 今日はすでにバックアップ済み
+      var nowMin = now.getHours() * 60 + now.getMinutes();
+      if (nowMin < getAutoBackupMinutes()) return; // まだ設定した時刻になっていない
+      runBackup(false);
+    } catch (e) {}
+  }
+
+  function testAutoBackupNow() {
+    try {
+      var now = new Date();
+      var nowMin = now.getHours() * 60 + now.getMinutes();
+      var thr = getAutoBackupMinutes();
+      if (nowMin < thr) {
+        alert(
+          "現在時刻(" + pad2(now.getHours()) + ":" + pad2(now.getMinutes()) + ")は、" +
+          "設定した自動バックアップ時刻(" + getAutoBackupTime() + ")よりも前のため、まだ実行されません。\n" +
+          "動作を今すぐ確認したい場合は、設定時刻を現在より前の時刻(例:今より1分前)に変更してから、もう一度お試しください。"
+        );
+        return;
+      }
+      runBackup(true);
+    } catch (e) {}
+  }
+  window.__taihoTestAutoBackup = testAutoBackupNow;
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var btn = document.getElementById("btnSidebarBackup");
+    if (btn) btn.addEventListener("click", function (e) { e.preventDefault(); runBackup(true); });
+    setTimeout(checkAutoBackup, 1500);
+  });
+})();
+</script>
 </head>
 <body>
 
@@ -218,6 +342,10 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
     ヘルプ
   </a>
+  <button type="button" class="sidebar__link" id="btnSidebarBackup" style="width:100%;background:none;border:none;text-align:left;cursor:pointer;font:inherit;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    バックアップ保存
+  </button>
 </nav>
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
