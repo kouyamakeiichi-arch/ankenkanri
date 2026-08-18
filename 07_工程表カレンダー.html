@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-08-18-2" />
+<meta name="app-build" content="2026-08-18-4" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>工程表 | 太豊建設アプリ</title>
 <style>
@@ -11,6 +11,7 @@
     --primary-soft: #EFEAFF; --text: #1E1B2E; --text-secondary: #6B6580; --text-tertiary: #9C97AE;
     --border: #E7E4F0; --danger: #F0525C; --success: #10B981; --radius: 12px;
     --shadow-sm: 0 1px 2px rgba(30,27,46,0.06); --shadow-md: 0 8px 24px rgba(30,27,46,0.12);
+    --rowhead-width: 128px; /* 工種欄(表の一番左の列)の幅。ヘッダーのスライダーで調整可能(画面・印刷の両方に反映) */
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -36,6 +37,11 @@
   .hamburger-btn:hover { background: #F1EFFB; }
   .shell-wrap { transition: margin-left .2s ease; }
   @media (min-width: 961px) { .shell-wrap.sidebar-open { margin-left: 232px; } }
+
+  .colwidth-field { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-secondary); font-weight: 700; white-space: nowrap; }
+  .colwidth-field input[type="range"] { width: 100px; accent-color: var(--primary); }
+  .colwidth-field input[type="number"] { width: 52px; padding: 5px 6px; border: 1px solid var(--border); border-radius: 7px; font-family: inherit; font-size: 12px; text-align: center; }
+
   .sidebar {
     position: fixed; top: 0; left: 0; bottom: 0; width: 232px; background: var(--surface);
     border-right: 1px solid var(--border); padding: 18px 12px; display: flex; flex-direction: column;
@@ -93,7 +99,7 @@
 
   table.matrix { border-collapse: collapse; }
   table.matrix th, table.matrix td { border: 1px solid var(--border); font-size: 11px; text-align: center; padding: 4px; white-space: nowrap; }
-  table.matrix th.rowhead, table.matrix td.rowhead { text-align: left; font-weight: 700; white-space: nowrap; position: sticky; left: 0; background: var(--surface); min-width: 510px; font-size: 12px; cursor: pointer; z-index: 2; }
+  table.matrix th.rowhead, table.matrix td.rowhead { text-align: left; font-weight: 700; white-space: nowrap; position: sticky; left: 0; background: var(--surface); width: var(--rowhead-width); min-width: var(--rowhead-width); font-size: 12px; cursor: pointer; z-index: 2; }
   table.matrix th { background: var(--bg); color: var(--text-secondary); font-weight: 700; }
   .rowhead-contractor { font-weight: 500; color: var(--text-tertiary); font-size: 10.5px; margin-top: 2px; white-space: nowrap; }
   table.matrix th.weekend { color: var(--danger); }
@@ -200,9 +206,8 @@
     table.matrix thead { display: table-header-group; } /* 複数ページになっても見出し行を各ページに繰り返す */
     table.matrix tr { page-break-inside: avoid; }
     table.matrix th, table.matrix td { font-size: 10px; padding: 2px; border: 1px solid #999; }
-    /* table-layout:fixedでは実際の width(min-widthではなく)で列幅が決まるため、ここで明示的に指定する */
-    table.matrix th.rowhead, table.matrix td.rowhead { position: static; width: 510px; }
-    table.matrix th:not(.rowhead), table.matrix td:not(.rowhead) { width: 20px; }
+    /* table-layout:fixedでは実際の width(min-widthではなく)で列幅が決まるため、ここで明示的に指定する。日付列はwidthを指定しないことで、工種欄が狭くなった分だけ自動的に広がる */
+    table.matrix th.rowhead, table.matrix td.rowhead { position: static; width: var(--rowhead-width); }
     .wc-content.wc-placeholder { display: none; } /* 「クリックして入力」のヒントは印刷しない */
     .wc-name { font-size: 9px; }
     .wc-content { font-size: 9.5px; }
@@ -297,7 +302,12 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
     <div class="page-header__title">工程表<span class="badge-count" id="countBadge"></span></div>
-    <div class="page-header__actions no-print" style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+    <div class="page-header__actions no-print" style="margin-left:auto;display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+      <div class="colwidth-field" title="表の一番左「工種」欄の幅を調整できます(画面・印刷の両方に反映されます)">
+        <label for="rowheadWidthRange">工種欄の幅</label>
+        <input type="range" id="rowheadWidthRange" min="60" max="510" step="1" />
+        <input type="number" id="rowheadWidthInput" min="60" max="510" step="1" /><span>px</span>
+      </div>
       <select id="printSize" style="padding:8px 10px;border:1px solid var(--border);border-radius:9px;font-family:inherit;font-size:12.5px;background:var(--surface);">
         <option value="A3-landscape" selected>A3よこ</option>
         <option value="A3-portrait">A3たて</option>
@@ -430,7 +440,8 @@
 
   var PROJECTS_KEY = "taiho_projects_v2";
   var TASKS_KEY = "taiho_schedule_tasks_v1";
-  var CATEGORIES_KEY = "taiho_schedule_categories_v1";
+  var CATEGORIES_KEY = "taiho_schedule_categories_v1"; // 過去の共通(全案件共有)の工種リスト。今は「まだ案件ごとの工種を保存していない案件」の初期値としてのみ使う
+  var PROJECT_CATEGORIES_KEY = "taiho_schedule_project_categories_v1"; // 案件ごとの工種リスト(現場ごとに独立)
   var PHASES_KEY = "taiho_schedule_phases_v1";
   var REMARKS_KEY = "taiho_schedule_remarks_v1";
   var SHEET_META_KEY = "taiho_schedule_sheet_meta_v1";
@@ -478,8 +489,15 @@
   var colorMap = {};
   var selected = {};
   var CATEGORY_PALETTE = ["#6C47FF","#F59E0B","#10B981","#3B82F6","#EF4444","#8B5CF6","#EC4899","#06B6D4","#84CC16","#F97316"];
-  function categoryColor(cat) {
-    var idx = scheduleCategories.indexOf(cat);
+  // この案件で実際に使う工種リストを返す。案件ごとの保存がまだ無ければ、これまでの共通リストを初期値として見せる(他の案件の編集の影響は受けない)
+  function categoriesFor(projectId) {
+    if (projectCategories && Object.prototype.hasOwnProperty.call(projectCategories, projectId) && Array.isArray(projectCategories[projectId])) {
+      return projectCategories[projectId];
+    }
+    return scheduleCategories;
+  }
+  function categoryColor(projectId, cat) {
+    var idx = categoriesFor(projectId).indexOf(cat);
     if (idx === -1) idx = 0;
     return CATEGORY_PALETTE[idx % CATEGORY_PALETTE.length];
   }
@@ -508,6 +526,27 @@
     };
   }
   var persistCategoriesTransform = makePersistTransform(CATEGORIES_KEY, function () { return scheduleCategories; }, function (v) { scheduleCategories = v; }, false);
+  // 案件ごとの工種リストを更新する。まだその案件専用のリストを保存していない場合は、現在見えているリストをその場でコピーして、以後は他の案件の編集の影響を受けないようにする
+  function persistProjectCategoriesTransform(projectId, transformFn) {
+    return storageGet(PROJECT_CATEGORIES_KEY).then(function (res) {
+      var fresh = null;
+      try { fresh = res && res.value ? JSON.parse(res.value) : null; } catch (e) { fresh = null; }
+      if (!fresh || typeof fresh !== "object" || Array.isArray(fresh)) fresh = projectCategories;
+      var currentList = Array.isArray(fresh[projectId]) ? fresh[projectId] : categoriesFor(projectId).slice();
+      var nextList = transformFn(currentList);
+      var next = Object.assign({}, fresh);
+      next[projectId] = nextList;
+      projectCategories = next;
+      return storageSet(PROJECT_CATEGORIES_KEY, JSON.stringify(next));
+    }).catch(function () {
+      var currentList = Array.isArray(projectCategories[projectId]) ? projectCategories[projectId] : categoriesFor(projectId).slice();
+      var nextList = transformFn(currentList);
+      var next = Object.assign({}, projectCategories);
+      next[projectId] = nextList;
+      projectCategories = next;
+      return storageSet(PROJECT_CATEGORIES_KEY, JSON.stringify(next));
+    });
+  }
   var persistPhasesTransform = makePersistTransform(PHASES_KEY, function () { return schedulePhases; }, function (v) { schedulePhases = v; }, false);
   var persistRemarksTransform = makePersistTransform(REMARKS_KEY, function () { return scheduleRemarks; }, function (v) { scheduleRemarks = v; }, false);
   var persistSheetMetaTransform = makePersistTransform(SHEET_META_KEY, function () { return scheduleSheetMeta; }, function (v) { scheduleSheetMeta = v; }, true);
@@ -519,13 +558,21 @@
   var ICON_PENCIL = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
   var ICON_PLUS = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
 
-  // 工種名の文字数に応じて、枠に収まらなくなってきたら少しずつ文字を小さくする(短い名前はそのまま)
+  // 工種欄の実際の幅(スライダーで変更可能)。rowheadNameStyleで使う
+  var currentRowheadWidth = 128;
+  var __measureCanvasCtx = null;
+  function measureTextPx(text, fontPx) {
+    if (!__measureCanvasCtx) __measureCanvasCtx = document.createElement("canvas").getContext("2d");
+    __measureCanvasCtx.font = "700 " + fontPx + 'px "Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif';
+    return __measureCanvasCtx.measureText(text).width;
+  }
+  // 工種名の実際の文字幅を測って、今の工種欄の幅に収まる分だけ文字を小さくする(欄が広い/名前が短ければそのまま12px)
   function rowheadNameStyle(text) {
-    var len = String(text || "").length;
-    if (len > 26) return ' style="font-size:9px;"';
-    if (len > 20) return ' style="font-size:10px;"';
-    if (len > 14) return ' style="font-size:11px;"';
-    return "";
+    var t = String(text || "");
+    var avail = Math.max(24, currentRowheadWidth - 26); // ドット・左右余白ぶんを差し引いたおおよその使える幅
+    var size = 12;
+    while (size > 8 && measureTextPx(t, size) > avail) size -= 0.5;
+    return size < 12 ? ' style="font-size:' + size + 'px;"' : "";
   }
   var tasksCache = [];
 
@@ -830,10 +877,10 @@
   /* ---------------- 単一案件モード：シート情報＋工種期間エディタ ---------------- */
   function renderSingleProjectPanel(p) {
     var meta = scheduleSheetMeta[p.id] || {};
-    var catRows = scheduleCategories.map(function (cat) {
+    var catRows = categoriesFor(p.id).map(function (cat) {
       var ph = phaseFor(p.id, cat);
       return '<div class="phase-row">' +
-        '<i class="phase-row__dot" style="background:' + categoryColor(cat) + ';"></i>' +
+        '<i class="phase-row__dot" style="background:' + categoryColor(p.id, cat) + ';"></i>' +
         '<span class="phase-row__name"' + rowheadNameStyle(cat) + ' title="' + esc(cat) + '">' + esc(cat) + '</span>' +
         '<input type="date" class="phase-row__date" data-phase-start="' + esc(cat) + '" value="' + (ph ? ph.startDate : "") + '" />' +
         '<span class="phase-row__arrow">→</span>' +
@@ -857,6 +904,7 @@
       '</div>' +
       '<p style="font-size:11px;color:var(--text-tertiary);margin:2px 0 10px;">💡 日付は「2026/7/15」のように直接入力もできますが、欄の右端のカレンダーアイコンから選ぶ方がスムーズです。</p>' +
       '<div class="single-panel__subhead">工種ごとの期間(○日 → ○日)</div>' +
+      '<p style="font-size:11px;color:var(--text-tertiary);margin:-4px 0 8px;">💡 工種の追加・削除・名前変更はこの案件専用です。ここで工種を編集しても、他の案件の工程表には影響しません。</p>' +
       '<p style="font-size:11px;color:var(--text-tertiary);margin:-4px 0 8px;">💡 開始日・終了日も直接入力できますが、カレンダーアイコンから選ぶ方が楽です。</p>' +
       '<datalist id="contractorSuggestions">' + contractorNames.map(function (n) { return '<option value="' + esc(n) + '">'; }).join("") + '</datalist>' +
       '<div class="phase-list">' + catRows + '</div>' +
@@ -938,29 +986,30 @@
     document.querySelectorAll("[data-cat-del]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var cat = btn.getAttribute("data-cat-del");
-        if (!confirm('工種「' + cat + '」を削除します。全案件のこの工種の期間データも消えます。よろしいですか？')) return;
-        persistCategoriesTransform(function (fresh) { return fresh.filter(function (c) { return c !== cat; }); });
-        persistPhasesTransform(function (fresh) { return fresh.filter(function (ph) { return ph.category !== cat; }); }).then(function () { renderActive(); });
+        if (!confirm('工種「' + cat + '」を削除します(この案件のみ)。この案件のこの工種の期間データも消えます。よろしいですか？')) return;
+        persistProjectCategoriesTransform(pid, function (fresh) { return fresh.filter(function (c) { return c !== cat; }); });
+        persistPhasesTransform(function (fresh) { return fresh.filter(function (ph) { return !(ph.projectId === pid && ph.category === cat); }); });
+        persistCategoryNotesTransform(function (fresh) { return fresh.filter(function (n) { return !(n.projectId === pid && n.category === cat); }); }).then(function () { renderActive(); });
       });
     });
     document.querySelectorAll("[data-cat-edit]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var oldName = btn.getAttribute("data-cat-edit");
-        var newName = prompt("工種名を編集", oldName);
+        var newName = prompt("工種名を編集(この案件のみに反映されます)", oldName);
         if (newName === null) return; // キャンセル
         newName = newName.trim();
         if (!newName || newName === oldName) return;
-        if (scheduleCategories.indexOf(newName) !== -1) { showToastLocal("その工種名はすでに存在します"); return; }
-        persistCategoriesTransform(function (fresh) {
+        if (categoriesFor(pid).indexOf(newName) !== -1) { showToastLocal("その工種名はすでに存在します"); return; }
+        persistProjectCategoriesTransform(pid, function (fresh) {
           return fresh.map(function (c) { return c === oldName ? newName : c; });
         });
         persistPhasesTransform(function (fresh) {
-          return fresh.map(function (ph) { return ph.category === oldName ? Object.assign({}, ph, { category: newName }) : ph; });
+          return fresh.map(function (ph) { return (ph.projectId === pid && ph.category === oldName) ? Object.assign({}, ph, { category: newName }) : ph; });
         });
         persistCategoryNotesTransform(function (fresh) {
-          return fresh.map(function (n) { return n.category === oldName ? Object.assign({}, n, { category: newName }) : n; });
+          return fresh.map(function (n) { return (n.projectId === pid && n.category === oldName) ? Object.assign({}, n, { category: newName }) : n; });
         }).then(function () {
-          showToastLocal("工種名を更新しました");
+          showToastLocal("工種名を更新しました(この案件のみ)");
           renderActive();
         });
       });
@@ -968,21 +1017,21 @@
     document.getElementById("addCatBtn").addEventListener("click", function () {
       var v = document.getElementById("newCatInput").value.trim();
       if (!v) return;
-      if (scheduleCategories.indexOf(v) !== -1) { showToastLocal("すでに存在する工種です"); return; }
-      persistCategoriesTransform(function (fresh) {
+      if (categoriesFor(pid).indexOf(v) !== -1) { showToastLocal("すでに存在する工種です"); return; }
+      persistProjectCategoriesTransform(pid, function (fresh) {
         return fresh.indexOf(v) === -1 ? fresh.concat([v]) : fresh;
       }).then(function () { renderActive(); });
     });
-    // 途中の工種を挿入(エクセルの「行の挿入」のように、指定した工種の直後に新しい工種を割り込ませる)
+    // 途中の工種を挿入(エクセルの「行の挿入」のように、指定した工種の直後に新しい工種を割り込ませる)。この案件だけに反映され、他の案件には影響しない
     document.querySelectorAll("[data-cat-insert]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var afterCat = btn.getAttribute("data-cat-insert");
-        var v = prompt('「' + afterCat + '」の下に挿入する工種名を入力してください');
+        var v = prompt('「' + afterCat + '」の下に挿入する工種名を入力してください(この案件のみに反映されます)');
         if (v === null) return; // キャンセル
         v = v.trim();
         if (!v) return;
-        if (scheduleCategories.indexOf(v) !== -1) { showToastLocal("すでに存在する工種です"); return; }
-        persistCategoriesTransform(function (fresh) {
+        if (categoriesFor(pid).indexOf(v) !== -1) { showToastLocal("すでに存在する工種です"); return; }
+        persistProjectCategoriesTransform(pid, function (fresh) {
           var idx = fresh.indexOf(afterCat);
           var next = fresh.slice();
           if (idx === -1) next.push(v); else next.splice(idx + 1, 0, v);
@@ -1139,7 +1188,7 @@
     headHtml += '</tr>';
 
     var bodyHtml = rows.map(function (p) {
-      var activeCats = scheduleCategories.filter(function (cat) {
+      var activeCats = categoriesFor(p.id).filter(function (cat) {
         var ph = phaseFor(p.id, cat);
         return ph && ph.startDate && ph.endDate;
       });
@@ -1170,7 +1219,7 @@
           if (!on2) { rowHtml += '<td></td>'; continue; }
           var iso2 = toISO(dd2b);
           var hasNote2 = !!categoryNoteFor(p.id, cat, iso2);
-          rowHtml += '<td class="cell-on' + (hasNote2?" has-task":"") + '" style="background:' + categoryColor(cat) + ';" data-cat-day="' + p.id + '|' + esc(cat) + '|' + iso2 + '"></td>';
+          rowHtml += '<td class="cell-on' + (hasNote2?" has-task":"") + '" style="background:' + categoryColor(p.id, cat) + ';" data-cat-day="' + p.id + '|' + esc(cat) + '|' + iso2 + '"></td>';
         }
         rowHtml += '</tr>';
         return rowHtml;
@@ -1210,7 +1259,7 @@
     }
     headHtml += '</tr>';
 
-    var bodyHtml = scheduleCategories.map(function (cat) {
+    var bodyHtml = categoriesFor(p.id).map(function (cat) {
       var ph = phaseFor(p.id, cat);
       var contractorLine = (ph && ph.contractor) ? '<div class="rowhead-contractor">担当: ' + esc(ph.contractor) + '</div>' : '';
       var rowHtml = '<tr><td class="rowhead"><span' + rowheadNameStyle(cat) + '>' + esc(cat) + '</span>' + contractorLine + '</td>';
@@ -1220,7 +1269,7 @@
         if (!on) { rowHtml += '<td></td>'; continue; }
         var iso = toISO(dd);
         var hasNote = !!categoryNoteFor(p.id, cat, iso);
-        rowHtml += '<td class="cell-on' + (hasNote?" has-task":"") + '" style="background:' + categoryColor(cat) + ';" data-cat-day="' + esc(cat) + '|' + iso + '"></td>';
+        rowHtml += '<td class="cell-on' + (hasNote?" has-task":"") + '" style="background:' + categoryColor(p.id, cat) + ';" data-cat-day="' + esc(cat) + '|' + iso + '"></td>';
       }
       rowHtml += '</tr>';
       return rowHtml;
@@ -1278,7 +1327,7 @@
     }).join("") + '</tr>';
 
     var bodyHtml = rows.map(function (p) {
-      var activeCats = scheduleCategories.filter(function (cat) {
+      var activeCats = categoriesFor(p.id).filter(function (cat) {
         var ph = phaseFor(p.id, cat);
         return ph && ph.startDate && ph.endDate;
       });
@@ -1308,8 +1357,8 @@
           if (!on) { rowHtml += '<td></td>'; return; }
           var iso = toISO(dd);
           var note = categoryNoteFor(p.id, cat, iso);
-          rowHtml += '<td class="week-cell" style="background:' + categoryColor(cat) + '22;border-left:3px solid ' + categoryColor(cat) + ';" data-cat-day="' + p.id + '|' + esc(cat) + '|' + iso + '">' +
-            '<div class="wc-name" style="color:' + categoryColor(cat) + ';">' + esc(cat) + '</div>' +
+          rowHtml += '<td class="week-cell" style="background:' + categoryColor(p.id, cat) + '22;border-left:3px solid ' + categoryColor(p.id, cat) + ';" data-cat-day="' + p.id + '|' + esc(cat) + '|' + iso + '">' +
+            '<div class="wc-name" style="color:' + categoryColor(p.id, cat) + ';">' + esc(cat) + '</div>' +
             (note && note.content ? '<div class="wc-content">' + esc(note.content) + '</div>' : '<div class="wc-content wc-placeholder">＋ クリックして工事内容を入力</div>') +
             '</td>';
         });
@@ -1349,7 +1398,7 @@
       return '<th class="' + (dow===0||dow===6?"weekend":"") + '">' + (d.getMonth()+1) + '/' + d.getDate() + '(' + dowNames[dow] + ')</th>';
     }).join("") + '</tr>';
 
-    var bodyHtml = scheduleCategories.map(function (cat) {
+    var bodyHtml = categoriesFor(p.id).map(function (cat) {
       var ph = phaseFor(p.id, cat);
       var contractorLine = (ph && ph.contractor) ? '<div class="rowhead-contractor">担当: ' + esc(ph.contractor) + '</div>' : '';
       var rowHtml = '<tr><td class="rowhead"><span' + rowheadNameStyle(cat) + '>' + esc(cat) + '</span>' + contractorLine + '</td>';
@@ -1358,8 +1407,8 @@
         if (!on) { rowHtml += '<td></td>'; return; }
         var iso = toISO(dd);
         var note = categoryNoteFor(p.id, cat, iso);
-        rowHtml += '<td class="week-cell" style="background:' + categoryColor(cat) + '22;border-left:3px solid ' + categoryColor(cat) + ';" data-cat-day="' + esc(cat) + '|' + iso + '">' +
-          '<div class="wc-name" style="color:' + categoryColor(cat) + ';">' + esc(cat) + '</div>' +
+        rowHtml += '<td class="week-cell" style="background:' + categoryColor(p.id, cat) + '22;border-left:3px solid ' + categoryColor(p.id, cat) + ';" data-cat-day="' + esc(cat) + '|' + iso + '">' +
+          '<div class="wc-name" style="color:' + categoryColor(p.id, cat) + ';">' + esc(cat) + '</div>' +
           (note && note.content ? '<div class="wc-content">' + esc(note.content) + '</div>' : '<div class="wc-content wc-placeholder">＋ クリックして工事内容を入力</div>') +
           '</td>';
       });
@@ -1405,10 +1454,46 @@
   });
   applyPrintSize();
 
+  /* ---------------- 工種欄の幅(画面・印刷の両方に反映。このパソコンだけの設定としてlocalStorageに保存) ---------------- */
+  var ROWHEAD_WIDTH_KEY = "taiho_schedule_rowhead_width_v1";
+  var ROWHEAD_WIDTH_MIN = 60, ROWHEAD_WIDTH_MAX = 510, ROWHEAD_WIDTH_DEFAULT = 128; // 128px = 従来(510px)のちょうど1/4
+  function clampRowheadWidth(v) {
+    v = parseInt(v, 10);
+    if (!v || isNaN(v)) v = ROWHEAD_WIDTH_DEFAULT;
+    return Math.min(ROWHEAD_WIDTH_MAX, Math.max(ROWHEAD_WIDTH_MIN, v));
+  }
+  function applyRowheadWidth(v) {
+    currentRowheadWidth = v;
+    document.documentElement.style.setProperty("--rowhead-width", v + "px");
+    document.getElementById("rowheadWidthRange").value = v;
+    document.getElementById("rowheadWidthInput").value = v;
+  }
+  var rowheadWidthRenderTimer = null;
+  function setRowheadWidth(v, immediate) {
+    v = clampRowheadWidth(v);
+    applyRowheadWidth(v);
+    try { window.localStorage.setItem(ROWHEAD_WIDTH_KEY, String(v)); } catch (e) {}
+    // ドラッグ中に毎回フル再描画すると重いので、動いている間は少し待ってからまとめて文字サイズを再計算する
+    clearTimeout(rowheadWidthRenderTimer);
+    if (immediate) { renderActive(); } else { rowheadWidthRenderTimer = setTimeout(renderActive, 150); }
+  }
+  (function initRowheadWidth() {
+    var saved = ROWHEAD_WIDTH_DEFAULT;
+    try {
+      var raw = window.localStorage.getItem(ROWHEAD_WIDTH_KEY);
+      if (raw) saved = clampRowheadWidth(raw);
+    } catch (e) {}
+    applyRowheadWidth(saved);
+  })();
+  document.getElementById("rowheadWidthRange").addEventListener("input", function () { setRowheadWidth(this.value); });
+  document.getElementById("rowheadWidthRange").addEventListener("change", function () { setRowheadWidth(this.value, true); });
+  document.getElementById("rowheadWidthInput").addEventListener("change", function () { setRowheadWidth(this.value, true); });
+
   renderTabs();
   document.getElementById("calArea").innerHTML = '<div class="empty-line">読み込み中...</div>';
 
   var scheduleCategories = ["建築工事","木工事","外壁工事","電気工事","設備工事","その他"];
+  var projectCategories = {}; // 案件ごとの工種リスト({ 案件ID: [工種名, ...] })。現場ごとに独立していて、他の案件の編集の影響を受けない
   var schedulePhases = [];
   var scheduleRemarks = [];
   var scheduleSheetMeta = {};
@@ -1418,22 +1503,24 @@
 
   Promise.all([
     storageGet(PROJECTS_KEY), storageGet(TASKS_KEY),
-    storageGet(CATEGORIES_KEY), storageGet(PHASES_KEY), storageGet(REMARKS_KEY), storageGet(SHEET_META_KEY), storageGet(CATEGORY_NOTES_KEY),
+    storageGet(CATEGORIES_KEY), storageGet(PROJECT_CATEGORIES_KEY), storageGet(PHASES_KEY), storageGet(REMARKS_KEY), storageGet(SHEET_META_KEY), storageGet(CATEGORY_NOTES_KEY),
     storageGet(CONTRACTORS_KEY)
   ]).then(function (res) {
-    var pData = null, tData = null, catData = null, phData = null, rmData = null, smData = null, cnData = null, ctData = null;
+    var pData = null, tData = null, catData = null, pcData = null, phData = null, rmData = null, smData = null, cnData = null, ctData = null;
     try { pData = res[0] && res[0].value ? JSON.parse(res[0].value) : null; } catch (e) {}
     try { tData = res[1] && res[1].value ? JSON.parse(res[1].value) : null; } catch (e) {}
     try { catData = res[2] && res[2].value ? JSON.parse(res[2].value) : null; } catch (e) {}
-    try { phData = res[3] && res[3].value ? JSON.parse(res[3].value) : null; } catch (e) {}
-    try { rmData = res[4] && res[4].value ? JSON.parse(res[4].value) : null; } catch (e) {}
-    try { smData = res[5] && res[5].value ? JSON.parse(res[5].value) : null; } catch (e) {}
-    try { cnData = res[6] && res[6].value ? JSON.parse(res[6].value) : null; } catch (e) {}
-    try { ctData = res[7] && res[7].value ? JSON.parse(res[7].value) : null; } catch (e) {}
+    try { pcData = res[3] && res[3].value ? JSON.parse(res[3].value) : null; } catch (e) {}
+    try { phData = res[4] && res[4].value ? JSON.parse(res[4].value) : null; } catch (e) {}
+    try { rmData = res[5] && res[5].value ? JSON.parse(res[5].value) : null; } catch (e) {}
+    try { smData = res[6] && res[6].value ? JSON.parse(res[6].value) : null; } catch (e) {}
+    try { cnData = res[7] && res[7].value ? JSON.parse(res[7].value) : null; } catch (e) {}
+    try { ctData = res[8] && res[8].value ? JSON.parse(res[8].value) : null; } catch (e) {}
 
     var projects = Array.isArray(pData) ? pData : [];
     tasksCache = Array.isArray(tData) ? tData : [];
     if (Array.isArray(catData) && catData.length) scheduleCategories = catData;
+    projectCategories = (pcData && typeof pcData === "object" && !Array.isArray(pcData)) ? pcData : {};
     schedulePhases = Array.isArray(phData) ? phData : [];
     scheduleRemarks = Array.isArray(rmData) ? rmData : [];
     scheduleSheetMeta = (smData && typeof smData === "object") ? smData : {};
