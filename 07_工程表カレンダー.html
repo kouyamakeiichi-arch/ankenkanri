@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="app-build" content="2026-08-18-1" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>工程表・カレンダー | 太豊建設アプリ</title>
+<title>工程表 | 太豊建設アプリ</title>
 <style>
   :root {
     --bg: #F6F5FB; --surface: #FFFFFF; --primary: #6C47FF; --primary-dark: #5636D9;
@@ -59,7 +59,7 @@
   .tab-btn.is-active { background: var(--primary); border-color: var(--primary); color: white; }
 
   .cal-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
-  .cal-toolbar h2 { font-size: 16px; margin: 0; min-width: 90px; font-weight: 900; }
+  .cal-toolbar h2 { font-size: 22px; margin: 0; min-width: 90px; font-weight: 900; }
   .btn-nav { width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--text-secondary); }
   .btn-nav:hover { background: #F1EFFB; }
   .btn-today { padding: 7px 14px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; }
@@ -93,8 +93,9 @@
 
   table.matrix { border-collapse: collapse; }
   table.matrix th, table.matrix td { border: 1px solid var(--border); font-size: 11px; text-align: center; padding: 4px; white-space: nowrap; }
-  table.matrix th.rowhead, table.matrix td.rowhead { text-align: left; font-weight: 700; white-space: nowrap; position: sticky; left: 0; background: var(--surface); min-width: 170px; font-size: 12px; cursor: pointer; z-index: 2; }
+  table.matrix th.rowhead, table.matrix td.rowhead { text-align: left; font-weight: 700; white-space: nowrap; position: sticky; left: 0; background: var(--surface); min-width: 510px; font-size: 12px; cursor: pointer; z-index: 2; }
   table.matrix th { background: var(--bg); color: var(--text-secondary); font-weight: 700; }
+  .rowhead-contractor { font-weight: 500; color: var(--text-tertiary); font-size: 10.5px; margin-top: 2px; white-space: nowrap; }
   table.matrix th.weekend { color: var(--danger); }
   td.cell-on { color: white; font-weight: 800; cursor: pointer; position: relative; }
   td.cell-on.has-task::after { content: "●"; position: absolute; top: 1px; right: 2px; font-size: 7px; color: white; }
@@ -146,7 +147,10 @@
   .phase-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--border); flex-wrap: wrap; }
   .phase-row:last-child { border-bottom: none; }
   .phase-row__dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-  .phase-row__name { width: 100px; font-size: 12.5px; font-weight: 700; flex-shrink: 0; }
+  .phase-row__name { width: 300px; font-size: 12.5px; font-weight: 700; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; }
+  .phase-row__insert-wrap { display: flex; justify-content: center; padding: 2px 0; }
+  .phase-row__insert-btn { font-size: 10.5px; font-weight: 700; color: var(--primary); background: transparent; border: none; cursor: pointer; padding: 2px 8px; border-radius: 999px; display: inline-flex; align-items: center; gap: 3px; opacity: .55; }
+  .phase-row__insert-btn:hover { opacity: 1; background: var(--primary-soft); }
   .phase-row__date { padding: 5px 8px; border: 1px solid var(--border); border-radius: 7px; font-family: inherit; font-size: 12px; }
   .phase-row__contractor { padding: 5px 8px; border: 1px solid var(--border); border-radius: 7px; font-family: inherit; font-size: 12px; width: 110px; }
   .phase-row__arrow { color: var(--text-tertiary); font-size: 12px; }
@@ -164,6 +168,9 @@
   .remark-row__content { font-size: 12.5px; white-space: pre-wrap; }
   .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; flex-shrink: 0; }
   .icon-btn:hover { background: var(--bg); color: var(--danger); }
+
+  /* ---------------- 印刷専用: シート見出し・備考(画面には出さず印刷時だけ表示) ---------------- */
+  .print-sheet-header, .print-remarks { display: none; }
 
   @media (max-width: 640px) {
     .shell { padding: 14px 12px 80px; }
@@ -185,7 +192,7 @@
     .shell { max-width: none; padding: 0; }
     .layout { display: block; }
     .panel-surface { border: none; padding: 0; overflow: visible; }
-    .cal-toolbar h2 { font-size: 14px; margin: 0 0 6px; }
+    .cal-toolbar h2 { font-size: 20px; margin: 0 0 6px; }
     table.matrix { width: 100%; table-layout: fixed; border-collapse: collapse; }
     table.matrix thead { display: table-header-group; } /* 複数ページになっても見出し行を各ページに繰り返す */
     table.matrix tr { page-break-inside: avoid; }
@@ -194,6 +201,20 @@
     .wc-content.wc-placeholder { display: none; } /* 「クリックして入力」のヒントは印刷しない */
     .wc-name { font-size: 9px; }
     .wc-content { font-size: 9.5px; }
+    .rowhead-contractor { font-size: 9px; color: #555; }
+
+    /* 印刷専用のシート見出し(案件名・NO・作成日・現場代理人)と備考 */
+    .print-sheet-header { display: block; margin: 0 0 8px; page-break-inside: avoid; }
+    .print-sheet-header__row1 { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; border-bottom: 1.5px solid #333; padding-bottom: 4px; }
+    .print-sheet-header__name { font-size: 18px; font-weight: 900; }
+    .print-sheet-header__no { font-size: 13px; font-weight: 800; white-space: nowrap; }
+    .print-sheet-header__row2 { font-size: 11px; color: #333; margin-top: 4px; display: flex; gap: 18px; flex-wrap: wrap; }
+
+    .print-remarks { display: block; margin-top: 10px; border-top: 1px solid #999; padding-top: 6px; page-break-inside: avoid; }
+    .print-remarks__title { font-weight: 800; font-size: 11px; margin-bottom: 4px; }
+    .print-remarks__row { font-size: 10px; margin-bottom: 3px; line-height: 1.5; }
+
+    .phase-row__insert-wrap, .phase-row__insert-btn { display: none !important; }
   }
 </style>
 <style id="printSizeStyle">
@@ -250,7 +271,7 @@
   </a>
   <a class="sidebar__link is-active" href="07_工程表カレンダー.html">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-    工程表・カレンダー
+    工程表
   </a>  <a class="sidebar__link" href="11_見積実行予算Pro.html" data-pref-key="sidebar_quote3">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 12h6M9 16h6M9 20h3"/></svg>
     見積・実行予算Pro
@@ -269,7 +290,7 @@
     <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニュー">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
-    <div class="page-header__title">工程表・カレンダー<span class="badge-count" id="countBadge"></span></div>
+    <div class="page-header__title">工程表<span class="badge-count" id="countBadge"></span></div>
     <div class="page-header__actions no-print" style="margin-left:auto;display:flex;gap:8px;align-items:center;">
       <select id="printSize" style="padding:8px 10px;border:1px solid var(--border);border-radius:9px;font-family:inherit;font-size:12.5px;background:var(--surface);">
         <option value="A3-landscape" selected>A3よこ</option>
@@ -490,6 +511,16 @@
   function scheduleUid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
   var ICON_TRASH = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/></svg>';
   var ICON_PENCIL = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+  var ICON_PLUS = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
+
+  // 工種名の文字数に応じて、枠に収まらなくなってきたら少しずつ文字を小さくする(短い名前はそのまま)
+  function rowheadNameStyle(text) {
+    var len = String(text || "").length;
+    if (len > 26) return ' style="font-size:9px;"';
+    if (len > 20) return ' style="font-size:10px;"';
+    if (len > 14) return ' style="font-size:11px;"';
+    return "";
+  }
   var tasksCache = [];
 
   function loadTasks() { return tasksCache; }
@@ -797,7 +828,7 @@
       var ph = phaseFor(p.id, cat);
       return '<div class="phase-row">' +
         '<i class="phase-row__dot" style="background:' + categoryColor(cat) + ';"></i>' +
-        '<span class="phase-row__name">' + esc(cat) + '</span>' +
+        '<span class="phase-row__name"' + rowheadNameStyle(cat) + ' title="' + esc(cat) + '">' + esc(cat) + '</span>' +
         '<input type="date" class="phase-row__date" data-phase-start="' + esc(cat) + '" value="' + (ph ? ph.startDate : "") + '" />' +
         '<span class="phase-row__arrow">→</span>' +
         '<input type="date" class="phase-row__date" data-phase-end="' + esc(cat) + '" value="' + (ph ? ph.endDate : "") + '" />' +
@@ -806,7 +837,8 @@
         '<button class="icon-btn" data-phase-clear="' + esc(cat) + '" title="期間をクリア">' + ICON_TRASH + '</button>' +
         '<button class="icon-btn" data-cat-edit="' + esc(cat) + '" title="この工種の名前を編集">' + ICON_PENCIL + '</button>' +
         '<button class="icon-btn" data-cat-del="' + esc(cat) + '" title="この工種を削除">✕</button>' +
-        '</div>';
+        '</div>' +
+        '<div class="phase-row__insert-wrap"><button type="button" class="phase-row__insert-btn" data-cat-insert="' + esc(cat) + '" title="「' + esc(cat) + '」の下に工種を挿入">' + ICON_PLUS + '「' + esc(cat) + '」の下に挿入</button></div>';
     }).join("");
 
     return '<div class="single-panel">' +
@@ -822,7 +854,8 @@
       '<p style="font-size:11px;color:var(--text-tertiary);margin:-4px 0 8px;">💡 開始日・終了日も直接入力できますが、カレンダーアイコンから選ぶ方が楽です。</p>' +
       '<datalist id="contractorSuggestions">' + contractorNames.map(function (n) { return '<option value="' + esc(n) + '">'; }).join("") + '</datalist>' +
       '<div class="phase-list">' + catRows + '</div>' +
-      '<div class="add-cat-row"><input type="text" id="newCatInput" placeholder="工種を追加(例: 塗装工事)" /><button class="btn btn--ghost btn--sm" id="addCatBtn">＋ 追加</button></div>' +
+      '<p style="font-size:11px;color:var(--text-tertiary);margin:8px 0 0;">💡 各行の下にうっすら出る「＋ ◯◯の下に挿入」を押すと、その工種のすぐ下に新しい工種を割り込ませて追加できます(あとから途中に足したいときはこちら)。</p>' +
+      '<div class="add-cat-row"><input type="text" id="newCatInput" placeholder="工種を追加(例: 塗装工事)" /><button class="btn btn--ghost btn--sm" id="addCatBtn">＋ 末尾に追加</button></div>' +
       '</div>';
   }
 
@@ -934,6 +967,26 @@
         return fresh.indexOf(v) === -1 ? fresh.concat([v]) : fresh;
       }).then(function () { renderActive(); });
     });
+    // 途中の工種を挿入(エクセルの「行の挿入」のように、指定した工種の直後に新しい工種を割り込ませる)
+    document.querySelectorAll("[data-cat-insert]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var afterCat = btn.getAttribute("data-cat-insert");
+        var v = prompt('「' + afterCat + '」の下に挿入する工種名を入力してください');
+        if (v === null) return; // キャンセル
+        v = v.trim();
+        if (!v) return;
+        if (scheduleCategories.indexOf(v) !== -1) { showToastLocal("すでに存在する工種です"); return; }
+        persistCategoriesTransform(function (fresh) {
+          var idx = fresh.indexOf(afterCat);
+          var next = fresh.slice();
+          if (idx === -1) next.push(v); else next.splice(idx + 1, 0, v);
+          return next;
+        }).then(function () {
+          showToastLocal('「' + v + '」を挿入しました');
+          renderActive();
+        });
+      });
+    });
   }
 
   /* ---------------- 単一案件モード：備考(履歴形式) ---------------- */
@@ -996,6 +1049,43 @@
         document.getElementById("remarkContent").focus();
       });
     });
+  }
+
+  /* ---------------- 印刷専用: シート見出し(案件名・NO・作成日・現場代理人)＋備考 ---------------- */
+  // NO.は着工月を1として、表示中の月がその何ヶ月目かを自動採番(例: 着工が9月なら9月=NO.1、10月=NO.2)
+  function sheetNoForMonth(p, y, m) {
+    var base = p._start || toDateOnly(new Date((p.startDate || p.completionDate) + "T00:00:00"));
+    var baseIdx = base.getFullYear() * 12 + base.getMonth();
+    var curIdx = y * 12 + m;
+    return Math.max(1, curIdx - baseIdx + 1);
+  }
+  // 週間表示は、着工日を含む週を1週目として数える
+  function sheetNoForWeek(p, weekStartDate) {
+    var base = p._start || toDateOnly(new Date((p.startDate || p.completionDate) + "T00:00:00"));
+    var baseWeekStart = toDateOnly(addDays(base, -base.getDay()));
+    var n = Math.floor(daysBetween(baseWeekStart, toDateOnly(weekStartDate)) / 7) + 1;
+    return Math.max(1, n);
+  }
+  function renderPrintSheetHeader(p, noNumber) {
+    var meta = scheduleSheetMeta[p.id] || {};
+    return '<div class="print-sheet-header">' +
+      '<div class="print-sheet-header__row1">' +
+        '<span class="print-sheet-header__name">' + esc(p.name) + '</span>' +
+        '<span class="print-sheet-header__no">NO. ' + noNumber + '</span>' +
+      '</div>' +
+      '<div class="print-sheet-header__row2">' +
+        '<span>作成日: ' + (meta.preparedDate ? esc(fmtDateFull(meta.preparedDate)) : "-") + '</span>' +
+        '<span>現場代理人: ' + (meta.siteManager ? esc(meta.siteManager) : "-") + '</span>' +
+      '</div>' +
+    '</div>';
+  }
+  function renderPrintRemarks(p) {
+    var list = scheduleRemarks.filter(function (r) { return r.projectId === p.id; }).sort(function (a,b) { return (a.date||"") < (b.date||"") ? -1 : 1; });
+    if (!list.length) return "";
+    var rows = list.map(function (r) {
+      return '<div class="print-remarks__row"><b>[' + esc(r.type) + ']</b> ' + esc(fmtDateFull(r.date)) + '　' + esc(r.content) + '</div>';
+    }).join("");
+    return '<div class="print-remarks"><div class="print-remarks__title">備考</div>' + rows + '</div>';
   }
 
   function showToastLocal(msg) {
@@ -1067,7 +1157,7 @@
       // 工種の期間が入力済みの案件は、工種ごとに複数行で表示
       return activeCats.map(function (cat, ci) {
         var ph = phaseFor(p.id, cat);
-        var label = (ci === 0 ? '<b>' + esc(p.name) + '</b><br>' : '') + '　・' + esc(cat);
+        var label = (ci === 0 ? '<b>' + esc(p.name) + '</b><br>' : '') + '　・' + esc(cat) + (ph && ph.contractor ? '<div class="rowhead-contractor">担当: ' + esc(ph.contractor) + '</div>' : '');
         var rowHtml = '<tr><td class="rowhead" data-detail="' + p.id + '">' + label + '</td>';
         for (var dd3 = 1; dd3 <= daysInMonth; dd3++) {
           var dd2b = toDateOnly(new Date(y, m, dd3));
@@ -1117,7 +1207,8 @@
 
     var bodyHtml = scheduleCategories.map(function (cat) {
       var ph = phaseFor(p.id, cat);
-      var rowHtml = '<tr><td class="rowhead">' + esc(cat) + '</td>';
+      var contractorLine = (ph && ph.contractor) ? '<div class="rowhead-contractor">担当: ' + esc(ph.contractor) + '</div>' : '';
+      var rowHtml = '<tr><td class="rowhead"><span' + rowheadNameStyle(cat) + '>' + esc(cat) + '</span>' + contractorLine + '</td>';
       for (var dd2 = 1; dd2 <= daysInMonth; dd2++) {
         var dd = toDateOnly(new Date(y, m, dd2));
         var on = ph && ph.startDate && ph.endDate && dd >= toDateOnly(new Date(ph.startDate+"T00:00:00")) && dd <= toDateOnly(new Date(ph.endDate+"T00:00:00"));
@@ -1132,7 +1223,9 @@
 
     area.innerHTML =
       renderSingleProjectPanel(p) +
+      renderPrintSheetHeader(p, sheetNoForMonth(p, y, m)) +
       '<table class="matrix" style="margin-top:10px;"><thead>' + headHtml + '</thead><tbody>' + bodyHtml + '</tbody></table>' +
+      renderPrintRemarks(p) +
       renderRemarksSection(p);
 
     bindSingleProjectPanelEvents(p);
@@ -1203,7 +1296,7 @@
 
       return activeCats.map(function (cat, ci) {
         var ph = phaseFor(p.id, cat);
-        var label = (ci === 0 ? '<b>' + esc(p.name) + '</b><br>' : '') + '　・' + esc(cat);
+        var label = (ci === 0 ? '<b>' + esc(p.name) + '</b><br>' : '') + '　・' + esc(cat) + (ph && ph.contractor ? '<div class="rowhead-contractor">担当: ' + esc(ph.contractor) + '</div>' : '');
         var rowHtml = '<tr><td class="rowhead" data-detail="' + p.id + '">' + label + '</td>';
         days.forEach(function (dd) {
           var on = dd >= toDateOnly(new Date(ph.startDate+"T00:00:00")) && dd <= toDateOnly(new Date(ph.endDate+"T00:00:00"));
@@ -1253,7 +1346,8 @@
 
     var bodyHtml = scheduleCategories.map(function (cat) {
       var ph = phaseFor(p.id, cat);
-      var rowHtml = '<tr><td class="rowhead">' + esc(cat) + '</td>';
+      var contractorLine = (ph && ph.contractor) ? '<div class="rowhead-contractor">担当: ' + esc(ph.contractor) + '</div>' : '';
+      var rowHtml = '<tr><td class="rowhead"><span' + rowheadNameStyle(cat) + '>' + esc(cat) + '</span>' + contractorLine + '</td>';
       days.forEach(function (dd) {
         var on = ph && ph.startDate && ph.endDate && dd >= toDateOnly(new Date(ph.startDate+"T00:00:00")) && dd <= toDateOnly(new Date(ph.endDate+"T00:00:00"));
         if (!on) { rowHtml += '<td></td>'; return; }
@@ -1270,7 +1364,9 @@
 
     area.innerHTML =
       renderSingleProjectPanel(p) +
+      renderPrintSheetHeader(p, sheetNoForWeek(p, days[0])) +
       '<table class="matrix" style="margin-top:10px;"><thead>' + headHtml + '</thead><tbody>' + bodyHtml + '</tbody></table>' +
+      renderPrintRemarks(p) +
       renderRemarksSection(p);
 
     bindSingleProjectPanelEvents(p);
