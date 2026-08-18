@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-08-18-1" />
+<meta name="app-build" content="2026-08-18-2" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>工程表 | 太豊建設アプリ</title>
 <style>
@@ -193,26 +193,32 @@
     .layout { display: block; }
     .panel-surface { border: none; padding: 0; overflow: visible; }
     .cal-toolbar h2 { font-size: 20px; margin: 0 0 6px; }
+    /* 単一案件モードでは、印刷専用の1行見出しに「工程表・年月・案件名」をまとめるので、通常の見出しは重複するため隠す */
+    body:has(.print-sheet-header) .page-header__title { display: none !important; }
+    body:has(.print-sheet-header) .cal-toolbar h2 { display: none !important; }
     table.matrix { width: 100%; table-layout: fixed; border-collapse: collapse; }
     table.matrix thead { display: table-header-group; } /* 複数ページになっても見出し行を各ページに繰り返す */
     table.matrix tr { page-break-inside: avoid; }
-    table.matrix th, table.matrix td { font-size: 10px; padding: 3px; border: 1px solid #999; }
-    table.matrix th.rowhead, table.matrix td.rowhead { position: static; }
+    table.matrix th, table.matrix td { font-size: 10px; padding: 2px; border: 1px solid #999; }
+    /* table-layout:fixedでは実際の width(min-widthではなく)で列幅が決まるため、ここで明示的に指定する */
+    table.matrix th.rowhead, table.matrix td.rowhead { position: static; width: 510px; }
+    table.matrix th:not(.rowhead), table.matrix td:not(.rowhead) { width: 20px; }
     .wc-content.wc-placeholder { display: none; } /* 「クリックして入力」のヒントは印刷しない */
     .wc-name { font-size: 9px; }
     .wc-content { font-size: 9.5px; }
     .rowhead-contractor { font-size: 9px; color: #555; }
 
-    /* 印刷専用のシート見出し(案件名・NO・作成日・現場代理人)と備考 */
-    .print-sheet-header { display: block; margin: 0 0 8px; page-break-inside: avoid; }
-    .print-sheet-header__row1 { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; border-bottom: 1.5px solid #333; padding-bottom: 4px; }
-    .print-sheet-header__name { font-size: 18px; font-weight: 900; }
-    .print-sheet-header__no { font-size: 13px; font-weight: 800; white-space: nowrap; }
-    .print-sheet-header__row2 { font-size: 11px; color: #333; margin-top: 4px; display: flex; gap: 18px; flex-wrap: wrap; }
+    /* 印刷専用の1行見出し(工程表・年月・案件名・NO・作成日・現場代理人)と備考 */
+    .print-sheet-header { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 16px; row-gap: 2px; margin: 0 0 6px; padding-bottom: 4px; border-bottom: 1.5px solid #333; page-break-inside: avoid; }
+    .print-sheet-header__label { font-size: 15px; font-weight: 900; }
+    .print-sheet-header__month { font-size: 15px; font-weight: 900; }
+    .print-sheet-header__name { font-size: 15px; font-weight: 900; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .print-sheet-header__no { font-size: 12px; font-weight: 800; white-space: nowrap; }
+    .print-sheet-header__meta { font-size: 10.5px; color: #333; white-space: nowrap; }
 
-    .print-remarks { display: block; margin-top: 10px; border-top: 1px solid #999; padding-top: 6px; page-break-inside: avoid; }
-    .print-remarks__title { font-weight: 800; font-size: 11px; margin-bottom: 4px; }
-    .print-remarks__row { font-size: 10px; margin-bottom: 3px; line-height: 1.5; }
+    .print-remarks { display: block; margin-top: 6px; border-top: 1px solid #999; padding-top: 5px; page-break-inside: avoid; }
+    .print-remarks__title { font-weight: 800; font-size: 10.5px; margin-bottom: 3px; }
+    .print-remarks__row { font-size: 9.5px; margin-bottom: 2px; line-height: 1.4; }
 
     .phase-row__insert-wrap, .phase-row__insert-btn { display: none !important; }
   }
@@ -1066,17 +1072,16 @@
     var n = Math.floor(daysBetween(baseWeekStart, toDateOnly(weekStartDate)) / 7) + 1;
     return Math.max(1, n);
   }
-  function renderPrintSheetHeader(p, noNumber) {
+  function renderPrintSheetHeader(p, noNumber, headingText) {
+    // 印刷時にページ数が増えないよう、案件名・年月・NO・作成日・現場代理人を1行にまとめる(通常の見出し「工程表」「2026年9月」は印刷時は非表示にして重複を避ける)
     var meta = scheduleSheetMeta[p.id] || {};
     return '<div class="print-sheet-header">' +
-      '<div class="print-sheet-header__row1">' +
-        '<span class="print-sheet-header__name">' + esc(p.name) + '</span>' +
-        '<span class="print-sheet-header__no">NO. ' + noNumber + '</span>' +
-      '</div>' +
-      '<div class="print-sheet-header__row2">' +
-        '<span>作成日: ' + (meta.preparedDate ? esc(fmtDateFull(meta.preparedDate)) : "-") + '</span>' +
-        '<span>現場代理人: ' + (meta.siteManager ? esc(meta.siteManager) : "-") + '</span>' +
-      '</div>' +
+      '<span class="print-sheet-header__label">工程表</span>' +
+      '<span class="print-sheet-header__month">' + esc(headingText) + '</span>' +
+      '<span class="print-sheet-header__name">' + esc(p.name) + '</span>' +
+      '<span class="print-sheet-header__no">NO. ' + noNumber + '</span>' +
+      '<span class="print-sheet-header__meta">作成日: ' + (meta.preparedDate ? esc(fmtDateFull(meta.preparedDate)) : "-") + '</span>' +
+      '<span class="print-sheet-header__meta">現場代理人: ' + (meta.siteManager ? esc(meta.siteManager) : "-") + '</span>' +
     '</div>';
   }
   function renderPrintRemarks(p) {
@@ -1223,7 +1228,7 @@
 
     area.innerHTML =
       renderSingleProjectPanel(p) +
-      renderPrintSheetHeader(p, sheetNoForMonth(p, y, m)) +
+      renderPrintSheetHeader(p, sheetNoForMonth(p, y, m), y + '年' + (m+1) + '月') +
       '<table class="matrix" style="margin-top:10px;"><thead>' + headHtml + '</thead><tbody>' + bodyHtml + '</tbody></table>' +
       renderPrintRemarks(p) +
       renderRemarksSection(p);
@@ -1364,7 +1369,7 @@
 
     area.innerHTML =
       renderSingleProjectPanel(p) +
-      renderPrintSheetHeader(p, sheetNoForWeek(p, days[0])) +
+      renderPrintSheetHeader(p, sheetNoForWeek(p, days[0]), fmtDateFull(toISO(days[0])) + '〜' + fmtDateFull(toISO(days[6]))) +
       '<table class="matrix" style="margin-top:10px;"><thead>' + headHtml + '</thead><tbody>' + bodyHtml + '</tbody></table>' +
       renderPrintRemarks(p) +
       renderRemarksSection(p);
