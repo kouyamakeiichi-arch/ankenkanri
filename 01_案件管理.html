@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-08-18-5" />
+<meta name="app-build" content="2026-08-18-6" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -2112,8 +2112,12 @@
       if (data && Array.isArray(data)) {
         state.projects = data;
       } else {
+        // 注意: ここでは絶対にクラウドへ保存しない。
+        // 通信エラーなどで読み込みに失敗しただけの場合に、サンプルデータで
+        // 実際の案件データを上書き・消去してしまう事故を防ぐための安全策。
+        // (画面には見本として表示するが、実際にクラウドへ書き込むのは
+        //  ユーザーが案件を追加・編集した時だけ)
         state.projects = seedProjects();
-        storageSet(STORAGE_KEY, JSON.stringify(state.projects));
       }
       state.customers = Array.isArray(cData) ? cData : [];
       state.buildings = Array.isArray(bData) ? bData : [];

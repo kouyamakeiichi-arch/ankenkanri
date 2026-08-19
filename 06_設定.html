@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-08-18-5" />
+<meta name="app-build" content="2026-08-18-6" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>設定 | 太豊建設アプリ</title>
 <style>
@@ -1804,14 +1804,14 @@
       try { uData = res[1] && res[1].value ? JSON.parse(res[1].value) : null; } catch (e) {}
       try { bData = res[2] && res[2].value ? JSON.parse(res[2].value) : null; } catch (e) {}
       try { mData = res[3] && res[3].value ? JSON.parse(res[3].value) : null; } catch (e) {}
+      // 注意: ここでは絶対にクラウドへ保存しない。通信エラーなどで読み込みに
+      // 失敗しただけの場合に、見本データで実際の設定データを上書き・消去して
+      // しまう事故を防ぐための安全策。(画面には見本として表示するが、実際に
+      // クラウドへ書き込むのはユーザーが編集・保存した時だけ)
       state.items = Array.isArray(iData) ? iData : seedPriceItems();
       state.units = Array.isArray(uData) ? uData : seedUnits();
       state.bizInfo = bData && typeof bData === "object" ? bData : seedBizInfo();
       state.members = Array.isArray(mData) ? mData : seedMembers();
-      if (!Array.isArray(iData)) storageSet(PRICE_ITEMS_KEY, JSON.stringify(state.items));
-      if (!Array.isArray(uData)) storageSet(UNITS_KEY, JSON.stringify(state.units));
-      if (!bData) storageSet(BIZ_INFO_KEY, JSON.stringify(state.bizInfo));
-      if (!Array.isArray(mData)) storageSet(MEMBERS_KEY, JSON.stringify(state.members));
 
       TYPE_SETTINGS_CATEGORIES.forEach(function (c, i) {
         var raw = res[4 + i];
@@ -1819,7 +1819,6 @@
         try { data = raw && raw.value ? JSON.parse(raw.value) : null; } catch (e) {}
         var list = Array.isArray(data) ? data : seedForCategory(c.id);
         state.typeSettings[c.id] = list;
-        if (!Array.isArray(data)) storageSet(c.key, JSON.stringify(list));
       });
 
       state.loading = false;
