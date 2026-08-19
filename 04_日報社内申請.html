@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-08-18-3" />
+<meta name="app-build" content="2026-08-18-4" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>日報・社内申請 | 太豊建設アプリ</title>
 <style>
@@ -252,17 +252,66 @@
     } catch (e) { return false; }
   }
 
-  function runBackup(manual) {
-    collectAllData().then(function (data) {
+  var BANNER_ID = "taihoAutoBackupBanner";
+  var BANNER_DISMISS_KEY = "taiho_auto_backup_banner_dismissed_v1";
+
+  function runBackup() {
+    return collectAllData().then(function (data) {
       var ok = downloadBackup(data);
       try { window.localStorage.setItem(LAST_BACKUP_KEY, todayStr()); } catch (e) {}
+      return ok;
+    });
+  }
+  window.__taihoRunBackup = function (manual) {
+    runBackup().then(function (ok) {
       if (manual) {
         if (ok) alert("バックアップを保存しました。ダウンロードフォルダをご確認ください。");
         else alert("バックアップの保存に失敗しました。お手数ですが、もう一度お試しください。");
       }
     });
+  };
+
+  // ブラウザは、画面操作(クリックなど)を伴わずに勝手にファイルを保存することを
+  // セキュリティ上ブロックすることがあるため、時間になったら右下に通知を出し、
+  // ワンクリックで確実に保存できるようにする。
+  function showAutoBackupBanner() {
+    try {
+      if (document.getElementById(BANNER_ID)) return;
+      if (window.sessionStorage.getItem(BANNER_DISMISS_KEY) === todayStr()) return;
+    } catch (e) {}
+    if (!document.body) return;
+    var el = document.createElement("div");
+    el.id = BANNER_ID;
+    el.style.cssText = "position:fixed;right:16px;bottom:16px;z-index:99999;background:#1F2937;color:#fff;" +
+      "padding:14px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.28);font-size:13px;max-width:280px;" +
+      "line-height:1.6;font-family:inherit;";
+    el.innerHTML =
+      '<div style="font-weight:800;margin-bottom:6px;">⏰ 本日のバックアップの時間です</div>' +
+      '<div style="color:#D1D5DB;margin-bottom:10px;">クリックしてPCに保存してください。</div>' +
+      '<div style="display:flex;gap:8px;">' +
+      '<button type="button" id="taihoBackupBannerSave" style="flex:1;background:#7C6FF0;color:#fff;border:none;' +
+      'border-radius:8px;padding:8px 10px;font-weight:700;cursor:pointer;font-size:12.5px;">📥 今すぐ保存</button>' +
+      '<button type="button" id="taihoBackupBannerClose" style="background:transparent;color:#9CA3AF;border:none;' +
+      'cursor:pointer;font-size:16px;padding:0 6px;">×</button>' +
+      '</div>';
+    document.body.appendChild(el);
+    var saveBtn = document.getElementById("taihoBackupBannerSave");
+    var closeBtn = document.getElementById("taihoBackupBannerClose");
+    if (saveBtn) saveBtn.addEventListener("click", function () {
+      saveBtn.disabled = true;
+      saveBtn.textContent = "保存中...";
+      runBackup().then(function (ok) {
+        el.innerHTML = ok
+          ? '<div style="font-weight:800;">✅ バックアップを保存しました</div>'
+          : '<div style="font-weight:800;">⚠️ 保存に失敗しました</div>';
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 2200);
+      });
+    });
+    if (closeBtn) closeBtn.addEventListener("click", function () {
+      try { window.sessionStorage.setItem(BANNER_DISMISS_KEY, todayStr()); } catch (e) {}
+      if (el.parentNode) el.parentNode.removeChild(el);
+    });
   }
-  window.__taihoRunBackup = runBackup;
 
   function checkAutoBackup() {
     try {
@@ -271,7 +320,7 @@
       if (last === todayStr(now)) return; // 今日はすでにバックアップ済み
       var nowMin = now.getHours() * 60 + now.getMinutes();
       if (nowMin < getAutoBackupMinutes()) return; // まだ設定した時刻になっていない
-      runBackup(false);
+      showAutoBackupBanner();
     } catch (e) {}
   }
 
@@ -288,14 +337,15 @@
         );
         return;
       }
-      runBackup(true);
+      try { window.sessionStorage.removeItem(BANNER_DISMISS_KEY); } catch (e) {}
+      showAutoBackupBanner();
     } catch (e) {}
   }
   window.__taihoTestAutoBackup = testAutoBackupNow;
 
   document.addEventListener("DOMContentLoaded", function () {
     var btn = document.getElementById("btnSidebarBackup");
-    if (btn) btn.addEventListener("click", function (e) { e.preventDefault(); runBackup(true); });
+    if (btn) btn.addEventListener("click", function (e) { e.preventDefault(); window.__taihoRunBackup(true); });
     setTimeout(checkAutoBackup, 1500);
   });
 })();
