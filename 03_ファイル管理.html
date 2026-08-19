@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-08-18-5" />
+<meta name="app-build" content="2026-08-19-1" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ファイル管理 | 太豊建設アプリ</title>
 <style>
@@ -432,20 +432,30 @@
   function storageGet(key) {
     return new Promise(function (resolve) {
       if (window.db) {
-        window.db.collection("taiho_app_data").doc(key).get().then(function (doc) {
-          if (doc.exists) { resolve({ value: doc.data().value }); return; }
-          var raw = null;
-          try { raw = window.localStorage.getItem(key); } catch (e) {}
-          if (raw) {
-            window.db.collection("taiho_app_data").doc(key).set({ value: raw, updatedAt: Date.now() }).catch(function () {});
-            resolve({ value: raw });
-          } else {
-            resolve(null);
-          }
-        }).catch(function () {
-          try { var raw2 = window.localStorage.getItem(key); resolve(raw2 ? { value: raw2 } : null); }
-          catch (e) { resolve(null); }
-        });
+        var attempts = 0;
+        var tryFetch = function () {
+          window.db.collection("taiho_app_data").doc(key).get().then(function (doc) {
+            if (doc.exists) { resolve({ value: doc.data().value }); return; }
+            var raw = null;
+            try { raw = window.localStorage.getItem(key); } catch (e) {}
+            if (raw) {
+              window.db.collection("taiho_app_data").doc(key).set({ value: raw, updatedAt: Date.now() }).catch(function () {});
+              resolve({ value: raw });
+            } else {
+              resolve(null);
+            }
+          }).catch(function () {
+            attempts++;
+            if (attempts < 3) {
+              // スマホの回線など、通信が不安定な場合に備えて少し待ってから再試行する
+              setTimeout(tryFetch, attempts * 700);
+            } else {
+              try { var raw2 = window.localStorage.getItem(key); resolve(raw2 ? { value: raw2 } : null); }
+              catch (e) { resolve(null); }
+            }
+          });
+        };
+        tryFetch();
       } else if (window.storage && typeof window.storage.get === "function") {
         window.storage.get(key, true).then(resolve).catch(function () { resolve(null); });
       } else {

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-08-18-5" />
+<meta name="app-build" content="2026-08-19-1" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>金銭管理 | 太豊建設アプリ</title>
 <style>
@@ -461,12 +461,23 @@
   function storageGet(key) {
     return new Promise(function (resolve) {
       if (window.db) {
-        window.db.collection("taiho_app_data").doc(key).get().then(function (doc) {
-          resolve(doc.exists ? { value: doc.data().value } : null);
-        }).catch(function () {
-          try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
-          catch (e) { resolve(null); }
-        });
+        var attempts = 0;
+        var tryFetch = function () {
+          window.db.collection("taiho_app_data").doc(key).get().then(function (doc) {
+            resolve(doc.exists ? { value: doc.data().value } : null);
+          }).catch(function () {
+            attempts++;
+            if (attempts < 3) {
+              // スマホの回線など、通信が不安定な場合に備えて少し待ってから再試行する
+              // (読み込みエラーを、うっかり「データが存在しない」と誤判定しないための対策)
+              setTimeout(tryFetch, attempts * 700);
+            } else {
+              try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
+              catch (e) { resolve(null); }
+            }
+          });
+        };
+        tryFetch();
       } else if (window.storage && typeof window.storage.get === "function") {
         window.storage.get(key, true).then(resolve).catch(function () { resolve(null); });
       } else {
