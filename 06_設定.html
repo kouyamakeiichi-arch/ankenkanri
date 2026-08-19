@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-08-18-4" />
+<meta name="app-build" content="2026-08-18-5" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>設定 | 太豊建設アプリ</title>
 <style>
@@ -242,14 +242,27 @@
 
   var BANNER_ID = "taihoAutoBackupBanner";
   var BANNER_DISMISS_KEY = "taiho_auto_backup_banner_dismissed_v1";
+  var LAST_BACKUP_AT_KEY = "taiho_last_backup_at_v1"; // 表示用(日時の文字列)
 
   function runBackup() {
     return collectAllData().then(function (data) {
       var ok = downloadBackup(data);
-      try { window.localStorage.setItem(LAST_BACKUP_KEY, todayStr()); } catch (e) {}
+      try {
+        window.localStorage.setItem(LAST_BACKUP_KEY, todayStr());
+        if (ok) window.localStorage.setItem(LAST_BACKUP_AT_KEY, new Date().toLocaleString("ja-JP"));
+      } catch (e) {}
       return ok;
     });
   }
+  window.__taihoGetLastBackupAt = function () {
+    try { return window.localStorage.getItem(LAST_BACKUP_AT_KEY); } catch (e) { return null; }
+  };
+  window.__taihoResetTodayBackupFlag = function () {
+    try {
+      window.localStorage.removeItem(LAST_BACKUP_KEY);
+      window.sessionStorage.removeItem(BANNER_DISMISS_KEY);
+    } catch (e) {}
+  };
   window.__taihoRunBackup = function (manual) {
     runBackup().then(function (ok) {
       if (manual) {
@@ -868,6 +881,8 @@
       '<button class="btn btn--ghost" id="btnTestAutoBackup">今すぐ動作を確認</button>' +
       '</div>' +
       '<div id="autoBackupTimeStatus" style="font-size:12px;color:var(--text-tertiary);margin-top:8px;"></div>' +
+      '<div id="lastBackupAtStatus" style="font-size:12px;color:var(--text-tertiary);margin-top:4px;"></div>' +
+      '<p style="font-size:11px;color:var(--text-tertiary);margin-top:10px;">※一度保存されると、その日はもう通知が出ません(1日1回まで)。今日すでに保存済みの状態で、もう一度通知の表示を試したい場合は<a href="#" id="btnResetAutoBackupFlag" style="color:var(--primary);">こちら</a>を押してください。</p>' +
       '</div>';
     document.getElementById("backupBtn").addEventListener("click", backupAll);
     document.getElementById("restoreBtn").addEventListener("click", function () { document.getElementById("restoreFileInput").click(); });
@@ -910,9 +925,12 @@
     var status = document.getElementById("autoBackupTimeStatus");
     var saveBtn = document.getElementById("btnSaveAutoBackupTime");
     var testBtn = document.getElementById("btnTestAutoBackup");
+    var lastAtEl = document.getElementById("lastBackupAtStatus");
+    var resetLink = document.getElementById("btnResetAutoBackupFlag");
     if (!input) return;
     input.value = (window.__taihoGetAutoBackupTime ? window.__taihoGetAutoBackupTime() : "17:00");
     if (status) status.textContent = "現在の設定: 毎日 " + input.value + " 以降にアプリを開くと自動保存されます。";
+    refreshLastBackupAtStatus();
     if (saveBtn) saveBtn.addEventListener("click", function () {
       var v = input.value;
       if (!v || !window.__taihoSetAutoBackupTime || !window.__taihoSetAutoBackupTime(v)) {
@@ -924,7 +942,19 @@
     });
     if (testBtn) testBtn.addEventListener("click", function () {
       if (window.__taihoTestAutoBackup) window.__taihoTestAutoBackup();
+      setTimeout(refreshLastBackupAtStatus, 800);
     });
+    if (resetLink) resetLink.addEventListener("click", function (e) {
+      e.preventDefault();
+      if (window.__taihoResetTodayBackupFlag) window.__taihoResetTodayBackupFlag();
+      showToast("本日の保存済み状態をリセットしました。もう一度お試しください。");
+      refreshLastBackupAtStatus();
+    });
+    function refreshLastBackupAtStatus() {
+      if (!lastAtEl) return;
+      var at = window.__taihoGetLastBackupAt ? window.__taihoGetLastBackupAt() : null;
+      lastAtEl.textContent = at ? ("前回のバックアップ保存: " + at) : "前回のバックアップ保存: まだありません";
+    }
   }
 
   function restoreFromFile(input) {

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-08-18-4" />
+<meta name="app-build" content="2026-08-18-5" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>案件管理 | 太豊建設アプリ</title>
 <style>
@@ -325,14 +325,27 @@
 
   var BANNER_ID = "taihoAutoBackupBanner";
   var BANNER_DISMISS_KEY = "taiho_auto_backup_banner_dismissed_v1";
+  var LAST_BACKUP_AT_KEY = "taiho_last_backup_at_v1"; // 表示用(日時の文字列)
 
   function runBackup() {
     return collectAllData().then(function (data) {
       var ok = downloadBackup(data);
-      try { window.localStorage.setItem(LAST_BACKUP_KEY, todayStr()); } catch (e) {}
+      try {
+        window.localStorage.setItem(LAST_BACKUP_KEY, todayStr());
+        if (ok) window.localStorage.setItem(LAST_BACKUP_AT_KEY, new Date().toLocaleString("ja-JP"));
+      } catch (e) {}
       return ok;
     });
   }
+  window.__taihoGetLastBackupAt = function () {
+    try { return window.localStorage.getItem(LAST_BACKUP_AT_KEY); } catch (e) { return null; }
+  };
+  window.__taihoResetTodayBackupFlag = function () {
+    try {
+      window.localStorage.removeItem(LAST_BACKUP_KEY);
+      window.sessionStorage.removeItem(BANNER_DISMISS_KEY);
+    } catch (e) {}
+  };
   window.__taihoRunBackup = function (manual) {
     runBackup().then(function (ok) {
       if (manual) {
