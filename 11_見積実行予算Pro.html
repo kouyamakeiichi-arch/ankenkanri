@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="app-build" content="2026-07-31-5">
+<meta name="app-build" content="2026-08-19-1">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Construction Estimate Pro</title>
 <style>
@@ -442,6 +442,12 @@ table.pq-table tr.total-row td.l{text-align:left}
     <div style="font-size:11px;color:var(--text3);margin:-6px 0 10px 138px;line-height:1.6">
       チェックすると、見積鏡・見積鏡Ⅱの「値引き」欄が非表示になり、御見積書・御見積書Ⅱの内訳にも値引き行が出なくなります（この物件だけの設定です）。
     </div>
+    <div class="f-sec">— 入力サポート表示設定（このパソコン・この端末だけの設定）—</div>
+    <div class="f-row"><label>登録確認</label><label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;cursor:pointer"><input type="checkbox" id="s-showPriceConfirm" style="width:16px;height:16px" onchange="setPref(PREF_SHOW_PRICE_CONFIRM,this.checked)"> 「単価表にまだ登録されていません」の確認を表示する</label></div>
+    <div class="f-row"><label>入力候補</label><label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;cursor:pointer"><input type="checkbox" id="s-showNameSuggest" style="width:16px;height:16px" onchange="setPref(PREF_SHOW_NAME_SUGGEST,this.checked);renderAll()"> 工事名称の入力時に、登録済みの名称を候補として表示する</label></div>
+    <div style="font-size:11px;color:var(--text3);margin:-6px 0 10px 138px;line-height:1.6">
+      ここだけは他の項目と違い、物件やクラウドには保存されず、今お使いのこのパソコン・ブラウザだけの設定になります。オフにすると、他のパソコンやスマホでは表示のオン/オフを別々に設定できます。
+    </div>
     <div class="modal-btns">
       <button class="btn" onclick="closeSettings()">キャンセル</button>
       <button class="btn pri" onclick="saveSettings()">保存して閉じる</button>
@@ -844,6 +850,16 @@ function curDiscount(){
 
 function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 
+// ===== 入力サポート表示設定(この端末だけの設定。localStorageに保存) =====
+var PREF_SHOW_PRICE_CONFIRM='cep9_pref_show_price_confirm'; // 「単価表にまだ登録されていません」の確認を出すか
+var PREF_SHOW_NAME_SUGGEST='cep9_pref_show_name_suggest';   // 工事名称の入力候補(予測)を出すか
+function getPref(key){
+  try{const v=localStorage.getItem(key);return v===null?true:(v==='1');}catch(e){return true;}
+}
+function setPref(key,val){
+  try{localStorage.setItem(key,val?'1':'0');}catch(e){}
+}
+
 function editAppTitle(){
   const el=document.getElementById('app-title');
   const cur=el.textContent;
@@ -1237,7 +1253,7 @@ function renderDetail(){
       </table></div>
       ${cat.items.length<MAX?`<button class="add-btn" onclick="addItem()">＋ 行を追加（残${MAX-cat.items.length}行）</button>`:''}
     </div>
-    <datalist id="price-dl">${priceItems.filter(p=>p.genre===cat.name).map(p=>`<option value="${String(p.name||'').replace(/"/g,'&quot;')}"></option>`).join('')}</datalist>`;
+    <datalist id="price-dl">${getPref(PREF_SHOW_NAME_SUGGEST)?priceItems.filter(p=>p.genre===cat.name).map(p=>`<option value="${String(p.name||'').replace(/"/g,'&quot;')}"></option>`).join(''):''}</datalist>`;
   // Tab/矢印キーでの移動中に(値確定による)再描画が挟まった場合、移動先セルへフォーカスを復元する
   if(pendingFocus){const pf=pendingFocus;pendingFocus=null;focusCell(pf.r,pf.c);}
 }
@@ -1537,6 +1553,7 @@ function maybeOfferRegisterPriceItem(idx){
   const it=cat.items[idx];
   if(!it||!it.name||!it.price||it.priceAsked)return;
   it.priceAsked=true;
+  if(!getPref(PREF_SHOW_PRICE_CONFIRM))return; // この端末で表示OFFにしている場合は確認を出さない
   const exists=priceItems.some(p=>p.genre===cat.name&&p.name===it.name);
   if(exists)return;
   if(confirm(`「${it.name}」は単価表（⑥設定）にまだ登録されていません。\n単位「${it.unit||'式'}」・単価「¥${fmt(it.price)}」で単価表に新規登録しますか？\n（登録すると次回から⑪プロの明細入力で候補として使えるようになります）`)){
@@ -1660,12 +1677,21 @@ function cellNav(e,r,c){
   }
   else return;
   e.preventDefault();
-  // 移動元セルの値が変わっていた場合、直後のchange/blurで表が再描画され
-  // せっかく移した focus が消えてしまうため、移動先を pendingFocus に控えておく。
-  // renderDetail() 側でこれを見て、再描画後にもう一度フォーカスし直す。
+  // 移動元セルの値が変わっていた場合、blur()で change が発火し、表が再描画される。
+  // 再描画後のフォーカス移動は renderDetail() 側の pendingFocus 処理に一本化する
+  // (以前はここで focusCell() も同時に呼んでいたため、再描画と競合して、まれに
+  //  移動先セルにフォーカスが当たらなくなることがあった。特に、値が変わりやすい
+  //  「数量」欄の直後にある「単位」欄で起きやすかった)。
   pendingFocus={r:nr,c:nc};
-  focusCell(nr,nc);
-  pendingFocus=null;
+  inp.blur();
+  // 値が変わらず change が発火しなかった場合(=再描画が起きない場合)に備えて、
+  // 再描画が無かった時だけ、少し遅らせて直接フォーカスする。
+  setTimeout(function(){
+    if(pendingFocus&&pendingFocus.r===nr&&pendingFocus.c===nc){
+      pendingFocus=null;
+      focusCell(nr,nc);
+    }
+  },0);
 }
 
 function gridCopy(){
@@ -1815,6 +1841,8 @@ function showSettings(){
     const el=document.getElementById('s-'+k);if(el)el.value=s[k]||'';
   });
   const noDiscEl=document.getElementById('s-noDiscount');if(noDiscEl)noDiscEl.checked=!!s.noDiscount;
+  const showPriceConfirmEl=document.getElementById('s-showPriceConfirm');if(showPriceConfirmEl)showPriceConfirmEl.checked=getPref(PREF_SHOW_PRICE_CONFIRM);
+  const showNameSuggestEl=document.getElementById('s-showNameSuggest');if(showNameSuggestEl)showNameSuggestEl.checked=getPref(PREF_SHOW_NAME_SUGGEST);
   document.getElementById('smodal').className='modal-ov on';
 }
 function closeSettings(){document.getElementById('smodal').className='modal-ov';}
