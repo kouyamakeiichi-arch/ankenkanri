@@ -524,7 +524,8 @@
     { id: "projectType",   label: "案件タイプ設定",     key: "taiho_settings_project_types_v1",  hasDone: false, hasHonorific: false },
     { id: "customerType",  label: "顧客タイプ設定",     key: "taiho_settings_customer_types_v1", hasDone: false, hasHonorific: true },
     { id: "buildingType",  label: "建物タイプ設定",     key: "taiho_settings_building_types_v1", hasDone: false, hasHonorific: false },
-    { id: "priceMajorCategory", label: "単価表 大項目設定", key: "taiho_settings_price_major_categories_v1", hasDone: false, hasHonorific: false }
+    { id: "priceMajorCategory", label: "単価表 大項目設定", key: "taiho_settings_price_major_categories_v1", hasDone: false, hasHonorific: false },
+    { id: "priceGenre", label: "単価表 ジャンル設定(建築用)", key: "taiho_settings_price_genres_v1", hasDone: false, hasHonorific: false }
   ];
   function typeCategoryOf(id) { for (var i=0;i<TYPE_SETTINGS_CATEGORIES.length;i++) if (TYPE_SETTINGS_CATEGORIES[i].id===id) return TYPE_SETTINGS_CATEGORIES[i]; return TYPE_SETTINGS_CATEGORIES[0]; }
 
@@ -579,50 +580,56 @@
       { id: "construction", label: "建築用",   color: "#059669" }
     ];
   }
+  // 単価表のジャンル一覧（建築用）の初期値。以後は「タイプ・大項目設定」タブから
+  // 名称の編集・削除・追加ができる（他のタイプ設定と同じ仕組み）。
+  function seedPriceGenreList() {
+    return [
+      { id: "pg-1",  label: "共通仮設工事",     color: "#64748B" },
+      { id: "pg-2",  label: "コンクリート工事", color: "#6C47FF" },
+      { id: "pg-3",  label: "木工事",           color: "#B08968" },
+      { id: "pg-4",  label: "断熱防水工事",     color: "#0284C7" },
+      { id: "pg-5",  label: "給排水設備工事",   color: "#0369A1" },
+      { id: "pg-6",  label: "冷暖房設備工事",   color: "#16A34A" },
+      { id: "pg-7",  label: "電気工事",         color: "#CA8A04" },
+      { id: "pg-8",  label: "外装工事",         color: "#EA580C" },
+      { id: "pg-9",  label: "建具工事",         color: "#2563EB" },
+      { id: "pg-10", label: "内装工事",         color: "#059669" },
+      { id: "pg-11", label: "雑工事",           color: "#6B7280" },
+      { id: "pg-12", label: "設計監理",         color: "#DC2626" },
+      { id: "pg-13", label: "運搬交通費",       color: "#4F46E5" },
+      { id: "pg-14", label: "法定福利費",       color: "#7C3AED" },
+      { id: "pg-15", label: "現場管理費",       color: "#DB2777" },
+      { id: "pg-16", label: "一般管理費",       color: "#78716C" }
+    ];
+  }
   function seedForCategory(catId) {
     if (catId === "projectStatus") return seedProjectStatusList();
     if (catId === "projectType") return seedProjectTypeList();
     if (catId === "customerType") return seedCustomerTypeList();
     if (catId === "priceMajorCategory") return seedPriceMajorCategoryList();
+    if (catId === "priceGenre") return seedPriceGenreList();
     return seedBuildingTypeList();
   }
   var UNITS_KEY = "taiho_units_v1";
 
-  // 単価表のジャンル一覧（⑪見積・実行予算Proの工種(工事タブ)と同じ名称・順序）
-  var PRICE_GENRES_DATA = [
-    { label: "仮設工事",       color: "#64748B" },
-    { label: "土工事",         color: "#8B5CF6" },
-    { label: "杭打工事",       color: "#7C3AED" },
-    { label: "コンクリート工事", color: "#6C47FF" },
-    { label: "木工事",         color: "#B08968" },
-    { label: "屋根・板金工事", color: "#D97706" },
-    { label: "外装工事",       color: "#EA580C" },
-    { label: "断熱防水工事",   color: "#0284C7" },
-    { label: "左官工事",       color: "#78716C" },
-    { label: "塗装工事",       color: "#DB2777" },
-    { label: "サッシ工事",     color: "#0891B2" },
-    { label: "建具工事",       color: "#2563EB" },
-    { label: "内装工事",       color: "#059669" },
-    { label: "設備機器工事",   color: "#0D9488" },
-    { label: "電気工事",       color: "#CA8A04" },
-    { label: "設備工事",       color: "#0369A1" },
-    { label: "雑工事",         color: "#6B7280" },
-    { label: "設計及び申請料", color: "#DC2626" },
-    { label: "運搬・諸経費",   color: "#4F46E5" }
-  ];
-  var PRICE_GENRES = PRICE_GENRES_DATA.map(function (g) { return g.label; });
+  // 単価表のジャンル一覧は「タイプ・大項目設定」→「単価表 ジャンル設定(建築用)」で
+  // 編集・削除・追加できる、他のタイプ設定と同じ仕組みのリストになった(state.typeSettings.priceGenre)。
+  function priceGenres() {
+    return (state.typeSettings["priceGenre"] || []).filter(function (g) { return !g.deletedAt; });
+  }
   function genreColorOf(label) {
-    var g = PRICE_GENRES_DATA.find(function (x) { return x.label === label; });
+    var g = priceGenres().find(function (x) { return x.label === label; });
     return g ? g.color : "#94A3B8";
   }
   function genreOptions(selected) {
-    return PRICE_GENRES.map(function (g) { return '<option value="' + esc(g) + '"' + (selected===g?" selected":"") + '>' + esc(g) + '</option>'; }).join("");
+    return priceGenres().map(function (g) { return '<option value="' + esc(g.label) + '"' + (selected===g.label?" selected":"") + '>' + esc(g.label) + '</option>'; }).join("");
   }
   function genreFieldHtml(majorId, currentGenre) {
     if (majorId === "construction") {
       return '<label>ジャンル <span class="req">*</span></label><select id="f_genre">' + genreOptions(currentGenre) + '</select>';
     }
-    return '<label>ジャンル(任意)</label><input type="text" id="f_genre" placeholder="例: 汚水処理・掘削" value="' + esc(currentGenre && PRICE_GENRES.indexOf(currentGenre) === -1 ? currentGenre : "") + '" />';
+    var knownLabels = priceGenres().map(function (g) { return g.label; });
+    return '<label>ジャンル(任意)</label><input type="text" id="f_genre" placeholder="例: 汚水処理・掘削" value="' + esc(currentGenre && knownLabels.indexOf(currentGenre) === -1 ? currentGenre : "") + '" />';
   }
 
   function esc(str) {
@@ -858,6 +865,10 @@
     { key: "taiho_units_v1",                      label: "⑥単位設定" },
     { key: "taiho_settings_project_status_v1",    label: "⑥案件ステータス設定" },
     { key: "taiho_settings_project_types_v1",     label: "⑥案件タイプ設定" },
+    { key: "taiho_settings_customer_types_v1",    label: "⑥顧客タイプ設定" },
+    { key: "taiho_settings_building_types_v1",    label: "⑥建物タイプ設定" },
+    { key: "taiho_settings_price_major_categories_v1", label: "⑥単価表 大項目設定" },
+    { key: "taiho_settings_price_genres_v1",      label: "⑥単価表 ジャンル設定(建築用)" },
     { key: "taiho_manager_capacity_v1",           label: "⑥担当者ごとの上限件数" },
     { key: "taiho_default_capacity_v1",           label: "⑥初期上限件数" },
     { key: "taiho_schedule_tasks_v1",             label: "⑦工程表の日別工事内容" },
@@ -1095,7 +1106,7 @@
     el.style.display = "flex";
     el.className = "status-chips";
     var allChip = '<button class="status-chip' + (state.activeGenre==="all" ? " is-active" : "") + '" style="--chip-color:#6C47FF' + (state.activeGenre==="all" ? ";color:" + contrastText("#6C47FF") : "") + '" data-genre="all">すべて</button>';
-    var genreChips = PRICE_GENRES_DATA.map(function (g) {
+    var genreChips = priceGenres().map(function (g) {
       var isOn = state.activeGenre===g.label;
       return '<button class="status-chip' + (isOn ? " is-active" : "") + '" style="--chip-color:' + esc(g.color) + (isOn ? ";color:" + contrastText(g.color) : "") + '" data-genre="' + esc(g.label) + '">' + esc(g.label) + '</button>';
     }).join("");
@@ -1460,7 +1471,7 @@
   }
 
   function openModal(isEdit, data) {
-    var defaultGenre = (state.activeGenre && state.activeGenre !== "all") ? state.activeGenre : PRICE_GENRES[0];
+    var defaultGenre = (state.activeGenre && state.activeGenre !== "all") ? state.activeGenre : (priceGenres()[0] ? priceGenres()[0].label : "");
     var defaultMajor = (state.activeMajorCategory && state.activeMajorCategory !== "all") ? state.activeMajorCategory : "construction";
     editModal = { isEdit: isEdit, data: data ? Object.assign({}, data) : { name: "", majorCategoryId: defaultMajor, genre: defaultGenre, spec: "", qty: 1, unit: state.units[0] || "式", sellPrice: "", costPrice: "", coef: "" } };
     renderModal();
