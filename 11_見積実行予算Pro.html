@@ -169,7 +169,8 @@ input:focus{outline:1px solid var(--accent);border-radius:2px;background:var(--m
 .pq-title{display:inline-block;font-size:20pt;font-weight:700;letter-spacing:.5em;border-bottom:3px double #000;padding:0 16px 5px}
 .pq-left{display:flex;flex-direction:column}
 .pq-co{text-align:left;font-size:9.5pt;line-height:1.4;margin-right:48px;position:relative}
-.pq-stamp-wrap{position:absolute;cursor:move;user-select:none}
+.pq-co-line{position:relative;z-index:2}
+.pq-stamp-wrap{position:absolute;z-index:1;cursor:move;user-select:none}
 .pq-stamp-wrap:hover{outline:1px dashed var(--accent);outline-offset:3px}
 .pq-stamp-img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;print-color-adjust:exact;-webkit-print-color-adjust:exact}
 .pq-stamp-handle{position:absolute;right:-7px;bottom:-7px;width:16px;height:16px;background:var(--accent);border:2px solid #fff;border-radius:50%;cursor:nwse-resize;box-shadow:0 1px 4px rgba(0,0,0,.35);opacity:0;transition:opacity .15s}
@@ -421,8 +422,28 @@ table.pq-table tr.total-row td.l{text-align:left}
     <div class="f-row"><label>TEL</label><input class="f-inp" id="s-tel"></div>
     <div class="f-row"><label>FAX</label><input class="f-inp" id="s-fax"></div>
     <div class="f-row"><label>インボイス番号</label><input class="f-inp" id="s-inv"></div>
+    <div class="f-sec">— 印影（角印）—</div>
+    <div class="f-row" style="align-items:flex-start">
+      <label>登録</label>
+      <div style="flex:1">
+        <div id="s-stamp-status" style="font-size:12px;color:var(--text3);margin-bottom:8px"></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <img id="s-stamp-preview" alt="印影プレビュー" style="width:50px;height:50px;object-fit:contain;border:1px solid var(--border2);border-radius:6px;background:#fff;display:none">
+          <button type="button" class="btn btn--ghost" onclick="document.getElementById('s-stamp-file').click()">画像を選択</button>
+          <input type="file" id="s-stamp-file" accept="image/*" style="display:none" onchange="onStampFileSelected(event)">
+          <button type="button" class="btn btn--ghost" id="s-stamp-clear" onclick="clearCompanyStamp()" style="display:none">登録解除</button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.6">白背景で撮影・スキャンした角印の画像(JPG/PNG)を選択すると、白い部分を自動的に透明化して登録します。登録した印影は全ての端末・見積書で共通して使われます。</div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
+          <span style="font-size:12px;color:var(--text2)">印影の色</span>
+          <input type="color" id="s-stamp-color" value="#b3121b" oninput="onStampColorChange(event)" style="width:44px;height:32px;padding:2px;border:1px solid var(--border2);border-radius:6px;cursor:pointer">
+          <button type="button" class="btn btn--ghost" id="s-stamp-color-reset" onclick="resetCompanyStampColor()" style="display:none">元の色に戻す</button>
+        </div>
+      </div>
+    </div>
     <div class="f-sec">— 見積書情報 —</div>
     <div class="f-row"><label>見積番号</label><input class="f-inp" id="s-no"></div>
+    <div class="f-row"><label>番号の表示</label><label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;cursor:pointer"><input type="checkbox" id="s-showNo" style="width:16px;height:16px"> 見積書に見積番号を表示する（他の方法で見積書を作る場合はチェックを外してください）</label></div>
     <div class="f-row"><label>見積担当者</label><input class="f-inp" id="s-estimator"></div>
     <div class="f-row"><label>発行日</label><input class="f-inp" id="s-date"></div>
     <div class="f-row"><label>有効期限</label><input class="f-inp" id="s-valid"></div>
@@ -532,12 +553,174 @@ function saveStampAsDefault(e){
 function stampHtml(){
   const s=curCfg()||{};
   if(!s.co1) return '';
+  if(!stampRenderSrc) return '';
   const b=getStampBox();
   return `<div class="pq-stamp-wrap" data-stamp="1" style="top:${b.top}px;right:${b.right}px;width:${b.w}px;height:${b.h}px" title="ドラッグで移動 / 右下の丸をドラッグでサイズ変更 / ダブルクリックで初期位置に戻す">`+
-    `<img class="pq-stamp-img" src="${COMPANY_STAMP_DATAURI}" alt="角印">`+
+    `<img class="pq-stamp-img" src="${stampRenderSrc}" alt="角印">`+
     `<button type="button" class="pq-stamp-pin no-print" onclick="saveStampAsDefault(event)" title="この位置・サイズを既定値にする">📌</button>`+
     `<div class="pq-stamp-handle no-print" title="ドラッグでサイズ変更"></div>`+
   `</div>`;
+}
+
+// ===== 印鑑登録（画像アップロード・色調整、全デバイス共通で同期） =====
+const COMPANY_STAMP_KEY='taiho_company_stamp_v1';
+let companyStamp={img:null,color:null}; // img: 白背景を透明化した登録画像(dataURI)。未登録ならnull(→既定の角印を使用)。color: 塗り替え色(hex)。nullなら元の色のまま。
+let stampRenderSrc=COMPANY_STAMP_DATAURI; // 実際に表示に使う画像(色調整を反映済み)。読み込み完了までは標準の印影を暫定表示する
+
+function loadCompanyStamp(){
+  return new Promise(function(resolve){
+    function seedIfEmpty(){
+      // まだ何も登録されていなければ、これまで使っていた実際の会社の角印(角印.xlsxから取り込み済みの画像)を
+      // 「登録済み」の状態として自動的に組み込む(初回のみ)
+      if(!companyStamp.img&&COMPANY_STAMP_DATAURI){
+        companyStamp.img=COMPANY_STAMP_DATAURI;
+        saveCompanyStamp();
+      }
+      resolve();
+    }
+    function fromLocal(){
+      try{
+        var raw=localStorage.getItem(COMPANY_STAMP_KEY);
+        companyStamp=raw?JSON.parse(raw):{img:null,color:null};
+      }catch(e){companyStamp={img:null,color:null};}
+      seedIfEmpty();
+    }
+    if(window.db){
+      window.db.collection('taiho_app_data').doc(COMPANY_STAMP_KEY).get().then(function(doc){
+        if(doc.exists){
+          try{companyStamp=JSON.parse(doc.data().value)||{img:null,color:null};}catch(e){companyStamp={img:null,color:null};}
+        }
+        seedIfEmpty();
+      }).catch(fromLocal);
+    }else{
+      fromLocal();
+    }
+  });
+}
+function saveCompanyStamp(){
+  var json=JSON.stringify(companyStamp);
+  try{localStorage.setItem(COMPANY_STAMP_KEY,json);}catch(e){}
+  fsSet(COMPANY_STAMP_KEY,json);
+}
+// 画像+色設定から、実際に表示するdataURIを作り直してキャッシュする
+function recomputeStampRenderSrc(){
+  return new Promise(function(resolve){
+    var baseImg=companyStamp.img||COMPANY_STAMP_DATAURI;
+    if(!baseImg){stampRenderSrc=null;resolve();return;}
+    if(!companyStamp.color){
+      stampRenderSrc=baseImg;
+      resolve();
+      return;
+    }
+    var img=new Image();
+    img.onload=function(){
+      try{
+        var cvs=document.createElement('canvas');
+        cvs.width=img.naturalWidth||1;cvs.height=img.naturalHeight||1;
+        var ctx=cvs.getContext('2d');
+        ctx.drawImage(img,0,0);
+        ctx.globalCompositeOperation='source-in';
+        ctx.fillStyle=companyStamp.color;
+        ctx.fillRect(0,0,cvs.width,cvs.height);
+        stampRenderSrc=cvs.toDataURL('image/png');
+      }catch(e){
+        stampRenderSrc=baseImg;
+      }
+      resolve();
+    };
+    img.onerror=function(){stampRenderSrc=baseImg;resolve();};
+    img.src=baseImg;
+  });
+}
+// 選択された画像ファイルを読み込み、白背景を自動的に透明化して登録用データURIを作る
+function processStampImageFile(file){
+  return new Promise(function(resolve,reject){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var img=new Image();
+      img.onload=function(){
+        try{
+          var maxDim=600;
+          var scale=Math.min(1,maxDim/Math.max(img.naturalWidth,img.naturalHeight));
+          var w=Math.max(1,Math.round(img.naturalWidth*scale));
+          var h=Math.max(1,Math.round(img.naturalHeight*scale));
+          var cvs=document.createElement('canvas');
+          cvs.width=w;cvs.height=h;
+          var ctx=cvs.getContext('2d');
+          ctx.drawImage(img,0,0,w,h);
+          var data=ctx.getImageData(0,0,w,h);
+          var d=data.data;
+          for(var i=0;i<d.length;i+=4){
+            var whiteness=(d[i]+d[i+1]+d[i+2])/3;
+            var inkAlpha=Math.max(0,Math.min(255,255-whiteness));
+            d[i+3]=Math.min(d[i+3],Math.round(inkAlpha*1.3));
+          }
+          ctx.putImageData(data,0,0);
+          resolve(cvs.toDataURL('image/png'));
+        }catch(err){reject(err);}
+      };
+      img.onerror=function(){reject(new Error('画像の読み込みに失敗しました'));};
+      img.src=e.target.result;
+    };
+    reader.onerror=function(){reject(new Error('ファイルの読み込みに失敗しました'));};
+    reader.readAsDataURL(file);
+  });
+}
+function onStampFileSelected(e){
+  var file=e.target.files&&e.target.files[0];
+  e.target.value='';
+  if(!file)return;
+  processStampImageFile(file).then(function(dataUri){
+    companyStamp.img=dataUri;
+    saveCompanyStamp();
+    return recomputeStampRenderSrc();
+  }).then(function(){
+    renderStampSettingsUI();
+    renderAll();
+  }).catch(function(err){
+    alert('印影画像の読み込みに失敗しました。\n'+(err&&err.message?err.message:''));
+  });
+}
+function clearCompanyStamp(){
+  if(!confirm('登録した印影画像を削除し、標準の印影に戻しますか？（色設定もリセットされます）'))return;
+  companyStamp={img:null,color:null};
+  saveCompanyStamp();
+  recomputeStampRenderSrc().then(function(){
+    renderStampSettingsUI();
+    renderAll();
+  });
+}
+function onStampColorChange(e){
+  companyStamp.color=e.target.value||null;
+  saveCompanyStamp();
+  recomputeStampRenderSrc().then(function(){
+    renderStampSettingsUI();
+    renderAll();
+  });
+}
+function resetCompanyStampColor(){
+  companyStamp.color=null;
+  saveCompanyStamp();
+  recomputeStampRenderSrc().then(function(){
+    renderStampSettingsUI();
+    renderAll();
+  });
+}
+// 設定モーダル内の「印影(角印)」欄の表示を、現在の登録状況にあわせて更新する
+function renderStampSettingsUI(){
+  var statusEl=document.getElementById('s-stamp-status');
+  var previewEl=document.getElementById('s-stamp-preview');
+  var clearBtn=document.getElementById('s-stamp-clear');
+  var colorEl=document.getElementById('s-stamp-color');
+  var colorResetBtn=document.getElementById('s-stamp-color-reset');
+  if(statusEl)statusEl.textContent=companyStamp.img?'登録済み（このアイコンが全ての見積書に使われます）':'未登録（標準の印影を使用中）';
+  if(previewEl){
+    if(stampRenderSrc){previewEl.src=stampRenderSrc;previewEl.style.display='inline-block';}
+    else previewEl.style.display='none';
+  }
+  if(clearBtn)clearBtn.style.display=companyStamp.img?'inline-flex':'none';
+  if(colorEl)colorEl.value=companyStamp.color||'#b3121b';
+  if(colorResetBtn)colorResetBtn.style.display=companyStamp.color?'inline-flex':'none';
 }
 
 const DEF_CATS=[
@@ -715,8 +898,8 @@ const DEF_CFG={
   zip:"〒059-1262",addr1:"苫小牧市美原町3丁目1番5号",addr2:"",
   tel:"(0144) 82-7648",fax:"(0144) 82-7649",inv:"T5-4300-0206-0556",
   no:"見積00001",date:"令和7年10月20日",valid:"2ヶ月",pay:"打ち合わせ",estimator:"",mainLabel:"建築工事",groupUpTo:12,
-  client:"有限会社 オオバ電設",proj:"オオバ電設事務所増築工事",
-  loc:"苫小牧市新開町4丁目4番3号",ovr:"事務所増築工事",period:"打ち合わせ",honorific:"御中",remarks:""
+  client:"有限会社太豊建設",proj:"太豊建設事務所新築工事",
+  loc:"苫小牧市美原町3丁目1番5号",ovr:"事務所新築工事",period:"打ち合わせ",honorific:"御中",remarks:""
 };
 
 // ===== Firebase 保存(クラウド同期) =====
@@ -936,7 +1119,7 @@ function loadAll(){
     if(projects.length===0){
       const id=genId();
       projects=[{
-        id,name:"オオバ電設事務所増築工事",
+        id,name:"太豊建設事務所新築工事",
         createdAt:new Date().toLocaleDateString('ja-JP'),
         cats:JSON.parse(JSON.stringify(DEF_CATS)),
         cfg:JSON.parse(JSON.stringify(DEF_CFG)),
@@ -1418,10 +1601,8 @@ function buildCoverHtml(){
   let coverRows='';
   if(mainCats.length){
     const mainTotal=mainCats.reduce((sum,cat)=>sum+cc(cat).dec,0);
-    const ids=mainCats.map(cat=>cat.id).sort((a,b)=>a-b);
-    let note=ids.length>1?`工種${ids[0]}〜${ids[ids.length-1]}`:`工種${ids[0]}`;
     const mainLabel=s.mainLabel||'建築工事';
-    coverRows+=`<tr><td class="l">${mainLabel}</td><td class="l"></td><td class="num">1</td><td class="c">式</td><td class="num"></td><td class="num">${mainTotal>0?fmt(mainTotal):''}</td><td class="l">${note}</td></tr>`;
+    coverRows+=`<tr><td class="l">${mainLabel}</td><td class="l"></td><td class="num">1</td><td class="c">式</td><td class="num"></td><td class="num">${mainTotal>0?fmt(mainTotal):''}</td><td class="l"></td></tr>`;
   }
   coverRows+=otherCats.map(cat=>{
     const t=cc(cat);
@@ -1440,17 +1621,17 @@ function buildCoverHtml(){
     <div class="pq-title-wrap"><span class="pq-title">御見積書</span></div>
     <div class="pq-top">
       <div class="pq-left">
-        <div>${s.date}<br>見積番号　第　${noText}　号</div>
+        <div>${s.date}${s.showNo===false?'':'<br>見積番号　第　'+noText+'　号'}</div>
         <div class="pq-client">${s.client}　${s.honorific||'御中'}</div>
       </div>
       <div class="pq-co">
-        ${s.co2?`<div style="font-size:9pt;color:#666">${s.co2}</div>`:''}
-        ${s.co1?`<div class="name">${s.co1}</div>`:''}
-        ${s.rep?`<div>${s.rep}</div>`:''}
-        <div>${s.zip} ${s.addr1}${s.addr2?' '+s.addr2:''}</div>
-        <div>TEL ${s.tel}　FAX ${s.fax}</div>
-        ${s.inv?`<div>インボイス登録番号　${s.inv}</div>`:''}
-        ${s.estimator?`<div class="estimator">見積担当者　${s.estimator}</div>`:''}
+        ${s.co2?`<div class="pq-co-line" style="font-size:9pt;color:#666">${s.co2}</div>`:''}
+        ${s.co1?`<div class="pq-co-line name">${s.co1}</div>`:''}
+        ${s.rep?`<div class="pq-co-line">${s.rep}</div>`:''}
+        <div class="pq-co-line">${s.zip} ${s.addr1}${s.addr2?' '+s.addr2:''}</div>
+        <div class="pq-co-line">TEL ${s.tel}　FAX ${s.fax}</div>
+        ${s.inv?`<div class="pq-co-line">インボイス登録番号　${s.inv}</div>`:''}
+        ${s.estimator?`<div class="pq-co-line estimator">見積担当者　${s.estimator}</div>`:''}
         ${stampHtml()}
       </div>
     </div>
@@ -1510,17 +1691,17 @@ function buildCoverHtml2(){
     <div class="pq-title-wrap"><span class="pq-title">御見積書</span></div>
     <div class="pq-top">
       <div class="pq-left">
-        <div>${s.date}<br>見積番号　第　${noText}　号</div>
+        <div>${s.date}${s.showNo===false?'':'<br>見積番号　第　'+noText+'　号'}</div>
         <div class="pq-client">${s.client}　${s.honorific||'御中'}</div>
       </div>
       <div class="pq-co">
-        ${s.co2?`<div style="font-size:9pt;color:#666">${s.co2}</div>`:''}
-        ${s.co1?`<div class="name">${s.co1}</div>`:''}
-        ${s.rep?`<div>${s.rep}</div>`:''}
-        <div>${s.zip} ${s.addr1}${s.addr2?' '+s.addr2:''}</div>
-        <div>TEL ${s.tel}　FAX ${s.fax}</div>
-        ${s.inv?`<div>インボイス登録番号　${s.inv}</div>`:''}
-        ${s.estimator?`<div class="estimator">見積担当者　${s.estimator}</div>`:''}
+        ${s.co2?`<div class="pq-co-line" style="font-size:9pt;color:#666">${s.co2}</div>`:''}
+        ${s.co1?`<div class="pq-co-line name">${s.co1}</div>`:''}
+        ${s.rep?`<div class="pq-co-line">${s.rep}</div>`:''}
+        <div class="pq-co-line">${s.zip} ${s.addr1}${s.addr2?' '+s.addr2:''}</div>
+        <div class="pq-co-line">TEL ${s.tel}　FAX ${s.fax}</div>
+        ${s.inv?`<div class="pq-co-line">インボイス登録番号　${s.inv}</div>`:''}
+        ${s.estimator?`<div class="pq-co-line estimator">見積担当者　${s.estimator}</div>`:''}
         ${stampHtml()}
       </div>
     </div>
@@ -1892,8 +2073,10 @@ function showSettings(){
     const el=document.getElementById('s-'+k);if(el)el.value=s[k]||'';
   });
   const noDiscEl=document.getElementById('s-noDiscount');if(noDiscEl)noDiscEl.checked=!!s.noDiscount;
+  const showNoEl=document.getElementById('s-showNo');if(showNoEl)showNoEl.checked=(s.showNo!==false);
   const showPriceConfirmEl=document.getElementById('s-showPriceConfirm');if(showPriceConfirmEl)showPriceConfirmEl.checked=getPref(PREF_SHOW_PRICE_CONFIRM);
   const showNameSuggestEl=document.getElementById('s-showNameSuggest');if(showNameSuggestEl)showNameSuggestEl.checked=getPref(PREF_SHOW_NAME_SUGGEST);
+  renderStampSettingsUI();
   document.getElementById('smodal').className='modal-ov on';
 }
 function closeSettings(){document.getElementById('smodal').className='modal-ov';}
@@ -1903,6 +2086,7 @@ function saveSettings(){
     const el=document.getElementById('s-'+k);if(el)p.cfg[k]=el.value;
   });
   const noDiscEl=document.getElementById('s-noDiscount');p.cfg.noDiscount=noDiscEl?noDiscEl.checked:false;
+  const showNoEl=document.getElementById('s-showNo');p.cfg.showNo=showNoEl?showNoEl.checked:true;
   document.getElementById('co-sub').textContent=p.cfg.co1||'';
   closeSettings();saveNow();renderAll();
 }
@@ -2359,6 +2543,8 @@ Promise.all([
 // ⑥単価表・単位設定のデータは起動をブロックしないよう並行して読み込み、
 // 完了したら（起動済みなら）候補リストを反映するため再描画する
 loadPriceItems().then(function(){ if(appBooted) renderAll(); }).catch(function(){});
+// 印鑑登録（画像・色）のデータも並行して読み込み、完了したら反映する
+loadCompanyStamp().then(recomputeStampRenderSrc).then(function(){ if(appBooted) renderAll(); }).catch(function(){});
 </script>
 </body>
 </html>
