@@ -678,7 +678,7 @@ const DEF_CATS=[
     {no:1,name:"ウォシュレット一体形便器ZJ1",kei:"手洗い無し",qty:1,unit:"台",price:75000,rate:1.25},
     {no:2,name:"洗面化粧台",kei:"パナソニックCラインW750",qty:1,unit:"台",price:105680,rate:1.25}
   ]},
-  {id:15,name:"電気工事",items:[{no:1,name:"別途予算取して下さい",kei:"",qty:0,unit:"",price:0,rate:1.0}]},
+  {id:15,name:"電気工事",items:[]},
   {id:16,name:"設備工事",items:[
     {no:1,name:"衛生設備工事",kei:"",qty:1,unit:"式",price:274430,rate:1.25},
     {no:2,name:"換気設備工事",kei:"",qty:1,unit:"式",price:162600,rate:1.25},
@@ -1420,14 +1420,12 @@ function buildCoverHtml(){
     const mainTotal=mainCats.reduce((sum,cat)=>sum+cc(cat).dec,0);
     const ids=mainCats.map(cat=>cat.id).sort((a,b)=>a-b);
     let note=ids.length>1?`工種${ids[0]}〜${ids[ids.length-1]}`:`工種${ids[0]}`;
-    if(mainCats.some(cat=>cat.id===15))note+='（電気工事は別途予算）';
     const mainLabel=s.mainLabel||'建築工事';
     coverRows+=`<tr><td class="l">${mainLabel}</td><td class="l"></td><td class="num">1</td><td class="c">式</td><td class="num"></td><td class="num">${mainTotal>0?fmt(mainTotal):''}</td><td class="l">${note}</td></tr>`;
   }
   coverRows+=otherCats.map(cat=>{
     const t=cc(cat);
-    const note=cat.id===15?'別途予算取して下さい':'';
-    return `<tr><td class="l">${cat.name}</td><td class="l"></td><td class="num">1</td><td class="c">式</td><td class="num"></td><td class="num">${t.dec>0?fmt(t.dec):''}</td><td class="l">${note}</td></tr>`;
+    return `<tr><td class="l">${cat.name}</td><td class="l"></td><td class="num">1</td><td class="c">式</td><td class="num"></td><td class="num">${t.dec>0?fmt(t.dec):''}</td><td class="l"></td></tr>`;
   }).join('');
 
   // 種別行(項目数)が少ないと表紙の見た目が寂しくなるため、種別ヘッダー行〜合計行までが常に13行になるよう空行で埋める
