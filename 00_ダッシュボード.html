@@ -570,6 +570,7 @@
 
   var MANAGER_CAPACITY_KEY = "taiho_manager_capacity_v1";
   var DEFAULT_CAPACITY_KEY = "taiho_default_capacity_v1";
+  var SETTINGS_STATUS_KEY = "taiho_settings_project_status_v1"; // ⑥設定「案件ステータス設定」と同じキー。01_案件管理と表示を一致させるため。
   var DEFAULT_CAPACITY = 5;
   var managerCapacity = {};
   var PRE_CONTRACT_STATUSES = ["inquiry", "survey", "estimating", "estimated"];
@@ -853,7 +854,8 @@
     storageGet("taiho_orders_v1"),
     storageGet(MANAGER_CAPACITY_KEY),
     storageGet(DEFAULT_CAPACITY_KEY),
-    storageGet("taiho_work_time_v1")
+    storageGet("taiho_work_time_v1"),
+    storageGet(SETTINGS_STATUS_KEY)
   ]).then(function (res) {
     var projects = parseArr(res[0]);
     var customers = parseArr(res[1]);
@@ -864,6 +866,16 @@
     try { var mc = res[6] && res[6].value ? JSON.parse(res[6].value) : null; managerCapacity = (mc && typeof mc === "object") ? mc : {}; } catch (e) { managerCapacity = {}; }
     try { var dc = res[7] && res[7].value ? parseInt(res[7].value, 10) : null; if (dc && dc > 0) DEFAULT_CAPACITY = dc; } catch (e) {}
     var workTime = parseArr(res[8]);
+
+    // ⑥設定で編集された案件ステータス(名称・色・並び順)があれば、01_案件管理と同じ内容に揃える
+    // (ゴミ箱に入っている項目は除外。編集されていなければ既定のSTATUS_LISTのまま)
+    try {
+      var sData = res[9] && res[9].value ? JSON.parse(res[9].value) : null;
+      if (Array.isArray(sData) && sData.length) {
+        STATUS_LIST.length = 0;
+        sData.filter(function (s) { return !s.deletedAt; }).forEach(function (s) { STATUS_LIST.push(s); });
+      }
+    } catch (e) {}
 
     var activeProjects = projects.filter(function (p) { return !statusOf(p.status).done; });
     document.getElementById("defaultCapacityInput").value = DEFAULT_CAPACITY;
