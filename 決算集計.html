@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>決算集計（社内検討用） | 太豊建設アプリ</title>
+<style>
+  :root {
+    --bg: #F6F5FB; --surface: #FFFFFF; --primary: #6C47FF; --primary-dark: #5636D9;
+    --primary-soft: #EFEAFF; --text: #1E1B2E; --text-secondary: #6B6580; --text-tertiary: #9C97AE;
+    --border: #E7E4F0; --danger: #F0525C; --success: #10B981; --warn: #F59E0B; --radius: 12px;
+    --shadow-sm: 0 1px 2px rgba(30,27,46,0.06); --shadow-md: 0 8px 24px rgba(30,27,46,0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Hiragino Sans','Yu Gothic','Noto Sans JP',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; }
+
+  .shell { max-width: 980px; margin: 0 auto; padding: 20px 20px 60px; }
+  .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .page-header__title { font-weight: 900; font-size: 20px; }
+  .badge-private { font-size: 10.5px; font-weight: 700; color: var(--danger); background: #FDEBEC; border: 1px solid #F6C7CA; padding: 2px 8px; border-radius: 999px; }
+  .page-sub { font-size: 12.5px; color: var(--text-tertiary); margin: 0 0 22px; }
+  .back-link { font-size: 12.5px; color: var(--text-secondary); text-decoration: none; }
+  .back-link:hover { color: var(--primary); }
+
+  .panel { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 18px 20px; margin-bottom: 16px; }
+  .panel h2 { font-size: 14px; margin: 0 0 14px; color: var(--text-secondary); }
+
+  .yr-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .yr-row label { font-size: 13px; font-weight: 700; }
+  .yr-row select, .yr-row input { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); }
+  .yr-range { font-size: 12.5px; color: var(--text-tertiary); margin-left: 4px; }
+  .basis-note { font-size: 11.5px; color: var(--text-tertiary); margin-top: 10px; line-height: 1.7; }
+
+  .stat-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .stat-item { background: var(--bg); border-radius: 10px; padding: 14px 18px; flex: 1; min-width: 140px; }
+  .stat-item .l { font-size: 11.5px; color: var(--text-tertiary); margin-bottom: 4px; }
+  .stat-item .v { font-family: 'Courier New', monospace; font-weight: 900; font-size: 20px; }
+  .stat-item .v.rate { font-size: 16px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 9px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+  th { font-size: 11.5px; color: var(--text-tertiary); font-weight: 700; }
+  td.num { text-align: right; font-family: 'Courier New', monospace; }
+  tr:last-child td { border-bottom: none; }
+  .table-wrap { overflow-x: auto; }
+  .empty-note { font-size: 13px; color: var(--text-tertiary); padding: 10px 2px; }
+  .warn-box { background: #FFF7E6; border: 1px solid #F5D68A; border-radius: 10px; padding: 12px 14px; font-size: 12.5px; color: #7A5B06; margin-top: 4px; }
+  .warn-box b { color: #7A5B06; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-weight: 700; font-size: 13px; cursor: pointer; }
+  .btn:hover { background: #F1EFFB; }
+  .btn--primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .btn--primary:hover { background: var(--primary-dark); }
+
+  .loading { font-size: 13px; color: var(--text-tertiary); padding: 20px 2px; }
+
+  @media print {
+    .no-print { display: none !important; }
+    body { background: #fff; }
+    .panel { box-shadow: none; border: 1px solid #ddd; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="page-header">
+    <span class="page-header__title">📊 決算集計</span>
+    <span class="badge-private">社内検討用・非公開</span>
+  </div>
+  <p class="page-sub"><a class="back-link" href="00_ダッシュボード.html">← ダッシュボードに戻る</a>　このページはメニューに表示されない社内検討用ツールです。第三者への共有は想定していません。</p>
+
+  <div class="panel no-print">
+    <h2>集計する年度</h2>
+    <div class="yr-row">
+      <label>令和</label>
+      <select id="fyYear"></select>
+      <span>年度</span>
+      <span class="yr-range" id="fyRangeLabel"></span>
+      <button class="btn" id="btnRecalc" style="margin-left:auto;">再集計</button>
+      <button class="btn" id="btnPrint">🖨 印刷</button>
+    </div>
+    <p class="basis-note">集計基準：状態が「精算完了」かつ「工事完了日」が上記年度（4/1〜翌3/31）に入っている案件を対象に、契約金額（売上）と発注合計（原価・実行金額）から粗利を計算します。工事完了日は各案件の編集画面で登録・修正できます。</p>
+  </div>
+
+  <div id="content">
+    <div class="loading">読み込み中...</div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyBVebyezaA9TxKBqfNjCZKhU44DtHqpG98",
+    authDomain: "ankenkanri-cfce2.firebaseapp.com",
+    projectId: "ankenkanri-cfce2",
+    storageBucket: "ankenkanri-cfce2.firebasestorage.app",
+    messagingSenderId: "1086701651367",
+    appId: "1:1086701651367:web:b59fe9f49a1e0335aba282"
+  };
+  try {
+    firebase.initializeApp(firebaseConfig);
+    window.db = firebase.firestore();
+  } catch (e) { window.db = null; }
+</script>
+
+<script>
+(function () {
+  "use strict";
+
+  function storageGet(key) {
+    return new Promise(function (resolve) {
+      if (window.db) {
+        var attempts = 0;
+        var tryFetch = function () {
+          window.db.collection("taiho_app_data").doc(key).get().then(function (doc) {
+            resolve(doc.exists ? { value: doc.data().value } : null);
+          }).catch(function () {
+            attempts++;
+            if (attempts < 3) { setTimeout(tryFetch, attempts * 700); }
+            else {
+              try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
+              catch (e) { resolve(null); }
+            }
+          });
+        };
+        tryFetch();
+      } else {
+        try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
+        catch (e) { resolve(null); }
+      }
+    });
+  }
+  function parseArr(res) {
+    try { var v = res && res.value ? JSON.parse(res.value) : null; return Array.isArray(v) ? v : []; }
+    catch (e) { return []; }
+  }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" })[c]; }); }
+  function fmtYen(v) { v = Number(v) || 0; return (v < 0 ? "-¥" : "¥") + Math.abs(v).toLocaleString("ja-JP"); }
+  function fmtPct(v) { return (isFinite(v) ? (v * 100).toFixed(1) : "0.0") + "%"; }
+
+  // 令和年 → 4/1始まり・翌3/31終わりの日付範囲(YYYY-MM-DD文字列、そのままcompletionDateと比較できる)
+  function fiscalRange(reiwaYear) {
+    var startY = reiwaYear + 2018;
+    var endY = startY + 1;
+    return {
+      start: startY + "-04-01",
+      end: endY + "-03-31",
+      label: startY + "年4月1日 〜 " + endY + "年3月31日"
+    };
+  }
+
+  var yearSel = document.getElementById("fyYear");
+  var thisYear = new Date().getFullYear();
+  var curReiwa = thisYear - 2018; // 現在の西暦年に対応する令和年(概算・4月未満の年初分の誤差は選択肢の幅で吸収)
+  for (var y = curReiwa + 1; y >= curReiwa - 5; y--) {
+    var opt = document.createElement("option");
+    opt.value = y; opt.textContent = y;
+    yearSel.appendChild(opt);
+  }
+  // 「今日がどの年度か」で初期選択(4月始まりなので、1〜3月なら1つ前の令和年が年度)
+  var now = new Date();
+  var defaultReiwa = (now.getMonth() + 1) >= 4 ? curReiwa : curReiwa - 1;
+  yearSel.value = defaultReiwa;
+
+  var projects = [], orders = [];
+
+  function orderTotalFor(pid) {
+    return orders.filter(function (o) { return o.projectId === pid && o.status !== "cancelled"; })
+      .reduce(function (s, o) { return s + (Number(o.orderAmount) || 0); }, 0);
+  }
+
+  function render() {
+    var reiwaYear = parseInt(yearSel.value, 10);
+    var range = fiscalRange(reiwaYear);
+    document.getElementById("fyRangeLabel").textContent = "(" + range.label + ")";
+
+    var settled = projects.filter(function (p) { return p.status === "settled"; });
+    var inRange = settled.filter(function (p) {
+      return p.completionDate && p.completionDate >= range.start && p.completionDate <= range.end;
+    });
+    var missingDate = settled.filter(function (p) { return !p.completionDate; });
+
+    var sumRevenue = 0, sumCost = 0;
+    var rows = inRange.slice().sort(function (a, b) { return (a.completionDate || "").localeCompare(b.completionDate || ""); })
+      .map(function (p) {
+        var revenue = Number(p.contractAmount) || 0;
+        var cost = orderTotalFor(p.id);
+        var profit = revenue - cost;
+        sumRevenue += revenue; sumCost += cost;
+        return '<tr>' +
+          '<td>' + esc(p.completionDate) + '</td>' +
+          '<td>' + esc(p.name) + '</td>' +
+          '<td>' + esc(p.customerName || "-") + '</td>' +
+          '<td>' + esc(p.manager || "-") + '</td>' +
+          '<td class="num">' + fmtYen(revenue) + '</td>' +
+          '<td class="num">' + fmtYen(cost) + '</td>' +
+          '<td class="num" style="color:' + (profit >= 0 ? "var(--success)" : "var(--danger)") + ';">' + fmtYen(profit) + '</td>' +
+        '</tr>';
+      }).join("");
+    var sumProfit = sumRevenue - sumCost;
+    var rate = sumRevenue > 0 ? (sumProfit / sumRevenue) : 0;
+
+    var missingHtml = "";
+    if (missingDate.length) {
+      missingHtml =
+        '<div class="warn-box">⚠ 状態が「精算完了」ですが工事完了日が未入力のため、集計から除外されている案件が ' + missingDate.length + ' 件あります： ' +
+        missingDate.map(function (p) { return esc(p.name); }).join("、") +
+        '。この年度に含めたい場合は、各案件の編集画面で工事完了日を入力してください。</div>';
+    }
+
+    document.getElementById("content").innerHTML =
+      '<div class="panel">' +
+        '<h2>令和' + reiwaYear + '年度（工事精算完了ベース）の集計結果</h2>' +
+        '<div class="stat-row">' +
+          '<div class="stat-item"><div class="l">対象案件数</div><div class="v">' + inRange.length + '<span style="font-size:13px;font-weight:700;">件</span></div></div>' +
+          '<div class="stat-item"><div class="l">売上合計</div><div class="v">' + fmtYen(sumRevenue) + '</div></div>' +
+          '<div class="stat-item"><div class="l">原価(実行)合計</div><div class="v">' + fmtYen(sumCost) + '</div></div>' +
+          '<div class="stat-item"><div class="l">粗利合計</div><div class="v" style="color:' + (sumProfit >= 0 ? "var(--success)" : "var(--danger)") + ';">' + fmtYen(sumProfit) + '</div></div>' +
+          '<div class="stat-item"><div class="l">粗利率</div><div class="v rate">' + fmtPct(rate) + '</div></div>' +
+        '</div>' +
+        missingHtml +
+      '</div>' +
+      '<div class="panel">' +
+        '<h2>対象案件の内訳（工事完了日順）</h2>' +
+        (rows
+          ? '<div class="table-wrap"><table><thead><tr><th>完了日</th><th>案件名</th><th>顧客</th><th>担当</th><th>売上</th><th>原価</th><th>粗利</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+          : '<p class="empty-note">この年度に該当する「精算完了」案件はまだありません。</p>') +
+      '</div>';
+  }
+
+  document.getElementById("btnRecalc").addEventListener("click", render);
+  document.getElementById("btnPrint").addEventListener("click", function () { window.print(); });
+
+  Promise.all([storageGet("taiho_projects_v2"), storageGet("taiho_orders_v1")]).then(function (res) {
+    projects = parseArr(res[0]);
+    orders = parseArr(res[1]);
+    render();
+  });
+})();
+</script>
+</body>
+</html>

@@ -1049,6 +1049,7 @@
     }
 
     var tableRows = "", cardItems = "";
+    var sumRevenue = 0, sumCost = 0, sumProfit = 0;
     filtered.forEach(function (p) {
       var t = typeOf(p.typeId);
       var na = nextActionSummary(p.id);
@@ -1060,6 +1061,7 @@
       var revenue = Number(p.contractAmount)||0;
       var cost = orderTotalFor(p.id);
       var profit = revenue - cost;
+      sumRevenue += revenue; sumCost += cost; sumProfit += profit;
       tableRows +=
         '<tr>' +
           '<td class="cell-no">' + esc(p.no) + '</td>' +
@@ -1088,13 +1090,21 @@
         '</div>';
     });
 
+    var summaryHtml =
+      '<div class="detail-summary-row" style="margin:14px 0 0;">' +
+        '<div class="detail-summary-item"><div class="l">表示中' + filtered.length + '件の売上合計</div><div class="v">' + fmtYen(sumRevenue) + '</div></div>' +
+        '<div class="detail-summary-item"><div class="l">原価(実行)合計</div><div class="v">' + fmtYen(sumCost) + '</div></div>' +
+        '<div class="detail-summary-item"><div class="l">粗利合計</div><div class="v" style="color:' + (sumProfit>=0?"var(--success)":"var(--danger)") + ';">' + fmtYen(sumProfit) + '</div></div>' +
+      '</div>';
+
     area.innerHTML =
       '<div class="table-wrap"><table class="projects-table">' +
       '<colgroup><col style="width:34px"><col style="width:118px"><col style="width:62px"><col style="width:80px"><col style="width:96px"><col style="width:68px"><col style="width:52px"><col style="width:70px"><col style="width:70px"><col style="width:70px"><col style="width:28px"></colgroup>' +
       '<thead><tr>' +
       '<th>No</th><th>案件名</th><th>タイプ</th><th>状況</th><th>ネクストアクション</th><th>顧客</th><th>担当</th><th>売上</th><th>原価(実行)</th><th>粗利</th><th></th>' +
       '</tr></thead><tbody>' + tableRows + '</tbody></table></div>' +
-      '<div class="card-list">' + cardItems + '</div>';
+      '<div class="card-list">' + cardItems + '</div>' +
+      summaryHtml;
 
     bindResultsEvents();
     updateTrashBadge();
