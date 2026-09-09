@@ -1116,6 +1116,14 @@
         FOLDERS.length = 0;
         ffData.forEach(function (f) { FOLDERS.push(f); });
       }
+      // ①案件管理の「③ファイル管理を開く」リンクなど、?project=ID付きで来た場合はその案件を最初から選択する
+      try {
+        var params = new URLSearchParams(window.location.search);
+        var pid = params.get("project");
+        if (pid && state.projects.some(function (p) { return p.id === pid; })) {
+          state.activeProjectId = pid;
+        }
+      } catch (e) {}
       state.loading = false;
       renderProjectSelect();
       renderFolderTabs();

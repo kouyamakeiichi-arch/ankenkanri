@@ -1790,7 +1790,7 @@
           '</div></div>';
       }).join("") + '</div>';
     }
-    html += '<p style="margin-top:16px;"><a class="link-jump" href="03_ファイル管理.html">③ファイル管理を開く ' + ICON_CHEV_R + '</a></p>';
+    html += '<p style="margin-top:16px;"><a class="link-jump" href="03_ファイル管理.html?project=' + encodeURIComponent(p.id) + '">③ファイル管理を開く ' + ICON_CHEV_R + '</a></p>';
     panel.innerHTML = html;
 
     panel.querySelectorAll("[data-ffilter]").forEach(function (btn) {
