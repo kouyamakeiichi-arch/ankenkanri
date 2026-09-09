@@ -488,6 +488,7 @@
   /* ---------------- 定数 ---------------- */
   var PROJECTS_KEY = "taiho_projects_v2"; // ①案件管理と共通のキー(読み取り専用で参照)
   var FILES_KEY = "taiho_files_v1";
+  var SETTINGS_FILE_FOLDER_KEY = "taiho_settings_file_folders_v1"; // ①案件管理(ファイルタブ)と共通のファイル種別設定
   var MAX_FILE_SIZE = 20 * 1024 * 1024;    // 1ファイルあたり上限 20MB(実ファイルはFirebase Storageに保存)
   var IMAGE_MAX_DIM = 1920;                // 写真は長辺1920pxにリサイズしてからアップロード
   var IMAGE_QUALITY = 0.8;                 // 写真はJPEG画質80%に圧縮
@@ -503,12 +504,19 @@
     return ACCEPT_EXT.indexOf(extOf(f.name)) !== -1;
   }
 
+  // 税務署の書類保管指摘を踏まえ、税務調査で確認される主要書類(見積書・注文書・請書・実行予算・工程表・検収書・売上請求書)を
+  // 標準の種別として用意。①案件管理・こちらどちらの歯車アイコンからも文言の変更・追加・削除ができ、内容は共通で同期される。
   var FOLDERS = [
-    { id: "shared",    label: "全業者共有", icon: "users" },
-    { id: "photos",    label: "写真",       icon: "image" },
-    { id: "estimate",  label: "見積書",     icon: "doc" },
-    { id: "invoice",   label: "請求書",     icon: "doc" },
-    { id: "materials", label: "資料",       icon: "folder" }
+    { id: "shared",     label: "全業者共有" },
+    { id: "photos",     label: "写真" },
+    { id: "estimate",   label: "見積書" },
+    { id: "order",      label: "注文書" },
+    { id: "uketsho",    label: "請書(注文請書)" },
+    { id: "budget",     label: "実行予算" },
+    { id: "schedule",   label: "工程表" },
+    { id: "inspection", label: "検収書" },
+    { id: "invoice",    label: "売上請求書" },
+    { id: "materials",  label: "資料" }
   ];
 
   function folderOf(id) { for (var i=0;i<FOLDERS.length;i++) if (FOLDERS[i].id===id) return FOLDERS[i]; return FOLDERS[0]; }
@@ -534,6 +542,8 @@
   /* ---------------- アイコン ---------------- */
   var ICON_X = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
   var ICON_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/><path d="M10 11v6M14 11v6"/></svg>';
+  var ICON_GEAR = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+  var ICON_PLUS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
   var ICON_CHECK = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>';
   var ICON_ALERT = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="confirm-box__icon"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>';
   var ICON_FOLDER40 = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>';
@@ -606,16 +616,114 @@
   /* ---------------- フォルダタブ ---------------- */
   function renderFolderTabs() {
     var el = document.getElementById("folderTabs");
+    if (!FOLDERS.some(function (f) { return f.id === state.activeFolder; })) state.activeFolder = FOLDERS.length ? FOLDERS[0].id : "";
     el.innerHTML = FOLDERS.map(function (f) {
       var count = filesInFolder(f.id).length;
       return '<button class="type-tab' + (state.activeFolder===f.id?" is-active":"") + '" data-folder="' + f.id + '">' + esc(f.label) + ' <span class="tab-count">' + count + '</span></button>';
-    }).join("");
+    }).join("") + '<button type="button" class="icon-btn" id="folderSettingsBtn" title="ファイル種別の設定" style="flex-shrink:0;">' + ICON_GEAR + '</button>';
     el.querySelectorAll(".type-tab").forEach(function (btn) {
       btn.addEventListener("click", function () {
         state.activeFolder = btn.getAttribute("data-folder");
         renderFolderTabs();
         renderResults();
       });
+    });
+    var gearBtn = document.getElementById("folderSettingsBtn");
+    if (gearBtn) gearBtn.addEventListener("click", function () {
+      openFolderSettingsModal(function () { renderFolderTabs(); renderResults(); });
+    });
+  }
+
+  /* ---------------- ファイル種別設定(①案件管理のファイルタブと共通) ---------------- */
+  function persistFileFoldersTransform(transformFn) {
+    return storageGet(SETTINGS_FILE_FOLDER_KEY).then(function (res) {
+      var fresh = null;
+      try { fresh = res && res.value ? JSON.parse(res.value) : null; } catch (e) { fresh = null; }
+      if (!Array.isArray(fresh) || !fresh.length) fresh = FOLDERS;
+      var next = transformFn(fresh);
+      return storageSet(SETTINGS_FILE_FOLDER_KEY, JSON.stringify(next)).then(function () { return next; });
+    }).catch(function () {
+      var next = transformFn(FOLDERS);
+      return storageSet(SETTINGS_FILE_FOLDER_KEY, JSON.stringify(next)).then(function () { return next; });
+    });
+  }
+
+  function openFolderSettingsModal(onSaved) {
+    var root = document.getElementById("modalRoot");
+    var rows = FOLDERS.map(function (f) { return { id: f.id, label: f.label }; });
+
+    // 追加・削除でDOMを再構築する前に、他の行に入力中の文字が消えないよう、
+    // 現在フォームに表示されている値をrows配列に反映してから操作する
+    function syncRowsFromDom() {
+      var body = document.getElementById("fsRows");
+      if (!body) return;
+      body.querySelectorAll(".fs-row").forEach(function (row) {
+        var id = row.getAttribute("data-fsid");
+        var input = row.querySelector(".fs-label-input");
+        var r = rows.find(function (x) { return x.id === id; });
+        if (r && input) r.label = input.value;
+      });
+    }
+
+    function renderRows() {
+      var body = document.getElementById("fsRows");
+      body.innerHTML = rows.map(function (r) {
+        return '<div class="fs-row" data-fsid="' + esc(r.id) + '" style="display:flex;gap:8px;align-items:center;">' +
+          '<input type="text" class="fs-label-input" value="' + esc(r.label) + '" style="flex:1;font-family:inherit;font-size:14px;padding:9px 11px;border:1px solid var(--border);border-radius:9px;outline:none;color:var(--text);background:var(--surface);" />' +
+          '<button type="button" class="icon-btn fs-del-btn" aria-label="削除">' + ICON_TRASH + '</button>' +
+        '</div>';
+      }).join("");
+      body.querySelectorAll(".fs-del-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var row = btn.closest(".fs-row");
+          var id = row.getAttribute("data-fsid");
+          syncRowsFromDom();
+          rows = rows.filter(function (r) { return r.id !== id; });
+          renderRows();
+        });
+      });
+    }
+
+    root.innerHTML =
+      '<div class="modal-overlay" id="fsOverlay"><div class="modal" role="dialog" aria-modal="true">' +
+      '<div class="modal__header"><h2>ファイル種別の設定</h2><button type="button" class="icon-btn" id="fsCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
+      '<div class="modal__body">' +
+      '<p style="margin:0;font-size:12px;color:var(--text-tertiary);">案件のファイルを分類する種別です。名前の変更・削除・追加ができます。ここでの変更は①案件管理のファイルタブなど、すべての案件に共通で反映されます。</p>' +
+      '<div id="fsRows" style="display:flex;flex-direction:column;gap:8px;"></div>' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="fsAddBtn" style="align-self:flex-start;">' + ICON_PLUS + ' 種別を追加</button>' +
+      '</div>' +
+      '<div class="modal__footer"><span></span>' +
+      '<div class="modal__footer-right"><button type="button" class="btn btn--ghost" id="fsCancelBtn">キャンセル</button><button type="button" class="btn btn--primary" id="fsSaveBtn">保存</button></div>' +
+      '</div></div></div>';
+    renderRows();
+
+    function close() { root.innerHTML = ""; }
+    document.getElementById("fsCloseBtn").addEventListener("click", close);
+    document.getElementById("fsCancelBtn").addEventListener("click", close);
+    document.getElementById("fsOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "fsOverlay") close(); });
+    document.getElementById("fsAddBtn").addEventListener("click", function () {
+      syncRowsFromDom();
+      rows.push({ id: "custom-" + Date.now() + "-" + Math.random().toString(36).slice(2,6), label: "" });
+      renderRows();
+      var inputs = document.querySelectorAll("#fsRows .fs-label-input");
+      if (inputs.length) inputs[inputs.length-1].focus();
+    });
+    document.getElementById("fsSaveBtn").addEventListener("click", function () {
+      var body = document.getElementById("fsRows");
+      var finalRows = [];
+      body.querySelectorAll(".fs-row").forEach(function (row) {
+        var id = row.getAttribute("data-fsid");
+        var label = row.querySelector(".fs-label-input").value.trim();
+        if (label) finalRows.push({ id: id, label: label });
+      });
+      if (!finalRows.length) { showToast("種別を1つ以上入力してください"); return; }
+      persistFileFoldersTransform(function () { return finalRows; }).then(function (saved) {
+        FOLDERS.length = 0;
+        saved.forEach(function (f) { FOLDERS.push(f); });
+        showToast("ファイル種別を保存しました");
+        close();
+        if (typeof onSaved === "function") onSaved();
+      }).catch(function () { showToast("保存に失敗しました"); });
     });
   }
 
@@ -995,13 +1103,19 @@
   function init() {
     renderFolderTabs();
     renderResults();
-    Promise.all([storageGet(PROJECTS_KEY), storageGet(FILES_KEY)]).then(function (res) {
-      var pRes = res[0], fRes = res[1];
-      var pData = null, fData = null;
+    Promise.all([storageGet(PROJECTS_KEY), storageGet(FILES_KEY), storageGet(SETTINGS_FILE_FOLDER_KEY)]).then(function (res) {
+      var pRes = res[0], fRes = res[1], ffRes = res[2];
+      var pData = null, fData = null, ffData = null;
       try { pData = pRes && pRes.value ? JSON.parse(pRes.value) : null; } catch (e) {}
       try { fData = fRes && fRes.value ? JSON.parse(fRes.value) : null; } catch (e) {}
+      try { ffData = ffRes && ffRes.value ? JSON.parse(ffRes.value) : null; } catch (e) {}
       state.projects = Array.isArray(pData) ? pData : [];
       state.files = Array.isArray(fData) ? fData : [];
+      // ファイル種別(歯車アイコンで編集)がすでに保存されていれば、標準の初期値の代わりにそちらを使う
+      if (Array.isArray(ffData) && ffData.length) {
+        FOLDERS.length = 0;
+        ffData.forEach(function (f) { FOLDERS.push(f); });
+      }
       state.loading = false;
       renderProjectSelect();
       renderFolderTabs();

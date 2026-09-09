@@ -52,6 +52,7 @@
   .type-tab { font-family: inherit; font-weight: 700; font-size: 13px; padding: 7px 13px; border-radius: 999px; border: 1.5px solid var(--tab-color, var(--border)); background: transparent; color: var(--tab-color, var(--text-secondary)); cursor: pointer; white-space: nowrap; transition: all .15s; }
   .type-tab:hover { background: #EDEAFA; }
   .type-tab.is-active { background: var(--tab-color, var(--text)); color: white; }
+  .type-tab .tab-count { font-family: 'Courier New', monospace; font-size: 10.5px; opacity: .75; margin-left: 3px; }
 
   .filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
   .status-chips { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
@@ -544,6 +545,7 @@
   var BUILDINGS_KEY = "taiho_buildings_v2";
   var SETTINGS_STATUS_KEY = "taiho_settings_project_status_v1";
   var SETTINGS_TYPE_KEY = "taiho_settings_project_types_v1";
+  var SETTINGS_FILE_FOLDER_KEY = "taiho_settings_file_folders_v1"; // ③ファイル管理と共通のファイル種別設定
   /* 案件詳細ハブで参照する他モジュールのキー(読み取り・一部書き込み) */
   var FILES_KEY = "taiho_files_v1";
   var SCHEDULE_TASKS_KEY = "taiho_schedule_tasks_v1";
@@ -685,12 +687,19 @@
     { id: "approved", label: "承認済み", color: "#10B981" },
     { id: "rejected", label: "却下",     color: "#F0525C" }
   ];
+  // 税務署の書類保管指摘を踏まえ、税務調査で確認される主要書類(見積書・注文書・請書・実行予算・工程表・検収書・売上請求書)を
+  // 標準の種別として用意。⑥ファイル種別設定(歯車アイコン)からいつでも文言の変更・追加・削除ができる。
   var FOLDERS = [
-    { id: "shared",    label: "全業者共有" },
-    { id: "photos",    label: "写真" },
-    { id: "estimate",  label: "見積書" },
-    { id: "invoice",   label: "請求書" },
-    { id: "materials", label: "資料" }
+    { id: "shared",     label: "全業者共有" },
+    { id: "photos",     label: "写真" },
+    { id: "estimate",   label: "見積書" },
+    { id: "order",      label: "注文書" },
+    { id: "uketsho",    label: "請書(注文請書)" },
+    { id: "budget",     label: "実行予算" },
+    { id: "schedule",   label: "工程表" },
+    { id: "inspection", label: "検収書" },
+    { id: "invoice",    label: "売上請求書" },
+    { id: "materials",  label: "資料" }
   ];
 
   function statusOf(id) { for (var i=0;i<STATUS_LIST.length;i++) if (STATUS_LIST[i].id===id) return STATUS_LIST[i]; return STATUS_LIST[0]; }
@@ -793,7 +802,7 @@
     viewMode: "list", // "list" | "trash"
     /* 案件詳細ハブ用 */
     files: [], scheduleTasks: [], contractors: [], orders: [], billings: [], worklogs: [], requests: [], workTime: [],
-    secondaryLoaded: false, detailProjectId: null, detailTab: "info"
+    secondaryLoaded: false, detailProjectId: null, detailTab: "info", detailFileFilter: "all"
   };
   var modalState = null;
   var confirmDeleteId = null;
@@ -810,6 +819,8 @@
   var ICON_CHEV = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="status-pill__chev"><path d="m6 9 6 6 6-6"/></svg>';
   var ICON_CHEV_R = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="m9 18 6-6-6-6"/></svg>';
   var ICON_UPLOAD = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12 4 4m-4-4-4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>';
+  var ICON_GEAR = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+  var ICON_PLUS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
 
   var toastTimer = null;
   function showToast(msg) {
@@ -1503,6 +1514,7 @@
   function openDetailView(projectId, tab) {
     state.detailProjectId = projectId;
     state.detailTab = tab || "info";
+    state.detailFileFilter = "all";
     var root = document.getElementById("detailRoot");
     root.innerHTML = '<div class="detail-page"><div class="detail-page__inner"><div class="loading-wrap"><span class="spinner"></span> 読み込み中...</div></div></div>';
     loadSecondaryData().then(function () { renderDetailView(); });
@@ -1739,10 +1751,23 @@
     return state.files.filter(function (f) { return f.projectId === state.detailProjectId; }).sort(function (a,b) { return b.uploadedAt - a.uploadedAt; });
   }
   function renderDetailFiles(panel, p) {
-    var list = projectFiles();
-    var folderOptions = FOLDERS.map(function (f) { return '<option value="' + f.id + '">' + esc(f.label) + '</option>'; }).join("");
+    var allFiles = projectFiles();
+    var activeFilter = state.detailFileFilter || "all";
+    if (activeFilter !== "all" && !FOLDERS.some(function (f) { return f.id === activeFilter; })) activeFilter = state.detailFileFilter = "all";
+    var list = activeFilter === "all" ? allFiles : allFiles.filter(function (f) { return f.folderId === activeFilter; });
+    var folderOptions = FOLDERS.map(function (f) { return '<option value="' + f.id + '"' + (activeFilter===f.id?" selected":"") + '>' + esc(f.label) + '</option>'; }).join("");
+    var filterTabsHtml =
+      '<div class="type-tabs" style="margin:2px 0 12px;">' +
+      '<button class="type-tab' + (activeFilter==="all"?" is-active":"") + '" data-ffilter="all">すべて <span class="tab-count">' + allFiles.length + '</span></button>' +
+      FOLDERS.map(function (f) {
+        var c = allFiles.filter(function (x) { return x.folderId === f.id; }).length;
+        return '<button class="type-tab' + (activeFilter===f.id?" is-active":"") + '" data-ffilter="' + f.id + '">' + esc(f.label) + ' <span class="tab-count">' + c + '</span></button>';
+      }).join("") +
+      '<button type="button" class="icon-btn" id="detailFolderSettingsBtn" title="ファイル種別の設定" style="flex-shrink:0;">' + ICON_GEAR + '</button>' +
+      '</div>';
     var html =
-      '<div class="detail-section-title">この案件のファイル(' + list.length + '件)</div>' +
+      '<div class="detail-section-title">この案件のファイル(' + allFiles.length + '件' + (activeFilter!=="all" ? "中 " + list.length + "件を表示" : "") + ')</div>' +
+      filterTabsHtml +
       '<div class="detail-upload-row">' +
         '<select id="detailFolderSelect">' + folderOptions + '</select>' +
         '<button class="btn btn--primary btn--sm" id="detailUploadBtn">' + ICON_UPLOAD + ' アップロード</button>' +
@@ -1750,7 +1775,7 @@
         '<span style="font-size:11px;color:var(--text-tertiary);">画像・PDF・図面(JWW/DXF)・Office資料、1ファイル上限20MB。写真は自動で圧縮されます。</span>' +
       '</div>';
     if (!list.length) {
-      html += '<div class="detail-empty">まだファイルがアップロードされていません</div>';
+      html += '<div class="detail-empty">' + (allFiles.length ? "この種別のファイルはありません" : "まだファイルがアップロードされていません") + '</div>';
     } else {
       html += '<div class="detail-file-grid">' + list.map(function (f) {
         var url = f.downloadURL || f.dataUrl;
@@ -1767,6 +1792,17 @@
     }
     html += '<p style="margin-top:16px;"><a class="link-jump" href="03_ファイル管理.html">③ファイル管理を開く ' + ICON_CHEV_R + '</a></p>';
     panel.innerHTML = html;
+
+    panel.querySelectorAll("[data-ffilter]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.detailFileFilter = btn.getAttribute("data-ffilter");
+        renderDetailFiles(panel, p);
+      });
+    });
+    var folderSettingsBtn = document.getElementById("detailFolderSettingsBtn");
+    if (folderSettingsBtn) folderSettingsBtn.addEventListener("click", function () {
+      openFolderSettingsModal(function () { renderDetailFiles(panel, p); });
+    });
 
     document.getElementById("detailUploadBtn").addEventListener("click", function () { document.getElementById("detailFileInput").click(); });
     document.getElementById("detailFileInput").addEventListener("change", function (e) {
@@ -1848,6 +1884,101 @@
           showToast("種別を「" + folderOf(newFolderId).label + "」に変更しました");
         });
       });
+    });
+  }
+
+  /* ---- ファイル種別設定(③ファイル管理と共通) ---- */
+  function persistFileFoldersTransform(transformFn) {
+    return storageGet(SETTINGS_FILE_FOLDER_KEY).then(function (res) {
+      var fresh = null;
+      try { fresh = res && res.value ? JSON.parse(res.value) : null; } catch (e) { fresh = null; }
+      if (!Array.isArray(fresh) || !fresh.length) fresh = FOLDERS;
+      var next = transformFn(fresh);
+      return storageSet(SETTINGS_FILE_FOLDER_KEY, JSON.stringify(next)).then(function () { return next; });
+    }).catch(function () {
+      var next = transformFn(FOLDERS);
+      return storageSet(SETTINGS_FILE_FOLDER_KEY, JSON.stringify(next)).then(function () { return next; });
+    });
+  }
+
+  function openFolderSettingsModal(onSaved) {
+    var root = document.getElementById("modalRoot") || (function () {
+      var d = document.createElement("div"); d.id = "modalRoot"; document.body.appendChild(d); return d;
+    })();
+    var rows = FOLDERS.map(function (f) { return { id: f.id, label: f.label }; });
+
+    // 追加・削除でDOMを再構築する前に、他の行に入力中の文字が消えないよう、
+    // 現在フォームに表示されている値をrows配列に反映してから操作する
+    function syncRowsFromDom() {
+      var body = document.getElementById("fsRows");
+      if (!body) return;
+      body.querySelectorAll(".fs-row").forEach(function (row) {
+        var id = row.getAttribute("data-fsid");
+        var input = row.querySelector(".fs-label-input");
+        var r = rows.find(function (x) { return x.id === id; });
+        if (r && input) r.label = input.value;
+      });
+    }
+
+    function renderRows() {
+      var body = document.getElementById("fsRows");
+      body.innerHTML = rows.map(function (r) {
+        return '<div class="fs-row" data-fsid="' + esc(r.id) + '" style="display:flex;gap:8px;align-items:center;">' +
+          '<input type="text" class="fs-label-input" value="' + esc(r.label) + '" style="flex:1;font-family:inherit;font-size:14px;padding:9px 11px;border:1px solid var(--border);border-radius:9px;outline:none;color:var(--text);background:var(--surface);" />' +
+          '<button type="button" class="icon-btn fs-del-btn" aria-label="削除">' + ICON_TRASH + '</button>' +
+        '</div>';
+      }).join("");
+      body.querySelectorAll(".fs-del-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var row = btn.closest(".fs-row");
+          var id = row.getAttribute("data-fsid");
+          syncRowsFromDom();
+          rows = rows.filter(function (r) { return r.id !== id; });
+          renderRows();
+        });
+      });
+    }
+
+    root.innerHTML =
+      '<div class="modal-overlay" id="fsOverlay"><div class="modal" role="dialog" aria-modal="true">' +
+      '<div class="modal__header"><h2>ファイル種別の設定</h2><button type="button" class="icon-btn" id="fsCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
+      '<div class="modal__body">' +
+      '<p style="margin:0;font-size:12px;color:var(--text-tertiary);">案件のファイルを分類する種別です。名前の変更・削除・追加ができます。ここでの変更は①ダッシュボード/③ファイル管理など、すべての案件に共通で反映されます。</p>' +
+      '<div id="fsRows" style="display:flex;flex-direction:column;gap:8px;"></div>' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="fsAddBtn" style="align-self:flex-start;">' + ICON_PLUS + ' 種別を追加</button>' +
+      '</div>' +
+      '<div class="modal__footer"><span></span>' +
+      '<div class="modal__footer-right"><button type="button" class="btn btn--ghost" id="fsCancelBtn">キャンセル</button><button type="button" class="btn btn--primary" id="fsSaveBtn">保存</button></div>' +
+      '</div></div></div>';
+    renderRows();
+
+    function close() { root.innerHTML = ""; }
+    document.getElementById("fsCloseBtn").addEventListener("click", close);
+    document.getElementById("fsCancelBtn").addEventListener("click", close);
+    document.getElementById("fsOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "fsOverlay") close(); });
+    document.getElementById("fsAddBtn").addEventListener("click", function () {
+      syncRowsFromDom();
+      rows.push({ id: "custom-" + Date.now() + "-" + Math.random().toString(36).slice(2,6), label: "" });
+      renderRows();
+      var inputs = document.querySelectorAll("#fsRows .fs-label-input");
+      if (inputs.length) inputs[inputs.length-1].focus();
+    });
+    document.getElementById("fsSaveBtn").addEventListener("click", function () {
+      var body = document.getElementById("fsRows");
+      var finalRows = [];
+      body.querySelectorAll(".fs-row").forEach(function (row) {
+        var id = row.getAttribute("data-fsid");
+        var label = row.querySelector(".fs-label-input").value.trim();
+        if (label) finalRows.push({ id: id, label: label });
+      });
+      if (!finalRows.length) { showToast("種別を1つ以上入力してください"); return; }
+      persistFileFoldersTransform(function () { return finalRows; }).then(function (saved) {
+        FOLDERS.length = 0;
+        saved.forEach(function (f) { FOLDERS.push(f); });
+        showToast("ファイル種別を保存しました");
+        close();
+        if (typeof onSaved === "function") onSaved();
+      }).catch(function () { showToast("保存に失敗しました"); });
     });
   }
 
@@ -2117,9 +2248,9 @@
     Promise.all([
       storageGet(STORAGE_KEY), storageGet(CUSTOMERS_KEY), storageGet(BUILDINGS_KEY),
       storageGet(SETTINGS_STATUS_KEY), storageGet(SETTINGS_TYPE_KEY), storageGet(NEXT_ACTIONS_KEY), storageGet("taiho_members_v1"),
-      storageGet(ORDERS_KEY)
+      storageGet(ORDERS_KEY), storageGet(SETTINGS_FILE_FOLDER_KEY)
     ]).then(function (res) {
-      var data = null, cData = null, bData = null, sData = null, tData = null, naData = null, mData = null, oData = null;
+      var data = null, cData = null, bData = null, sData = null, tData = null, naData = null, mData = null, oData = null, ffData = null;
       try { data = res[0] && res[0].value ? JSON.parse(res[0].value) : null; } catch (e) {}
       try { cData = res[1] && res[1].value ? JSON.parse(res[1].value) : null; } catch (e) {}
       try { bData = res[2] && res[2].value ? JSON.parse(res[2].value) : null; } catch (e) {}
@@ -2128,6 +2259,7 @@
       try { naData = res[5] && res[5].value ? JSON.parse(res[5].value) : null; } catch (e) {}
       try { mData = res[6] && res[6].value ? JSON.parse(res[6].value) : null; } catch (e) {}
       try { oData = res[7] && res[7].value ? JSON.parse(res[7].value) : null; } catch (e) {}
+      try { ffData = res[8] && res[8].value ? JSON.parse(res[8].value) : null; } catch (e) {}
       if (!state.secondaryLoaded) state.orders = Array.isArray(oData) ? oData : [];
 
       if (data && Array.isArray(data)) {
@@ -2152,6 +2284,11 @@
       if (Array.isArray(tData) && tData.length) {
         TYPE_LIST.length = 0;
         tData.filter(function (t) { return !t.deletedAt; }).forEach(function (t) { TYPE_LIST.push(t); });
+      }
+      // ファイル種別(歯車アイコンで編集)がすでに保存されていれば、標準の初期値の代わりにそちらを使う
+      if (Array.isArray(ffData) && ffData.length) {
+        FOLDERS.length = 0;
+        ffData.forEach(function (f) { FOLDERS.push(f); });
       }
 
       // ⑥メンバー管理の登録名 + 既存案件で使われている担当者名をあわせてプルダウンの選択肢にする
