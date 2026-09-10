@@ -475,11 +475,11 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 12h6M9 16h6M9 20h3"/></svg>
     見積・実行予算Pro
   </a>
-  <a class="sidebar__link" href="12_工事完了書ツール.html">
+  <a class="sidebar__link" href="12_工事完了書ツール.html" data-pref-key="sidebar_kanryosho">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
     工事完了書
   </a>
-  <a class="sidebar__link" href="13_注文書ツール.html">
+  <a class="sidebar__link" href="13_注文書ツール.html" data-pref-key="sidebar_orderform">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 12h6M9 16h4"/></svg>
     注文書
   </a>
@@ -1845,7 +1845,9 @@
             '<span id="infoDekidakaToggleIcon">' + (dkExpanded ? "▾" : "▸") + '</span> 出来高計算(事業年度をまたぐ案件向け)' +
           '</button>' +
           '<div id="infoDekidakaSection" style="display:' + (dkExpanded ? "block" : "none") + ';margin-top:10px;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--bg);"></div>' +
-        '</div>'
+        '</div>' +
+        '<p style="margin-top:16px;"><a class="link-jump" href="12_工事完了書ツール.html?project=' + encodeURIComponent(p.id) + '" target="_blank" rel="noopener">⑫工事完了書ツールを開く ' + ICON_CHEV_R + '</a></p>' +
+        '<p style="margin-top:8px;"><a class="link-jump" href="13_注文書ツール.html?project=' + encodeURIComponent(p.id) + '" target="_blank" rel="noopener">⑬注文書ツールを開く ' + ICON_CHEV_R + '</a></p>'
       : '') +
       '<p style="font-size:12.5px;color:var(--text-tertiary);margin:16px 0 0;">右上の「基本情報を編集」からタイプ・名前・日付・金額・工事内容・備考などを編集できます。</p>';
 

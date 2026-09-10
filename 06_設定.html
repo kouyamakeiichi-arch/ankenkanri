@@ -392,11 +392,11 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 12h6M9 16h6M9 20h3"/></svg>
     見積・実行予算Pro
   </a>
-  <a class="sidebar__link" href="12_工事完了書ツール.html">
+  <a class="sidebar__link" href="12_工事完了書ツール.html" data-pref-key="sidebar_kanryosho">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
     工事完了書
   </a>
-  <a class="sidebar__link" href="13_注文書ツール.html">
+  <a class="sidebar__link" href="13_注文書ツール.html" data-pref-key="sidebar_orderform">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 12h6M9 16h4"/></svg>
     注文書
   </a>
@@ -1351,10 +1351,9 @@
     try { prefs = JSON.parse(window.localStorage.getItem("taiho_ui_prefs_v1") || "{}"); } catch (e) { prefs = {}; }
     var items = [
       { key: "sidebar_worklog", label: "サイドバー: 日報・社内申請", group: "サイドバー" },
-      { key: "sidebar_estimate_exec", label: "サイドバー: 見積・実行予算", group: "サイドバー" },
-      { key: "sidebar_estimate_budget", label: "サイドバー: 見積・予算", group: "サイドバー" },
-      { key: "sidebar_quick_estimate", label: "サイドバー: 簡易見積書", group: "サイドバー" },
       { key: "sidebar_quote3", label: "サイドバー: 見積・実行予算Pro", group: "サイドバー" },
+      { key: "sidebar_kanryosho", label: "サイドバー: 工事完了書", group: "サイドバー" },
+      { key: "sidebar_orderform", label: "サイドバー: 注文書", group: "サイドバー" },
       { key: "dash_unpaid", label: "ホーム画面: 未入金額カード", group: "ホーム画面" },
       { key: "dash_profit", label: "ホーム画面: 粗利合計カード", group: "ホーム画面" },
       { key: "dash_payment", label: "ホーム画面: 支払い予定合計カード", group: "ホーム画面" },

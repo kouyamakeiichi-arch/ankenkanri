@@ -556,7 +556,7 @@ datalist{display:none}
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
     工事完了書
   </a>
-  <a class="sidebar__link" href="13_注文書ツール.html">
+  <a class="sidebar__link" href="13_注文書ツール.html" data-pref-key="sidebar_orderform">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 12h6M9 16h4"/></svg>
     注文書
   </a>
@@ -1627,6 +1627,17 @@ async function init(){
 
   renderPreview();
   setAutosaveTag('','待機中');
+
+  // ①案件管理の「⑫工事完了書ツールを開く」リンクから ?project=ID で来た場合、下書きの復元がなければ自動でその案件の内容を反映する
+  try {
+    var qp = new URLSearchParams(window.location.search);
+    var pid = qp.get('project');
+    var hadDraft = draft && (draft.siteName || (draft.destination && draft.destination.name));
+    if (pid && !hadDraft) {
+      _projectsCache = await loadProjectsForPicker();
+      if (_projectsCache.some(function (x) { return x.id === pid; })) applyProjectToForm(pid);
+    }
+  } catch (e) {}
 }
 init();
 
@@ -1648,6 +1659,16 @@ init();
   });
   document.getElementById("sidebarOverlay").addEventListener("click", function () { setSidebar(false); });
   setSidebar(window.innerWidth > 960);
+
+  /* ---------------- 表示/非表示設定(各PCでlocalStorage保存) ---------------- */
+  (function applyUiPrefs() {
+    var prefs = {};
+    try { prefs = JSON.parse(window.localStorage.getItem("taiho_ui_prefs_v1") || "{}"); } catch (e) { prefs = {}; }
+    document.querySelectorAll("[data-pref-key]").forEach(function (el) {
+      var key = el.getAttribute("data-pref-key");
+      if (prefs[key] === false) el.style.display = "none";
+    });
+  })();
 })();
 </script>
 </body>
