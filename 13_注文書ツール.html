@@ -1,0 +1,1879 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>注文書ツール | 太豊建設アプリ</title>
+<style>
+  /* ---- 太豊建設アプリ 共通サイドバー(ハンバーガーメニュー) ---- */
+  .hamburger-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; border: 1px solid #E7E4F0; background: #FFFFFF; color: #1E1B2E; cursor: pointer; flex-shrink: 0; }
+  .hamburger-btn:hover { background: #F1EFFB; }
+  .shell-wrap { transition: margin-left .2s ease; }
+  @media (min-width: 961px) { .shell-wrap.sidebar-open { margin-left: 232px; } }
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 232px; background: #FFFFFF;
+    border-right: 1px solid #E7E4F0; padding: 18px 12px; display: flex; flex-direction: column;
+    gap: 2px; overflow-y: auto; z-index: 150; transform: translateX(-100%); transition: transform .2s ease;
+  }
+  .sidebar.is-open { transform: translateX(0); box-shadow: 0 8px 24px rgba(30,27,46,0.12); }
+  .sidebar__brand { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 15px; color: #6C47FF; padding: 6px 10px 16px; text-decoration:none; }
+  .sidebar__section { font-size: 11px; font-weight: 700; color: #9C97AE; padding: 14px 12px 4px; }
+  .sidebar__link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13.5px; font-weight: 700; color: #6B6580; text-decoration: none; }
+  .sidebar__link:hover { background: #F1EFFB; color: #1E1B2E; }
+  .sidebar__link.is-active { background: #EFEAFF; color: #6C47FF; }
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); z-index: 140; display: none; }
+  .sidebar-overlay.is-open { display: block; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap">
+
+<style>
+
+/* ============ tokens ============ */
+:root{
+  --bg:#f3f1e9;
+  --surface:#ffffff;
+  --surface-2:#ebe6d6;
+  --surface-3:#e2dcc8;
+  --border:#d8d0b8;
+  --border-strong:#b9ae8c;
+  --text:#2a2820;
+  --text-2:#6f6a56;
+  --text-3:#9a9478;
+  --accent:#1e3a5f;
+  --accent-2:#14283f;
+  --accent-soft:#e2eaf3;
+  --accent-soft-border:#c3d3e5;
+  --seal:#b3272a;
+  --seal-soft:#f7e2e1;
+  --good:#3f7a4d;
+  --good-soft:#e4f1e5;
+  --danger:#9a3324;
+  --danger-soft:#f5e3df;
+  --shadow:0 8px 24px rgba(42,40,32,.10),0 2px 6px rgba(42,40,32,.08);
+  --radius:10px;
+  --font-ui:'Noto Sans JP',"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+  --font-doc:'Shippori Mincho',"Hiragino Mincho ProN","Yu Mincho",serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1b1a16;
+    --surface:#242219;
+    --surface-2:#2b2920;
+    --surface-3:#343124;
+    --border:#4a4634;
+    --border-strong:#635d43;
+    --text:#ece7d8;
+    --text-2:#b3ac93;
+    --text-3:#8a8468;
+    --accent:#7fa6d6;
+    --accent-2:#a9c5e8;
+    --accent-soft:#243144;
+    --accent-soft-border:#3a4d68;
+    --seal:#e07b73;
+    --seal-soft:#3c2624;
+    --good:#7fc08d;
+    --good-soft:#213a28;
+    --danger:#e2917f;
+    --danger-soft:#3c2a22;
+    --shadow:0 8px 28px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1b1a16;
+  --surface:#242219;
+  --surface-2:#2b2920;
+  --surface-3:#343124;
+  --border:#4a4634;
+  --border-strong:#635d43;
+  --text:#ece7d8;
+  --text-2:#b3ac93;
+  --text-3:#8a8468;
+  --accent:#7fa6d6;
+  --accent-2:#a9c5e8;
+  --accent-soft:#243144;
+  --accent-soft-border:#3a4d68;
+  --seal:#e07b73;
+  --seal-soft:#3c2624;
+  --good:#7fc08d;
+  --good-soft:#213a28;
+  --danger:#e2917f;
+  --danger-soft:#3c2a22;
+  --shadow:0 8px 28px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-ui);
+  font-size:14px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0;text-wrap:balance}
+button{font-family:inherit}
+input,select,textarea{font-family:inherit;color:inherit}
+::selection{background:var(--accent-soft)}
+
+/* ============ layout shell ============ */
+.app{max-width:1440px;margin:0 auto;padding:16px clamp(16px,3vw,28px) 48px}
+
+.topbar{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:14px 18px;margin-bottom:16px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);
+}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto;min-width:0}
+.brand-mark{
+  width:38px;height:38px;flex:none;border-radius:9px;
+  background:linear-gradient(155deg,var(--accent),var(--accent-2));
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-doc);font-weight:700;font-size:17px;letter-spacing:.02em;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);
+}
+.brand-text{min-width:0}
+.brand-text .t1{font-weight:700;font-size:15.5px;letter-spacing:.02em;white-space:nowrap}
+.brand-text .t2{font-size:11.5px;color:var(--text-2);white-space:nowrap}
+
+.btn{
+  appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--text);
+  border-radius:8px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+  transition:background .12s,border-color .12s,transform .05s;
+}
+.btn:hover{background:var(--surface-2)}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.pri:hover{background:var(--accent-2);border-color:var(--accent-2)}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--danger);border-color:var(--danger-soft)}
+.btn.danger:hover{background:var(--danger-soft)}
+.btn.sm{padding:6px 10px;font-size:12px;border-radius:7px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+
+.autosave-tag{font-size:11.5px;color:var(--text-3);display:flex;align-items:center;gap:5px;white-space:nowrap}
+.autosave-dot{width:6px;height:6px;border-radius:50%;background:var(--text-3)}
+.autosave-tag.saved .autosave-dot{background:var(--good)}
+.autosave-tag.busy .autosave-dot{background:var(--accent);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.workspace{display:grid;grid-template-columns:minmax(320px,440px) 1fr;gap:16px;align-items:start}
+@media (max-width:920px){.workspace{grid-template-columns:1fr}}
+
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);
+}
+.form-col{display:flex;flex-direction:column;gap:14px}
+.section{padding:16px 18px}
+.section+.section{border-top:1px solid var(--border)}
+.section-title{
+  font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.08em;
+  text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px;
+}
+.section-title::after{content:"";flex:1;height:1px;background:var(--border)}
+
+.field{margin-bottom:11px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:12px;color:var(--text-2);margin-bottom:4px;font-weight:600}
+.field input[type=text],.field input[type=date],.field input[type=number],.field textarea,.field select{
+  width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;
+  background:var(--surface);color:var(--text);font-size:13.5px;
+}
+.field input:focus,.field textarea:focus,.field select:focus{outline:2px solid var(--accent-soft-border);border-color:var(--accent)}
+.field textarea{resize:vertical;min-height:54px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.hint{font-size:11px;color:var(--text-3);margin-top:3px}
+
+/* items table (edit mode) */
+.items-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:8px}
+table.items-edit{width:100%;border-collapse:collapse;min-width:640px;font-size:12.8px}
+table.items-edit th{
+  background:var(--surface-2);color:var(--text-2);font-weight:700;font-size:11px;
+  padding:7px 6px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;
+}
+table.items-edit td{padding:5px 6px;border-bottom:1px solid var(--border)}
+table.items-edit tr:last-child td{border-bottom:none}
+table.items-edit input{width:100%;border:1px solid transparent;background:transparent;padding:6px 5px;border-radius:5px;font-size:12.8px;color:var(--text)}
+table.items-edit input:hover{border-color:var(--border)}
+table.items-edit input:focus{border-color:var(--accent);background:var(--surface);outline:none}
+table.items-edit input.num{text-align:right;font-variant-numeric:tabular-nums}
+table.items-edit td.amt{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;padding-right:9px;white-space:nowrap}
+table.items-edit td.del{width:30px;text-align:center}
+.icon-del{border:none;background:transparent;color:var(--text-3);cursor:pointer;font-size:15px;padding:3px 6px;border-radius:6px}
+.icon-del:hover{color:var(--danger);background:var(--danger-soft)}
+
+.items-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap}
+.tax-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-2)}
+.tax-row input[type=number]{width:56px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;text-align:right;font-variant-numeric:tabular-nums}
+.chk{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2);cursor:pointer;user-select:none}
+
+.totals{margin-top:12px;border-top:1px dashed var(--border);padding-top:10px;display:flex;flex-direction:column;gap:4px}
+.totals .tline{display:flex;justify-content:space-between;font-size:13px;color:var(--text-2)}
+.totals .tline b{font-variant-numeric:tabular-nums;color:var(--text)}
+.totals .tline.grand{font-size:16.5px;color:var(--accent);border-top:1px solid var(--border);padding-top:7px;margin-top:2px}
+.totals .tline.grand b{font-size:19px;font-family:var(--font-doc)}
+
+/* ============ preview column ============ */
+.preview-col{display:flex;flex-direction:column;gap:12px;position:sticky;top:16px}
+@media (max-width:920px){.preview-col{position:static}}
+.preview-toolbar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);
+}
+.tabs{display:flex;gap:4px;background:var(--surface-2);padding:3px;border-radius:8px}
+.tab{border:none;background:transparent;padding:7px 14px;border-radius:6px;font-size:13px;font-weight:700;color:var(--text-2);cursor:pointer}
+.tab.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.print-actions{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+
+.stage-outer{
+  background:var(--surface-3);border:1px solid var(--border);border-radius:var(--radius);
+  padding:22px 16px;overflow:auto;box-shadow:var(--shadow);
+  display:flex;justify-content:center;
+}
+.stage-inner{position:relative}
+
+/* ============ the printed document itself ============ */
+.doc-page{
+  width:297mm;background:#fdfcf8;color:#211f18;
+  font-family:var(--font-ui);line-height:1.38;position:relative;
+  border:1px solid #cfc6a6;border-radius:14px;
+  padding:8mm 13mm 8mm;
+  display:none;
+}
+.doc-page.active{display:block}
+.doc-inner{border:1.6px solid #211f18;border-radius:10px;padding:6mm 9mm 7mm}
+.doc-title{
+  text-align:center;font-family:var(--font-doc);font-weight:700;
+  font-size:27px;letter-spacing:.5em;padding-left:.5em;
+  border-bottom:1.6px solid #211f18;padding-bottom:8px;margin-bottom:10px;
+}
+.doc-headrow{display:flex;justify-content:space-between;gap:16px;margin-bottom:10px}
+.doc-lead{flex:1;font-size:13px}
+.doc-lead .to{font-family:var(--font-doc);font-size:16.5px;font-weight:600;border-bottom:1px solid #211f18;display:inline-block;padding-bottom:2px;margin-bottom:7px}
+.doc-lead p{margin:2.5px 0;color:#4a4534}
+.doc-side{width:80mm;font-size:11.8px}
+.doc-noDate{display:flex;justify-content:flex-end;gap:14px;margin-bottom:5px;color:#4a4534}
+.doc-party{
+  border:1.3px solid #211f18;border-radius:6px;padding:7px 10px 8px;position:relative;
+}
+.doc-party .role{font-size:10px;color:#6b6550;letter-spacing:.1em;margin-bottom:2px}
+.doc-party .pname{font-family:var(--font-doc);font-weight:700;font-size:14.8px;margin-bottom:3px}
+.doc-party p{margin:1.5px 0;font-size:11.2px;color:#3c3826}
+.seal-wrap{
+  position:absolute;right:6px;top:6px;width:19mm;height:19mm;pointer-events:none;
+}
+.seal-wrap img{width:100%;height:100%;object-fit:contain;opacity:.92;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+.seal-placeholder{
+  position:absolute;right:6px;top:6px;width:19mm;height:19mm;border:1.4px dashed #b3272a;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;color:#b3272a;font-size:9px;text-align:center;line-height:1.3;
+}
+body.stamp-edit [data-company-stamp]{
+  pointer-events:auto;cursor:grab;outline:2px dashed var(--accent);outline-offset:4px;border-radius:50%;touch-action:none;
+}
+body.stamp-edit [data-company-stamp]:active{cursor:grabbing;outline-color:var(--seal)}
+.stamp-edit-hint{
+  display:none;align-items:center;gap:8px;font-size:12.5px;color:var(--accent);background:var(--accent-soft);
+  border:1px solid var(--accent-soft-border);border-radius:8px;padding:8px 12px;margin-bottom:10px;
+}
+body.stamp-edit .stamp-edit-hint{display:flex}
+
+.doc-columns{display:grid;grid-template-columns:1fr 1.32fr;gap:0 9mm;align-items:start;margin-top:8px}
+.doc-col-left, .doc-col-right{min-width:0}
+
+.doc-meta{border:1.3px solid #211f18;border-radius:6px}
+.doc-meta .mrow{display:flex;border-bottom:1px solid #211f18}
+.doc-meta .mrow:last-child{border-bottom:none}
+.doc-meta .mlabel{
+  width:25mm;flex:none;background:#efe9d6;font-size:11.2px;font-weight:700;color:#4a4534;
+  padding:4.5px 7px;border-right:1px solid #211f18;display:flex;align-items:center;
+}
+.doc-meta .mval{flex:1;padding:4.5px 8px;font-size:12.3px;display:flex;align-items:center;min-height:13px}
+.doc-meta .amount{font-family:var(--font-doc);font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
+.doc-meta .amount::before{content:"¥ ";font-size:14.5px}
+
+.doc-clauses{margin-top:8px;border:1px solid #8b866c;border-radius:6px;padding:6px 11px}
+.doc-clauses .ctitle{font-size:10.7px;font-weight:700;color:#4a4534;margin-bottom:4px}
+.doc-clauses .ccols{display:grid;grid-template-columns:repeat(4,1fr);gap:0 11px;font-size:8.8px;line-height:1.38;color:#3c3826}
+.doc-clauses ol{margin:0;padding-left:1.1em}
+.doc-clauses li{margin-bottom:2.8px}
+
+table.doc-items{width:100%;border-collapse:collapse;font-size:11.4px}
+table.doc-items th{background:#efe9d6;border:1px solid #211f18;padding:5px 6px;font-size:10.7px;font-weight:700;color:#3c3826}
+table.doc-items td{border:1px solid #211f18;padding:4.5px 7px;height:18px}
+table.doc-items td.num{text-align:center}
+table.doc-items td.amt{text-align:right;font-variant-numeric:tabular-nums;padding-right:9px}
+table.doc-items tr.sumrow td{background:#f6f2e6;font-weight:700}
+table.doc-items tr.grand td{background:#efe9d6;font-weight:800;font-size:12.3px}
+table.doc-items tr.grand td.amt{font-family:var(--font-doc);font-size:14.5px}
+
+.doc-foot{margin-top:8px;font-size:9.9px;color:#6b6550;display:flex;justify-content:space-between;gap:12px}
+
+/* ============ modals ============ */
+.overlay{
+  position:fixed;inset:0;background:rgba(20,18,10,.42);display:none;
+  align-items:center;justify-content:center;padding:20px;z-index:60;backdrop-filter:blur(1px);
+}
+.overlay.open{display:flex}
+.modal{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);
+  width:100%;max-height:88vh;display:flex;flex-direction:column;
+}
+.modal.w-sm{max-width:440px}
+.modal.w-md{max-width:620px}
+.modal.w-lg{max-width:860px}
+.modal-head{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--border)}
+.modal-head h3{font-size:15.5px}
+.modal-head .btn{margin-left:auto}
+.modal-body{padding:18px;overflow:auto}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--border)}
+
+.list-search{margin-bottom:12px}
+table.order-list{width:100%;border-collapse:collapse;font-size:12.5px}
+table.order-list th{text-align:left;color:var(--text-2);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)}
+table.order-list td{padding:8px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
+table.order-list td.amt{text-align:right;font-variant-numeric:tabular-nums}
+table.order-list tr:hover td{background:var(--surface-2)}
+.empty-note{color:var(--text-3);text-align:center;padding:30px 10px;font-size:13px}
+
+.stamp-preview-box{
+  width:90px;height:90px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);
+  display:flex;align-items:center;justify-content:center;flex:none;overflow:hidden;
+}
+.stamp-preview-box img{width:100%;height:100%;object-fit:contain}
+.stamp-preview-box .ph{color:var(--text-3);font-size:11px;text-align:center;padding:6px}
+.stamp-controls{display:flex;gap:14px;flex-wrap:wrap}
+.slider-field{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--text-2);min-width:140px}
+.slider-field input[type=range]{width:100%}
+
+.toast{
+  position:fixed;bottom:20px;right:20px;background:var(--text);color:var(--bg);
+  padding:10px 16px;border-radius:9px;font-size:13px;box-shadow:var(--shadow);
+  opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none;z-index:80;
+}
+.toast.show{opacity:1;transform:translateY(0)}
+
+.contact-suggest{position:relative}
+datalist{display:none}
+
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:700}
+
+summary::-webkit-details-marker{display:none}
+summary{outline:none}
+.clause-row{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}
+.clause-row .cnum{flex:none;width:22px;padding-top:9px;font-size:12px;font-weight:700;color:var(--text-3);text-align:right}
+.clause-row textarea{flex:1;min-height:44px;padding:7px 9px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:12.5px;line-height:1.5;resize:vertical}
+.clause-row textarea:focus{outline:2px solid var(--accent-soft-border);border-color:var(--accent)}
+
+/* ============ print ============ */
+.no-print{}
+@media print{
+  @page{size:A4 landscape;margin:7mm}
+  html,body{background:#fff !important}
+  .no-print{display:none !important}
+  .app{padding:0;max-width:none}
+  .workspace{display:block}
+  .form-col{display:none !important}
+  .preview-col{position:static}
+  .stage-outer{background:none;border:none;box-shadow:none;padding:0;overflow:visible;display:block}
+  .stage-inner{transform:none !important;position:static}
+  .print-area{position:static;width:auto}
+  .doc-page{display:none;border:none;border-radius:0;width:283mm;min-height:0;margin:0 auto;box-shadow:none}
+  .doc-page.active{display:none}
+  .page-break{display:none}
+  .doc-inner{border-radius:0}
+  body[data-print="both"] .page-break{display:block;break-after:page;height:0}
+  body[data-print="order"] .doc-page.order{display:block}
+  body[data-print="accept"] .doc-page.accept{display:block}
+  body[data-print="both"] .doc-page.order{display:block}
+  body[data-print="both"] .doc-page.accept{display:block}
+  [data-company-stamp]{outline:none !important}
+}
+
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyBVebyezaA9TxKBqfNjCZKhU44DtHqpG98",
+    authDomain: "ankenkanri-cfce2.firebaseapp.com",
+    projectId: "ankenkanri-cfce2",
+    storageBucket: "ankenkanri-cfce2.firebasestorage.app",
+    messagingSenderId: "1086701651367",
+    appId: "1:1086701651367:web:b59fe9f49a1e0335aba282"
+  };
+  try {
+    firebase.initializeApp(firebaseConfig);
+    window.db = firebase.firestore();
+    window.fbStorage = firebase.storage();
+  } catch (e) { window.db = null; window.fbStorage = null; }
+</script>
+<script>
+(function () {
+  "use strict";
+  var BACKUP_COLLECTION = "taiho_app_data";
+  var LAST_BACKUP_KEY = "taiho_last_auto_backup_date_v1";
+  var AUTO_BACKUP_TIME_KEY = "taiho_auto_backup_time_v1"; // "HH:MM" 形式。この時刻以降、その日まだ自動バックアップしていなければ自動保存する
+  var DEFAULT_AUTO_BACKUP_TIME = "17:00";
+
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function todayStr(d) {
+    d = d || new Date();
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  }
+
+  function getAutoBackupTime() {
+    var raw = null;
+    try { raw = window.localStorage.getItem(AUTO_BACKUP_TIME_KEY); } catch (e) {}
+    if (raw && /^([01]?\d|2[0-3]):[0-5]\d$/.test(raw)) return raw;
+    return DEFAULT_AUTO_BACKUP_TIME;
+  }
+  function getAutoBackupMinutes() {
+    var t = getAutoBackupTime().split(":");
+    return parseInt(t[0], 10) * 60 + parseInt(t[1], 10);
+  }
+  window.__taihoGetAutoBackupTime = getAutoBackupTime;
+  window.__taihoSetAutoBackupTime = function (v) {
+    if (!/^([01]?\d|2[0-3]):[0-5]\d$/.test(v)) return false;
+    try { window.localStorage.setItem(AUTO_BACKUP_TIME_KEY, v); } catch (e) {}
+    return true;
+  };
+
+  function collectFromLocalStorage() {
+    var out = {};
+    try {
+      for (var i = 0; i < window.localStorage.length; i++) {
+        var k = window.localStorage.key(i);
+        if (k && k.indexOf("taiho_") === 0) out[k] = window.localStorage.getItem(k);
+      }
+    } catch (e) {}
+    return out;
+  }
+
+  function collectAllData() {
+    return new Promise(function (resolve) {
+      if (window.db) {
+        window.db.collection(BACKUP_COLLECTION).get().then(function (snap) {
+          var out = {};
+          snap.forEach(function (doc) {
+            var d = doc.data();
+            out[doc.id] = (d && Object.prototype.hasOwnProperty.call(d, "value")) ? d.value : d;
+          });
+          resolve(out);
+        }).catch(function () { resolve(collectFromLocalStorage()); });
+      } else {
+        resolve(collectFromLocalStorage());
+      }
+    });
+  }
+
+  function downloadBackup(data) {
+    try {
+      var payload = { app: "太豊建設アプリ", exportedAt: new Date().toISOString(), data: data };
+      var json = JSON.stringify(payload, null, 2);
+      var blob = new Blob([json], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "太豊建設アプリ_バックアップ_" + todayStr() + ".json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  var BANNER_ID = "taihoAutoBackupBanner";
+  var BANNER_DISMISS_KEY = "taiho_auto_backup_banner_dismissed_v1";
+  var LAST_BACKUP_AT_KEY = "taiho_last_backup_at_v1"; // 表示用(日時の文字列)
+
+  function runBackup() {
+    return collectAllData().then(function (data) {
+      var ok = downloadBackup(data);
+      try {
+        window.localStorage.setItem(LAST_BACKUP_KEY, todayStr());
+        if (ok) window.localStorage.setItem(LAST_BACKUP_AT_KEY, new Date().toLocaleString("ja-JP"));
+      } catch (e) {}
+      return ok;
+    });
+  }
+  window.__taihoGetLastBackupAt = function () {
+    try { return window.localStorage.getItem(LAST_BACKUP_AT_KEY); } catch (e) { return null; }
+  };
+  window.__taihoResetTodayBackupFlag = function () {
+    try {
+      window.localStorage.removeItem(LAST_BACKUP_KEY);
+      window.sessionStorage.removeItem(BANNER_DISMISS_KEY);
+    } catch (e) {}
+  };
+  window.__taihoRunBackup = function (manual) {
+    runBackup().then(function (ok) {
+      if (manual) {
+        if (ok) alert("バックアップを保存しました。ダウンロードフォルダをご確認ください。");
+        else alert("バックアップの保存に失敗しました。お手数ですが、もう一度お試しください。");
+      }
+    });
+  };
+
+  // ブラウザは、画面操作(クリックなど)を伴わずに勝手にファイルを保存することを
+  // セキュリティ上ブロックすることがあるため、時間になったら右下に通知を出し、
+  // ワンクリックで確実に保存できるようにする。
+  function showAutoBackupBanner() {
+    try {
+      if (document.getElementById(BANNER_ID)) return;
+      if (window.sessionStorage.getItem(BANNER_DISMISS_KEY) === todayStr()) return;
+    } catch (e) {}
+    if (!document.body) return;
+    var el = document.createElement("div");
+    el.id = BANNER_ID;
+    el.style.cssText = "position:fixed;right:16px;bottom:16px;z-index:99999;background:#1F2937;color:#fff;" +
+      "padding:14px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.28);font-size:13px;max-width:280px;" +
+      "line-height:1.6;font-family:inherit;";
+    el.innerHTML =
+      '<div style="font-weight:800;margin-bottom:6px;">⏰ 本日のバックアップの時間です</div>' +
+      '<div style="color:#D1D5DB;margin-bottom:10px;">クリックしてPCに保存してください。</div>' +
+      '<div style="display:flex;gap:8px;">' +
+      '<button type="button" id="taihoBackupBannerSave" style="flex:1;background:#7C6FF0;color:#fff;border:none;' +
+      'border-radius:8px;padding:8px 10px;font-weight:700;cursor:pointer;font-size:12.5px;">📥 今すぐ保存</button>' +
+      '<button type="button" id="taihoBackupBannerClose" style="background:transparent;color:#9CA3AF;border:none;' +
+      'cursor:pointer;font-size:16px;padding:0 6px;">×</button>' +
+      '</div>';
+    document.body.appendChild(el);
+    var saveBtn = document.getElementById("taihoBackupBannerSave");
+    var closeBtn = document.getElementById("taihoBackupBannerClose");
+    if (saveBtn) saveBtn.addEventListener("click", function () {
+      saveBtn.disabled = true;
+      saveBtn.textContent = "保存中...";
+      runBackup().then(function (ok) {
+        el.innerHTML = ok
+          ? '<div style="font-weight:800;">✅ バックアップを保存しました</div>'
+          : '<div style="font-weight:800;">⚠️ 保存に失敗しました</div>';
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 2200);
+      });
+    });
+    if (closeBtn) closeBtn.addEventListener("click", function () {
+      try { window.sessionStorage.setItem(BANNER_DISMISS_KEY, todayStr()); } catch (e) {}
+      if (el.parentNode) el.parentNode.removeChild(el);
+    });
+  }
+
+  function checkAutoBackup() {
+    try {
+      var now = new Date();
+      var last = window.localStorage.getItem(LAST_BACKUP_KEY);
+      if (last === todayStr(now)) return; // 今日はすでにバックアップ済み
+      var nowMin = now.getHours() * 60 + now.getMinutes();
+      if (nowMin < getAutoBackupMinutes()) return; // まだ設定した時刻になっていない
+      showAutoBackupBanner();
+    } catch (e) {}
+  }
+
+  function testAutoBackupNow() {
+    try {
+      var now = new Date();
+      var nowMin = now.getHours() * 60 + now.getMinutes();
+      var thr = getAutoBackupMinutes();
+      if (nowMin < thr) {
+        alert(
+          "現在時刻(" + pad2(now.getHours()) + ":" + pad2(now.getMinutes()) + ")は、" +
+          "設定した自動バックアップ時刻(" + getAutoBackupTime() + ")よりも前のため、まだ実行されません。\n" +
+          "動作を今すぐ確認したい場合は、設定時刻を現在より前の時刻(例:今より1分前)に変更してから、もう一度お試しください。"
+        );
+        return;
+      }
+      try { window.sessionStorage.removeItem(BANNER_DISMISS_KEY); } catch (e) {}
+      showAutoBackupBanner();
+    } catch (e) {}
+  }
+  window.__taihoTestAutoBackup = testAutoBackupNow;
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var btn = document.getElementById("btnSidebarBackup");
+    if (btn) btn.addEventListener("click", function (e) { e.preventDefault(); window.__taihoRunBackup(true); });
+    setTimeout(checkAutoBackup, 1500);
+  });
+})();
+</script>
+
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <a class="sidebar__brand" href="00_ダッシュボード.html">太豊建設アプリ</a>
+  <a class="sidebar__link" href="00_ダッシュボード.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    ホーム
+  </a>
+  <a class="sidebar__link" href="01_案件管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    案件
+  </a>
+  <a class="sidebar__link" href="02_顧客建物管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    顧客・建物
+  </a>
+  <a class="sidebar__link" href="03_ファイル管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    ファイル
+  </a>
+  <a class="sidebar__link" href="04_日報社内申請.html" data-pref-key="sidebar_worklog">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    日報・社内申請
+  </a>
+  <a class="sidebar__link" href="05_金銭管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9 9a3 3 0 0 1 3-1c1.5 0 3 .8 3 2.2S13.5 12 12 12s-3 .8-3 2.2S10.5 16 12 16a3 3 0 0 0 3-1"/></svg>
+    金銭管理
+  </a>
+  <a class="sidebar__link" href="06_設定.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    設定
+  </a>
+  <a class="sidebar__link" href="07_工程表カレンダー.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    工程表
+  </a>  <a class="sidebar__link" href="11_見積実行予算Pro.html" data-pref-key="sidebar_quote3">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 12h6M9 16h6M9 20h3"/></svg>
+    見積・実行予算Pro
+  </a>
+  <a class="sidebar__link" href="12_工事完了書ツール.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+    工事完了書
+  </a>
+  <a class="sidebar__link is-active" href="13_注文書ツール.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 12h6M9 16h4"/></svg>
+    注文書
+  </a>
+  <div class="sidebar__section">サポート</div>
+  <a class="sidebar__link" href="99_ヘルプ.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
+    ヘルプ
+  </a>
+  <button type="button" class="sidebar__link" id="btnSidebarBackup" style="width:100%;background:none;border:none;text-align:left;cursor:pointer;font:inherit;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    バックアップ保存
+  </button>
+</nav>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="shell-wrap" id="shellWrap">
+
+<div class="app">
+
+  <div class="topbar no-print">
+    <button class="hamburger-btn no-print" id="hamburgerBtn" aria-label="メニュー"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    <div class="brand">
+      <div class="brand-mark">注</div>
+      <div class="brand-text">
+        <div class="t1">太豊建設 注文書ツール</div>
+        <div class="t2">注文書・注文請書 &nbsp;入力 / 保存 / 印刷</div>
+      </div>
+    </div>
+    <span class="autosave-tag" id="autosaveTag"><span class="autosave-dot"></span><span id="autosaveText">待機中</span></span>
+    <button class="btn" id="btnNew">＋ 新規作成</button>
+    <button class="btn" id="btnList">🗂 保存済み一覧</button>
+    <button class="btn" id="btnSettings">⚙ 会社・印鑑設定</button>
+    <button class="btn pri" id="btnSave">💾 保存</button>
+  </div>
+
+  <div class="workspace">
+
+    <!-- ===================== FORM ===================== -->
+    <div class="card form-col">
+
+      <div class="section">
+        <div class="section-title">基本情報</div>
+        <div class="field" style="margin-bottom:14px;">
+          <button type="button" class="btn sm" id="btnPickProject">📋 ①案件管理の案件から選んで自動入力</button>
+          <div class="hint">現場名・工期などを、①案件管理に登録済みの案件から自動で入力できます</div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="f-no">注文番号(No.)</label><input type="text" id="f-no" placeholder="例：1"></div>
+          <div class="field"><label for="f-date">発注日</label><input type="date" id="f-date"></div>
+        </div>
+        <div class="field"><label for="f-site">現場名</label><input type="text" id="f-site" placeholder="例：勇払公民館避難階段設置工事"></div>
+        <div class="field"><label for="f-work">工事名</label><input type="text" id="f-work" placeholder="（現場名と同じ場合は空欄可）"></div>
+        <div class="field"><label for="f-loc">施工場所</label><input type="text" id="f-loc" placeholder="例：苫小牧市字勇払33番地"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">請負者（発注先）</div>
+        <div class="field">
+          <label for="f-c-name">会社名・屋号</label>
+          <input type="text" id="f-c-name" list="contactList" placeholder="例：ミウラ鉄筋">
+          <datalist id="contactList"></datalist>
+          <div class="hint">過去に入力した取引先は候補に表示されます（選択すると住所等を自動入力）</div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="f-c-zip">郵便番号</label><input type="text" id="f-c-zip" placeholder="例：059-1262"></div>
+          <div class="field"><label for="f-c-rep">代表者名</label><input type="text" id="f-c-rep" placeholder="例：三浦　高裕"></div>
+        </div>
+        <div class="field"><label for="f-c-addr">住所</label><input type="text" id="f-c-addr" placeholder="例：苫小牧市木場町2丁目13-16"></div>
+        <div class="row2">
+          <div class="field"><label for="f-c-tel">TEL</label><input type="text" id="f-c-tel"></div>
+          <div class="field"><label for="f-c-fax">FAX</label><input type="text" id="f-c-fax"></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">工事明細</div>
+        <div class="items-table-wrap">
+          <table class="items-edit">
+            <thead><tr>
+              <th style="width:24px">#</th><th>名称</th><th>仕様</th><th style="width:52px">呼称</th>
+              <th style="width:56px">数量</th><th style="width:80px">単価</th><th style="width:92px">金額</th><th>備考</th><th></th>
+            </tr></thead>
+            <tbody id="itemsBody"></tbody>
+          </table>
+        </div>
+        <div class="items-toolbar">
+          <button class="btn sm" id="btnAddItem">＋ 行を追加</button>
+          <label class="tax-row">
+            消費税率 <input type="number" id="f-taxrate" min="0" max="100" step="1"> %
+            <label class="chk"><input type="checkbox" id="f-taxauto"> 自動計算</label>
+          </label>
+        </div>
+        <div class="totals">
+          <div class="tline" id="rowSubtotal" style="display:none"><span>小計</span><b id="tSubtotal">¥0</b></div>
+          <div class="tline"><span>消費税</span><b id="tTax">¥0</b></div>
+          <div class="tline grand"><span>合計金額</span><b id="tTotal">¥0</b></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">取引条件</div>
+        <div class="field"><label for="f-payment">支払条件</label><input type="text" id="f-payment"></div>
+        <div class="row3">
+          <div class="field"><label for="f-p-from">工期（自）</label><input type="date" id="f-p-from"></div>
+          <div class="field"><label for="f-p-to">工期（至）</label><input type="date" id="f-p-to"></div>
+          <div class="field"><label for="f-delivery">引渡</label><input type="text" id="f-delivery" placeholder="例：完成後速やかに"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="f-warranty">瑕疵担保（注文条項6）</label><input type="number" id="f-warranty" min="0" placeholder="例：1"><div class="hint">注文条項6の文言を「◯ヶ年」で自動生成する際に使われます</div></div>
+          <div class="field"><label for="f-overview">工事概要</label><textarea id="f-overview" style="min-height:38px"></textarea></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <details id="clausesDetails">
+          <summary class="section-title" style="cursor:pointer;list-style:none">〔注文条項〕を編集する ▾</summary>
+          <div class="hint" style="margin:-4px 0 10px">通常は変更不要です。特殊な条件の案件のときだけ、念のため文言を直接編集できます。</div>
+          <div id="clausesBody"></div>
+          <button class="btn sm" id="btnClausesReset" style="margin-top:8px">既定の文言に戻す</button>
+        </details>
+      </div>
+
+    </div>
+
+    <!-- ===================== PREVIEW ===================== -->
+    <div class="preview-col">
+      <div class="preview-toolbar no-print">
+        <div class="tabs">
+          <button class="tab active" data-tab="order">注文書</button>
+          <button class="tab" data-tab="accept">注文請書</button>
+        </div>
+        <button class="btn" id="btnStampEdit">📍 印影の位置を調整</button>
+        <div class="print-actions">
+          <button class="btn" id="btnPrintCurrent">🖨 表示中を印刷</button>
+          <button class="btn pri" id="btnPrintBoth">🖨 両方を印刷</button>
+        </div>
+      </div>
+      <div class="stamp-edit-hint no-print" id="stampEditHint">
+        📍 印影をドラッグして位置を調整できます（注文書タブのみ）。終わったらもう一度ボタンを押してください。
+        <button class="btn sm ghost" id="btnStampPosReset" style="margin-left:auto">既定位置に戻す</button>
+      </div>
+      <div class="stage-outer">
+        <div class="stage-inner" id="stageInner">
+          <div class="print-area" id="printArea">
+            <div class="doc-page order active" id="docOrder"></div>
+            <div class="page-break" id="pageBreak"></div>
+            <div class="doc-page accept" id="docAccept"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== MODAL: LIST ===================== -->
+<div class="overlay no-print" id="ovList">
+  <div class="modal w-lg">
+    <div class="modal-head"><h3>🗂 保存済みの注文書</h3><button class="btn ghost sm" id="btnListClose">✕ 閉じる</button></div>
+    <div class="modal-body">
+      <input type="text" class="list-search" id="listSearch" placeholder="現場名・請負者名で絞り込み…" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px">
+      <div id="listWrap"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: SETTINGS ===================== -->
+<div class="overlay no-print" id="ovSettings">
+  <div class="modal w-md">
+    <div class="modal-head"><h3>⚙ 会社情報・印鑑設定</h3><button class="btn ghost sm" id="btnSettingsClose">✕ 閉じる</button></div>
+    <div class="modal-body">
+      <div class="section-title" style="margin-top:0">発注者情報（自社・全ての注文書に共通）</div>
+      <div class="field"><label for="s-name">会社名</label><input type="text" id="s-name"></div>
+      <div class="row2">
+        <div class="field"><label for="s-zip">郵便番号</label><input type="text" id="s-zip"></div>
+        <div class="field"><label for="s-rep">代表者名</label><input type="text" id="s-rep" placeholder="例：代表取締役　◯◯　◯◯"></div>
+      </div>
+      <div class="field"><label for="s-addr">住所</label><input type="text" id="s-addr"></div>
+      <div class="row2">
+        <div class="field"><label for="s-tel">TEL</label><input type="text" id="s-tel"></div>
+        <div class="field"><label for="s-fax">FAX</label><input type="text" id="s-fax"></div>
+      </div>
+
+      <div class="section-title">印影（角印）登録</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+        <div class="stamp-preview-box" id="stampPreviewBox"><span class="ph">未登録</span></div>
+        <div style="flex:1;min-width:220px;display:flex;flex-direction:column;gap:10px">
+          <div id="stampStatus" style="font-size:12px;color:var(--text-2)">未登録（注文書には印影欄の枠のみ表示されます）</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="btn sm" id="btnStampPick">画像を選択</button>
+            <input type="file" id="stampFile" accept="image/*" style="display:none">
+            <button type="button" class="btn sm danger" id="btnStampClear" style="display:none">登録解除</button>
+          </div>
+          <div class="stamp-controls">
+            <label class="slider-field">色味を調整
+              <input type="color" id="stampColor" value="#b3272a">
+            </label>
+            <label class="slider-field">大きさ
+              <input type="range" id="stampScale" min="60" max="150" value="100">
+            </label>
+          </div>
+          <div class="hint">白背景の印影画像をアップロードすると、白い部分は自動的に透明化されます。色味を変えると印影全体をその色で塗り直せます。</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="btnSettingsClose2">閉じる</button>
+      <button class="btn pri" id="btnSettingsSave">保存する</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay no-print" id="ovProjectPick">
+  <div class="modal w-lg">
+    <div class="modal-head"><h3>📋 案件を選択</h3><button class="btn ghost sm" id="btnProjectPickClose">✕ 閉じる</button></div>
+    <div class="modal-body">
+      <input type="text" class="list-search" id="projectPickSearch" placeholder="案件名・顧客名で絞り込み…" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px">
+      <div id="projectPickWrap"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast no-print" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   0. storage abstraction — 他モジュール(①案件管理など)と同じFirebase(taiho_app_data)を共有
+   ============================================================ */
+function storageGet(key) {
+  return new Promise(function (resolve) {
+    if (window.db) {
+      var attempts = 0;
+      var tryFetch = function () {
+        window.db.collection("taiho_app_data").doc(key).get().then(function (doc) {
+          resolve(doc.exists ? { value: doc.data().value } : null);
+        }).catch(function () {
+          attempts++;
+          if (attempts < 3) {
+            setTimeout(tryFetch, attempts * 700);
+          } else {
+            try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
+            catch (e) { resolve(null); }
+          }
+        });
+      };
+      tryFetch();
+    } else {
+      try {
+        var raw = window.localStorage.getItem(key);
+        resolve(raw ? { value: raw } : null);
+      } catch (e) { resolve(null); }
+    }
+  });
+}
+function storageSet(key, value) {
+  return new Promise(function (resolve) {
+    if (window.db) {
+      window.db.collection("taiho_app_data").doc(key).set({ value: value, updatedAt: Date.now() }).then(function () {
+        resolve({ value: value });
+      }).catch(function () {
+        try { window.localStorage.setItem(key, value); } catch (e) {}
+        resolve({ value: value });
+      });
+    } else {
+      try { window.localStorage.setItem(key, value); } catch (e) {}
+      resolve({ value: value });
+    }
+  });
+}
+
+var KEY_DOCS = "taiho_ordertool_docs_v1";
+var KEY_CONTACTS = "taiho_ordertool_contacts_v1";
+var KEY_COMPANY = "taiho_ordertool_company_v1";
+var KEY_DRAFT = "taiho_ordertool_draft_v1";
+var PROJECTS_KEY = "taiho_projects_v2"; // ①案件管理と共通(読み取りのみ)
+
+function readArray(key) {
+  return storageGet(key).then(function (res) {
+    try { var v = res && res.value ? JSON.parse(res.value) : null; return Array.isArray(v) ? v : []; }
+    catch (e) { return []; }
+  });
+}
+function writeArray(key, arr) { return storageSet(key, JSON.stringify(arr)); }
+function readObj(key) {
+  return storageGet(key).then(function (res) {
+    try { return res && res.value ? JSON.parse(res.value) : null; } catch (e) { return null; }
+  });
+}
+function writeObj(key, obj) { return storageSet(key, JSON.stringify(obj)); }
+
+async function storeGet(path) {
+  if (path === 'settings/company') return readObj(KEY_COMPANY);
+  if (path === 'drafts/current') return readObj(KEY_DRAFT);
+  if (path.indexOf('orders/') === 0) {
+    var id = path.slice('orders/'.length);
+    var arr = await readArray(KEY_DOCS);
+    return arr.find(function (o) { return o.id === id; }) || null;
+  }
+  return null;
+}
+async function storeSet(path, data) {
+  if (path === 'settings/company') { await writeObj(KEY_COMPANY, data); return true; }
+  if (path === 'drafts/current') { await writeObj(KEY_DRAFT, data); return true; }
+  if (path.indexOf('orders/') === 0) {
+    var id = path.slice('orders/'.length);
+    var arr = await readArray(KEY_DOCS); // 保存直前に最新を取得し直す(他の端末の更新を上書きしないため)
+    var idx = arr.findIndex(function (o) { return o.id === id; });
+    var rec = Object.assign({}, data, { id: id });
+    if (idx >= 0) arr[idx] = rec; else arr.push(rec);
+    await writeArray(KEY_DOCS, arr);
+    return true;
+  }
+  return true;
+}
+async function storeDelete(path) {
+  if (path === 'drafts/current') { await writeObj(KEY_DRAFT, null); return true; }
+  if (path.indexOf('orders/') === 0) {
+    var id = path.slice('orders/'.length);
+    var arr = await readArray(KEY_DOCS);
+    arr = arr.filter(function (o) { return o.id !== id; });
+    await writeArray(KEY_DOCS, arr);
+    return true;
+  }
+  return true;
+}
+async function ordersAll() {
+  var arr = await readArray(KEY_DOCS);
+  return arr.slice().sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+}
+async function orderSaveTo(id, data) {
+  var arr = await readArray(KEY_DOCS);
+  var newId = id || ('o' + Date.now() + Math.random().toString(36).slice(2, 7));
+  var idx = arr.findIndex(function (o) { return o.id === newId; });
+  var rec = Object.assign({}, data, { id: newId });
+  if (idx >= 0) arr[idx] = rec; else arr.push(rec);
+  await writeArray(KEY_DOCS, arr);
+  return newId;
+}
+async function orderDeleteId(id) {
+  var arr = await readArray(KEY_DOCS);
+  arr = arr.filter(function (o) { return o.id !== id; });
+  await writeArray(KEY_DOCS, arr);
+}
+async function contactsAll() {
+  var arr = await readArray(KEY_CONTACTS);
+  return arr.slice().sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+}
+async function contactUpsert(name, data) {
+  if (!name) return;
+  data = Object.assign({}, data);
+  data.updatedAt = Date.now();
+  var slug = name.trim(); if (!slug) return;
+  var id = 'c_' + slug.replace(/[^a-zA-Z0-9ぁ-んァ-ヶ一-龠々ー]/g, '_').slice(0, 60) || ('c' + Date.now());
+  data.id = id;
+  var arr = await readArray(KEY_CONTACTS);
+  var idx = arr.findIndex(function (o) { return o.id === id; });
+  if (idx >= 0) arr[idx] = Object.assign({}, arr[idx], data); else arr.push(data);
+  await writeArray(KEY_CONTACTS, arr);
+}
+
+/* ---- ①案件管理の案件一覧から選んで自動入力するピッカー ---- */
+var _projectsCache = [];
+async function loadProjectsForPicker() {
+  var res = await storageGet(PROJECTS_KEY);
+  try { var arr = res && res.value ? JSON.parse(res.value) : []; return Array.isArray(arr) ? arr : []; }
+  catch (e) { return []; }
+}
+async function openProjectPicker() {
+  $('ovProjectPick').classList.add('open');
+  $('projectPickWrap').innerHTML = '<div class="empty-note">読み込み中…</div>';
+  _projectsCache = await loadProjectsForPicker();
+  _projectsCache.sort(function (a, b) { return (b.no || 0) - (a.no || 0); });
+  paintProjectPick();
+}
+function closeProjectPicker() { $('ovProjectPick').classList.remove('open'); }
+function paintProjectPick() {
+  var q = ($('projectPickSearch').value || '').trim();
+  var rows = _projectsCache.filter(function (p) {
+    if (!q) return true;
+    var hay = (p.name || '') + ' ' + (p.customerName || '');
+    return hay.indexOf(q) >= 0;
+  });
+  var wrap = $('projectPickWrap');
+  if (!rows.length) { wrap.innerHTML = '<div class="empty-note">案件が見つかりません</div>'; return; }
+  var html = '<table class="order-list"><thead><tr><th>No.</th><th>案件名</th><th>顧客</th><th></th></tr></thead><tbody>';
+  rows.forEach(function (p) {
+    html += '<tr><td>' + esc(p.no || '-') + '</td><td>' + esc(p.name || '') + '</td><td>' + esc(p.customerName || '') + '</td>' +
+      '<td style="text-align:right"><button class="btn sm" data-pick="' + esc(p.id) + '">選択</button></td></tr>';
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+  wrap.querySelectorAll('[data-pick]').forEach(function (b) {
+    b.addEventListener('click', function () { applyProjectToForm(b.dataset.pick); });
+  });
+}
+function applyProjectToForm(id) {
+  var p = _projectsCache.find(function (x) { return x.id === id; });
+  if (!p) return;
+  S.siteName = p.name || S.siteName;
+  if (p.startDate) S.periodFrom = p.startDate;
+  if (p.completionDate) S.periodTo = p.completionDate;
+  // 注文先(請負者)は案件の顧客とは別(協力業者)のため自動入力しない
+  suppressAutosave = true; pushStateIntoForm(); suppressAutosave = false;
+  renderPreview();
+  scheduleAutosave();
+  closeProjectPicker();
+  showToast('案件「' + (p.name || '') + '」の内容を反映しました');
+}
+
+/* ============================================================
+   1. helpers
+   ============================================================ */
+function $(id){ return document.getElementById(id); }
+function todayISO(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function eraParts(iso){
+  if(!iso) return null;
+  var d=new Date(iso+'T00:00:00');
+  if(isNaN(d.getTime())) return null;
+  var y=d.getFullYear()-2018;
+  return {y:y, m:d.getMonth()+1, day:d.getDate()};
+}
+function eraStr(iso){
+  var p=eraParts(iso);
+  if(!p) return '　　年　　月　　日';
+  return 'R'+p.y+'年 '+p.m+'月 '+p.day+'日';
+}
+function money(n){ n=Math.round(Number(n)||0); return '¥'+n.toLocaleString('ja-JP'); }
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function nl2br(s){ return esc(s).replace(/\n/g,'<br>'); }
+function uid(){ return 'i'+Math.random().toString(36).slice(2,10); }
+function debounce(fn,ms){ var t=null; return function(){ var a=arguments,ctx=this; clearTimeout(t); t=setTimeout(function(){ fn.apply(ctx,a); }, ms); }; }
+function showToast(msg){
+  var t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(showToast._t); showToast._t=setTimeout(function(){ t.classList.remove('show'); },2200);
+}
+
+var CLAUSES_TEMPLATE = [
+  '請負者は注文者の認める図面や仕様書等により工事を施工し、工事の増減変更等は両者協議の上決定する。',
+  '請負者は本注文による一切の権利義務を注文者の承諾なしに第三者に譲渡してはならない。',
+  '請負者は工事の施工に関し、請負者の責に帰すべき事由により第三者に損害を及ぼした場合は速やかに処理解決しその賠償の責を負うものとする。',
+  '注文者は請負者が正当な理由なく工事を工期内に完成する見込みがないか又は工事内容が注文の趣旨に反する、と認めた場合には随意解約し、それによる損害は請負者の負担とする。',
+  '請負者は工事施工が注文者の検査に不合格の場合には合格まで手直し補修し、又正当な理由なく工事の引渡が遅れた場合には遅延料を注文者に支払うものとする。',
+  null, // filled dynamically (warranty years) — see defaultClauses()
+  'この注文書に記載のない事項については、別に締結された基本契約書又はこの注文書に添付された契約約款の定めによるものとする。',
+  'その他建設業法や労働基準法・労災保険法など関係諸法規を遵守し両者協議の上決定する。'
+];
+function clause6Text(years){
+  var y = (years===undefined||years===null||years==='') ? '◯' : String(years);
+  return '請負者は完成工事の瑕疵について'+y+'ヶ年補修又はその損害についての賠償の責を負うものとする。';
+}
+function defaultClauses(years){
+  return CLAUSES_TEMPLATE.map(function(t,i){ return i===5 ? clause6Text(years) : t; });
+}
+
+/* ============================================================
+   2. state
+   ============================================================ */
+function blankItem(){ return {id:uid(), name:'', spec:'', unit:'式', qty:1, unitPrice:0, amount:0, note:''}; }
+function defaultState(){
+  return {
+    docId:null,
+    no:'', date: todayISO(),
+    siteName:'', workName:'', workLocation:'',
+    items:[blankItem()],
+    taxRate:10, taxAuto:true, taxAmount:0,
+    payment:'末〆　翌月末日払　現金100%',
+    periodFrom:'', periodTo:'', delivery:'', warrantyYears:'1', overview:'',
+    contractor:{name:'',zip:'',address:'',tel:'',fax:'',representative:''},
+    clauses: defaultClauses('1'),
+    createdAt:null, updatedAt:null
+  };
+}
+var S = defaultState();
+var COMPANY = {name:'有限会社太豊建設', zip:'059-1262', address:'苫小牧市美原町3丁目1番5号', tel:'0144-82-7648', fax:'0144-82-7649', representative:'', stampImg:null, stampColor:'#b3272a', stampScale:100, stampTop:6, stampRight:6};
+var activeCompany = Object.assign({}, COMPANY); // snapshot used for rendering current doc (live for new/draft, frozen for opened saved orders)
+var activeTab='order';
+var suppressAutosave=false;
+
+/* ============================================================
+   3. rendering — item edit table
+   ============================================================ */
+function renderItemsTable(){
+  var body=$('itemsBody'); body.innerHTML='';
+  S.items.forEach(function(it,idx){
+    var tr=document.createElement('tr');
+    tr.innerHTML =
+      '<td style="text-align:center;color:var(--text-3)">'+(idx+1)+'</td>'+
+      '<td><input type="text" data-f="name" data-i="'+idx+'" value="'+esc(it.name)+'" placeholder="鉄筋工事"></td>'+
+      '<td><input type="text" data-f="spec" data-i="'+idx+'" value="'+esc(it.spec)+'"></td>'+
+      '<td><input type="text" data-f="unit" data-i="'+idx+'" value="'+esc(it.unit)+'" placeholder="式"></td>'+
+      '<td><input type="number" class="num" data-f="qty" data-i="'+idx+'" value="'+esc(it.qty)+'" step="any"></td>'+
+      '<td><input type="number" class="num" data-f="unitPrice" data-i="'+idx+'" value="'+esc(it.unitPrice)+'" step="any"></td>'+
+      '<td class="amt"><input type="number" class="num" data-f="amount" data-i="'+idx+'" value="'+Math.round(it.amount)+'" step="any"></td>'+
+      '<td><input type="text" data-f="note" data-i="'+idx+'" value="'+esc(it.note)+'"></td>'+
+      '<td class="del"><button type="button" class="icon-del" data-del="'+idx+'" title="行を削除">✕</button></td>';
+    body.appendChild(tr);
+  });
+}
+
+/* ============================================================
+   4. calculations
+   ============================================================ */
+function recalc(){
+  var subtotal=0;
+  S.items.forEach(function(it){ subtotal += Number(it.amount)||0; });
+  if(S.taxAuto){ S.taxAmount = Math.round(subtotal * (Number(S.taxRate)||0) / 100); }
+  var total = subtotal + (Number(S.taxAmount)||0);
+  $('rowSubtotal').style.display = S.items.length>1 ? 'flex' : 'none';
+  $('tSubtotal').textContent = money(subtotal);
+  $('tTax').textContent = money(S.taxAmount);
+  $('tTotal').textContent = money(total);
+  return {subtotal:subtotal, tax:S.taxAmount, total:total};
+}
+
+/* ============================================================
+   5. document preview markup
+   ============================================================ */
+function partyBlock(role, name, zip, addr, tel, fax, rep, stamp){
+  var stampHtml='';
+  if(stamp && (stamp.img || stamp.showPlaceholder)){
+    var top = (stamp.top!=null && stamp.top!=='') ? stamp.top : 6;
+    var right = (stamp.right!=null && stamp.right!=='') ? stamp.right : 6;
+    var posStyle = 'top:'+top+'px;right:'+right+'px;';
+    var dragAttr = stamp.draggable ? ' data-company-stamp="1"' : '';
+    if(stamp.img){
+      var tstyle = posStyle+'transform:scale('+((stamp.scale||100)/100)+');transform-origin:top right;';
+      stampHtml = '<div class="seal-wrap"'+dragAttr+' style="'+tstyle+'"><img src="'+stamp.img+'" alt="印"></div>';
+    } else {
+      stampHtml = '<div class="seal-placeholder"'+dragAttr+' style="'+posStyle+'">印</div>';
+    }
+  }
+  return (
+    '<div class="doc-party">'+
+      '<div class="role">'+esc(role)+'</div>'+
+      '<div class="pname">'+esc(name||'　')+'</div>'+
+      (zip?'<p>〒'+esc(zip)+'</p>':'')+
+      (addr?'<p>'+esc(addr)+'</p>':'')+
+      (rep?'<p>'+esc(rep)+'</p>':'')+
+      ((tel||fax)?'<p>'+(tel?'TEL '+esc(tel)+' ':'')+(fax?'FAX '+esc(fax):'')+'</p>':'')+
+      stampHtml+
+    '</div>'
+  );
+}
+
+function clausesHtml(){
+  var list = (S.clauses && S.clauses.length===8) ? S.clauses : defaultClauses(S.warrantyYears);
+  var cols=['','','',''];
+  for(var i=0;i<8;i++){
+    cols[Math.floor(i/2)] += '<li>'+nl2br(list[i]||'')+'</li>';
+  }
+  var olsHtml='';
+  for(var c=0;c<4;c++){ olsHtml += '<ol start="'+(c*2+1)+'">'+cols[c]+'</ol>'; }
+  return (
+    '<div class="doc-clauses"><div class="ctitle">〔注文条項〕</div>'+
+    '<div class="ccols">'+olsHtml+'</div></div>'
+  );
+}
+
+function itemsTableHtml(sums){
+  var rows='';
+  S.items.forEach(function(it){
+    rows += '<tr><td>'+esc(it.name)+'</td><td>'+esc(it.spec)+'</td><td class="num">'+esc(it.unit)+'</td>'+
+      '<td class="num">'+esc(it.qty)+'</td><td class="amt">'+(it.unitPrice?money(it.unitPrice).replace('¥',''):'')+'</td>'+
+      '<td class="amt">'+money(it.amount).replace('¥','')+'</td><td>'+esc(it.note)+'</td></tr>';
+  });
+  var sumRows='';
+  if(S.items.length>1){
+    sumRows += '<tr class="sumrow"><td colspan="5" style="text-align:right">小計</td><td class="amt">'+money(sums.subtotal).replace('¥','')+'</td><td></td></tr>';
+  }
+  sumRows += '<tr class="sumrow"><td colspan="5" style="text-align:right">消費税（'+esc(S.taxRate)+'%）</td><td class="amt">'+money(sums.tax).replace('¥','')+'</td><td></td></tr>';
+  sumRows += '<tr class="grand"><td colspan="5" style="text-align:right">合計</td><td class="amt">'+money(sums.total).replace('¥','')+'</td><td></td></tr>';
+  return (
+    '<table class="doc-items"><thead><tr>'+
+    '<th style="width:20%">名称</th><th style="width:20%">仕様</th><th style="width:7%">呼称</th>'+
+    '<th style="width:8%">数量</th><th style="width:12%">単価</th><th style="width:13%">金額</th><th>備考</th>'+
+    '</tr></thead><tbody>'+rows+sumRows+'</tbody></table>'
+  );
+}
+
+function buildDoc(kind, sums){
+  // kind: 'order' (注文書, issued by our company) | 'accept' (注文請書, issued by contractor)
+  var title = kind==='order' ? '注　文　書' : '注　文　請　書';
+  var leadTo = kind==='order' ? (S.contractor.name||'　') : (activeCompany.name||'　');
+  var leadText = kind==='order'
+    ? '<p>下記のとおり注文いたします。</p><p>お引き受けのときは請書をご提出ください。</p>'
+    : '<p>下記のとおりご注文をお請けいたします。</p>';
+
+  var partyHtml;
+  if(kind==='order'){
+    partyHtml = partyBlock('発注者', activeCompany.name, activeCompany.zip, activeCompany.address, activeCompany.tel, activeCompany.fax, activeCompany.representative,
+      {img: activeCompany.stampImg, scale: activeCompany.stampScale, showPlaceholder: !activeCompany.stampImg,
+       top: activeCompany.stampTop, right: activeCompany.stampRight, draggable:true});
+  } else {
+    partyHtml = partyBlock('請負者', S.contractor.name, S.contractor.zip, S.contractor.address, S.contractor.tel, S.contractor.fax, S.contractor.representative,
+      {showPlaceholder:true});
+  }
+
+  var periodStr = (S.periodFrom||S.periodTo) ? (eraStr(S.periodFrom)+' ～ '+eraStr(S.periodTo)) : '';
+
+  return (
+    '<div class="doc-inner">'+
+      '<div class="doc-title">'+title+'</div>'+
+      '<div class="doc-headrow">'+
+        '<div class="doc-lead"><div class="to">'+esc(leadTo)+'　様</div>'+leadText+'</div>'+
+        '<div class="doc-side">'+
+          '<div class="doc-noDate"><span>No. '+esc(S.no||'')+'</span><span>'+eraStr(S.date)+'</span></div>'+
+          partyHtml+
+        '</div>'+
+      '</div>'+
+      '<div class="doc-columns">'+
+        '<div class="doc-col-left">'+
+          '<div class="doc-meta">'+
+            '<div class="mrow"><div class="mlabel">現場名</div><div class="mval">'+esc(S.siteName)+'</div></div>'+
+            '<div class="mrow"><div class="mlabel">工事名</div><div class="mval">'+esc(S.workName||S.siteName)+'</div></div>'+
+            '<div class="mrow"><div class="mlabel">施工場所</div><div class="mval">'+esc(S.workLocation)+'</div></div>'+
+            '<div class="mrow"><div class="mlabel">金額</div><div class="mval amount">'+Math.round(sums.total).toLocaleString('ja-JP')+'</div></div>'+
+            '<div class="mrow"><div class="mlabel">支払条件</div><div class="mval">'+esc(S.payment)+'</div></div>'+
+            '<div class="mrow"><div class="mlabel">工期</div><div class="mval">'+periodStr+'</div></div>'+
+            '<div class="mrow"><div class="mlabel">引渡</div><div class="mval">'+esc(S.delivery)+'</div></div>'+
+            (S.overview?'<div class="mrow"><div class="mlabel">工事概要</div><div class="mval">'+nl2br(S.overview)+'</div></div>':'')+
+          '</div>'+
+        '</div>'+
+        '<div class="doc-col-right">'+itemsTableHtml(sums)+'</div>'+
+      '</div>'+
+      clausesHtml()+
+      '<div class="doc-foot"><span>'+(kind==='order'?'太豊建設 注文書ツール':'太豊建設 注文書ツール（注文請書）')+'</span><span>作成日：'+eraStr(todayISO())+'</span></div>'+
+    '</div>'
+  );
+}
+
+function renderPreview(){
+  var sums = recalc();
+  $('docOrder').innerHTML = buildDoc('order', sums);
+  $('docAccept').innerHTML = buildDoc('accept', sums);
+  fitStage();
+}
+
+var stageScale = 1;
+function fitStage(){
+  var outer=document.querySelector('.stage-outer');
+  var inner=$('stageInner');
+  if(!outer||!inner) return;
+  var avail = outer.clientWidth - 24;
+  var natural = 297*3.7795; // mm to px approx at 96dpi (A4 landscape)
+  var scale = Math.min(1, avail/natural);
+  stageScale = scale || 1;
+  inner.style.transform = 'scale('+scale+')';
+  inner.style.transformOrigin='top center';
+  var page = document.querySelector('.doc-page.active') || $('docOrder');
+  var h = page.offsetHeight || 1120;
+  outer.style.height = Math.max(200,(h*scale)+40)+'px';
+}
+window.addEventListener('resize', debounce(fitStage,120));
+
+/* ---- drag-to-move the company stamp (印影) directly in the preview ---- */
+var stampDrag=null;
+function bindStampDrag(){
+  var inner=$('stageInner');
+  inner.addEventListener('pointerdown', function(e){
+    if(!document.body.classList.contains('stamp-edit')) return;
+    var el = e.target.closest('[data-company-stamp]');
+    if(!el) return;
+    e.preventDefault();
+    stampDrag = {
+      el: el,
+      startX: e.clientX, startY: e.clientY,
+      startTop: (activeCompany.stampTop!=null?activeCompany.stampTop:6),
+      startRight: (activeCompany.stampRight!=null?activeCompany.stampRight:6),
+      newTop: null, newRight: null
+    };
+    try{ el.setPointerCapture(e.pointerId); }catch(err){}
+  });
+  inner.addEventListener('pointermove', function(e){
+    if(!stampDrag) return;
+    var dx = (e.clientX - stampDrag.startX) / (stageScale||1);
+    var dy = (e.clientY - stampDrag.startY) / (stageScale||1);
+    var newTop = Math.round((stampDrag.startTop + dy)*10)/10;
+    var newRight = Math.round((stampDrag.startRight - dx)*10)/10;
+    stampDrag.el.style.top = newTop+'px';
+    stampDrag.el.style.right = newRight+'px';
+    stampDrag.newTop = newTop; stampDrag.newRight = newRight;
+  });
+  async function endStampDrag(){
+    if(!stampDrag) return;
+    var nt=stampDrag.newTop, nr=stampDrag.newRight;
+    stampDrag=null;
+    if(nt==null) return;
+    COMPANY.stampTop=nt; COMPANY.stampRight=nr;
+    activeCompany.stampTop=nt; activeCompany.stampRight=nr;
+    await storeSet('settings/company', COMPANY);
+    renderPreview();
+  }
+  inner.addEventListener('pointerup', endStampDrag);
+  inner.addEventListener('pointercancel', endStampDrag);
+}
+function setStampEditMode(on){
+  document.body.classList.toggle('stamp-edit', on);
+  $('btnStampEdit').classList.toggle('pri', on);
+  $('btnStampEdit').textContent = on ? '📍 位置調整を終了' : '📍 印影の位置を調整';
+  if(on && activeTab!=='order') setTab('order');
+}
+$('btnStampEdit').addEventListener('click', function(){
+  setStampEditMode(!document.body.classList.contains('stamp-edit'));
+});
+$('btnStampPosReset').addEventListener('click', async function(){
+  COMPANY.stampTop=6; COMPANY.stampRight=6;
+  activeCompany.stampTop=6; activeCompany.stampRight=6;
+  await storeSet('settings/company', COMPANY);
+  renderPreview();
+  showToast('印影の位置を既定に戻しました');
+});
+bindStampDrag();
+
+/* ============================================================
+   6. autosave / persistence
+   ============================================================ */
+var autosaveTimer=null;
+function setAutosaveTag(mode,label){
+  var el=$('autosaveTag'); el.className='autosave-tag'+(mode?(' '+mode):'');
+  $('autosaveText').textContent=label;
+}
+function scheduleAutosave(){
+  if(suppressAutosave) return;
+  setAutosaveTag('busy','編集中…');
+  clearTimeout(autosaveTimer);
+  autosaveTimer=setTimeout(doAutosave,1100);
+}
+function snapshotData(){
+  var sums=recalc();
+  return {
+    no:S.no, date:S.date, siteName:S.siteName, workName:S.workName, workLocation:S.workLocation,
+    items:S.items, taxRate:S.taxRate, taxAuto:S.taxAuto, taxAmount:S.taxAmount,
+    subtotal:sums.subtotal, total:sums.total,
+    payment:S.payment, periodFrom:S.periodFrom, periodTo:S.periodTo, delivery:S.delivery,
+    warrantyYears:S.warrantyYears, overview:S.overview, contractor:S.contractor,
+    clauses:S.clauses,
+    company: activeCompany,
+    createdAt: S.createdAt || Date.now(), updatedAt: Date.now()
+  };
+}
+async function doAutosave(){
+  var data=snapshotData();
+  if(S.docId){
+    await storeSet('orders/'+S.docId, data);
+  } else {
+    await storeSet('drafts/current', data);
+  }
+  S.createdAt = data.createdAt;
+  setAutosaveTag('saved','保存済み '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}));
+}
+
+/* ============================================================
+   7. form <-> state binding
+   ============================================================ */
+var FIELD_MAP = [
+  ['f-no','no'],['f-date','date'],['f-site','siteName'],['f-work','workName'],['f-loc','workLocation'],
+  ['f-payment','payment'],['f-p-from','periodFrom'],['f-p-to','periodTo'],['f-delivery','delivery'],
+  ['f-overview','overview']
+];
+var CONTRACTOR_MAP = [
+  ['f-c-name','name'],['f-c-zip','zip'],['f-c-addr','address'],['f-c-tel','tel'],['f-c-fax','fax'],['f-c-rep','representative']
+];
+
+function pullFormIntoState(){
+  FIELD_MAP.forEach(function(m){ S[m[1]] = $(m[0]).value; });
+  CONTRACTOR_MAP.forEach(function(m){ S.contractor[m[1]] = $(m[0]).value; });
+  S.taxRate = Number($('f-taxrate').value)||0;
+  S.taxAuto = $('f-taxauto').checked;
+}
+function pushStateIntoForm(){
+  FIELD_MAP.forEach(function(m){ $(m[0]).value = S[m[1]]||''; });
+  CONTRACTOR_MAP.forEach(function(m){ $(m[0]).value = S.contractor[m[1]]||''; });
+  $('f-taxrate').value = S.taxRate;
+  $('f-taxauto').checked = !!S.taxAuto;
+  $('f-warranty').value = S.warrantyYears||'';
+  if(!S.clauses || S.clauses.length!==8){ S.clauses = defaultClauses(S.warrantyYears); }
+  renderItemsTable();
+  renderClausesEditor();
+}
+function renderClausesEditor(){
+  var wrap=$('clausesBody'); wrap.innerHTML='';
+  for(var i=0;i<8;i++){
+    var row=document.createElement('div'); row.className='clause-row';
+    row.innerHTML = '<div class="cnum">'+(i+1)+'.</div><textarea data-clause="'+i+'" rows="2"></textarea>';
+    wrap.appendChild(row);
+    row.querySelector('textarea').value = S.clauses[i]||'';
+  }
+}
+function onFormChanged(){
+  pullFormIntoState();
+  renderPreview();
+  scheduleAutosave();
+}
+
+function bindForm(){
+  FIELD_MAP.forEach(function(m){ $(m[0]).addEventListener('input', onFormChanged); });
+  CONTRACTOR_MAP.forEach(function(m){ $(m[0]).addEventListener('input', onFormChanged); });
+  $('f-taxrate').addEventListener('input', onFormChanged);
+  $('f-taxauto').addEventListener('change', onFormChanged);
+
+  $('f-warranty').addEventListener('input', function(){
+    // if clause 6 still matches the auto-generated text for the previous number, keep it in sync;
+    // otherwise the user has customized it, so leave their wording alone.
+    var wasAuto = (S.clauses[5]||'') === clause6Text(S.warrantyYears);
+    S.warrantyYears = $('f-warranty').value;
+    if(wasAuto){
+      S.clauses[5] = clause6Text(S.warrantyYears);
+      var ta = document.querySelector('textarea[data-clause="5"]');
+      if(ta) ta.value = S.clauses[5];
+    }
+    renderPreview();
+    scheduleAutosave();
+  });
+
+  $('clausesBody').addEventListener('input', function(e){
+    var t=e.target; if(!t.dataset || t.dataset.clause===undefined) return;
+    S.clauses[Number(t.dataset.clause)] = t.value;
+    renderPreview();
+    scheduleAutosave();
+  });
+  $('btnClausesReset').addEventListener('click', function(){
+    if(!confirm('注文条項を既定の文言に戻します。よろしいですか？')) return;
+    S.clauses = defaultClauses(S.warrantyYears);
+    renderClausesEditor();
+    renderPreview();
+    scheduleAutosave();
+  });
+
+  $('f-c-name').addEventListener('change', async function(){
+    var name=$('f-c-name').value.trim();
+    if(!name) return;
+    var list = await contactsAll();
+    var hit = list.find(function(c){ return (c.name||'').trim()===name; });
+    if(hit){
+      $('f-c-zip').value=hit.zip||''; $('f-c-addr').value=hit.address||'';
+      $('f-c-tel').value=hit.tel||''; $('f-c-fax').value=hit.fax||''; $('f-c-rep').value=hit.representative||'';
+      onFormChanged();
+    }
+  });
+
+  $('itemsBody').addEventListener('input', function(e){
+    var t=e.target; if(!t.dataset || t.dataset.i===undefined) return;
+    var idx=Number(t.dataset.i), f=t.dataset.f, it=S.items[idx]; if(!it) return;
+    if(f==='qty' || f==='unitPrice'){
+      it[f] = t.value===''?'':Number(t.value);
+      var q=Number(it.qty)||0, p=Number(it.unitPrice)||0;
+      if(q && p){ it.amount = Math.round(q*p); }
+    } else if(f==='amount'){
+      it.amount = Number(t.value)||0;
+    } else {
+      it[f] = t.value;
+    }
+    renderPreviewLite();
+  });
+  $('itemsBody').addEventListener('change', function(e){
+    if(e.target.dataset && e.target.dataset.f==='qty' || (e.target.dataset && e.target.dataset.f==='unitPrice')){
+      renderItemsTable();
+    }
+    onFormChanged();
+  });
+  $('itemsBody').addEventListener('click', function(e){
+    var b=e.target.closest('[data-del]'); if(!b) return;
+    var idx=Number(b.dataset.del);
+    if(S.items.length<=1){ S.items[0]=blankItem(); } else { S.items.splice(idx,1); }
+    renderItemsTable(); onFormChanged();
+  });
+  $('btnAddItem').addEventListener('click', function(){
+    S.items.push(blankItem()); renderItemsTable(); onFormChanged();
+  });
+}
+// lighter-weight refresh used while typing digits in the items table (avoids full form re-pull each keystroke)
+function renderPreviewLite(){ renderPreview(); scheduleAutosave(); }
+
+/* ============================================================
+   8. tabs / print
+   ============================================================ */
+function setTab(which){
+  activeTab=which;
+  document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('active', b.dataset.tab===which); });
+  $('docOrder').classList.toggle('active', which==='order');
+  $('docAccept').classList.toggle('active', which==='accept');
+  fitStage();
+}
+document.querySelectorAll('.tab').forEach(function(b){ b.addEventListener('click', function(){ setTab(b.dataset.tab); }); });
+
+$('btnPrintCurrent').addEventListener('click', function(){
+  setStampEditMode(false);
+  document.body.setAttribute('data-print', activeTab);
+  window.print();
+});
+$('btnPrintBoth').addEventListener('click', function(){
+  setStampEditMode(false);
+  document.body.setAttribute('data-print','both');
+  window.print();
+});
+
+/* ============================================================
+   9. new / save / list / open / delete
+   ============================================================ */
+async function suggestNextNo(){
+  try{
+    var all = await ordersAll();
+    return String(all.length+1);
+  }catch(e){ return '1'; }
+}
+
+async function doNew(){
+  S = defaultState();
+  activeCompany = Object.assign({}, COMPANY);
+  S.no = await suggestNextNo();
+  suppressAutosave=true;
+  pushStateIntoForm();
+  suppressAutosave=false;
+  renderPreview();
+  setAutosaveTag('','待機中');
+  showToast('新規作成しました');
+}
+
+async function doSave(){
+  pullFormIntoState();
+  if(!S.siteName){ if(!confirm('現場名が未入力です。このまま保存しますか？')) return; }
+  var data = snapshotData();
+  if(!S.docId){ data.createdAt = Date.now(); }
+  var id = await orderSaveTo(S.docId, data);
+  S.docId = id; S.createdAt = data.createdAt;
+  if(S.contractor.name){
+    contactUpsert(S.contractor.name, {name:S.contractor.name, zip:S.contractor.zip, address:S.contractor.address, tel:S.contractor.tel, fax:S.contractor.fax, representative:S.contractor.representative});
+    await refreshContactList();
+  }
+  await storeDelete('drafts/current');
+  setAutosaveTag('saved','保存済み '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}));
+  showToast('注文書を保存しました（No.'+ (S.no||'-') +'）');
+}
+
+async function refreshContactList(){
+  var list = await contactsAll();
+  var dl=$('contactList'); dl.innerHTML='';
+  list.forEach(function(c){ var o=document.createElement('option'); o.value=c.name; dl.appendChild(o); });
+}
+
+async function openOrder(id){
+  var data = await storeGet('orders/'+id);
+  if(!data){ showToast('データを読み込めませんでした'); return; }
+  S = defaultState();
+  S.docId=id;
+  S.no=data.no||''; S.date=data.date||todayISO();
+  S.siteName=data.siteName||''; S.workName=data.workName||''; S.workLocation=data.workLocation||'';
+  S.items = (data.items&&data.items.length) ? data.items.map(function(it){ it.id=it.id||uid(); return it; }) : [blankItem()];
+  S.taxRate = data.taxRate!=null?data.taxRate:10; S.taxAuto = data.taxAuto!==false; S.taxAmount=data.taxAmount||0;
+  S.payment=data.payment||''; S.periodFrom=data.periodFrom||''; S.periodTo=data.periodTo||'';
+  S.delivery=data.delivery||''; S.warrantyYears=data.warrantyYears||''; S.overview=data.overview||'';
+  S.contractor = Object.assign({name:'',zip:'',address:'',tel:'',fax:'',representative:''}, data.contractor||{});
+  S.clauses = (data.clauses && data.clauses.length===8) ? data.clauses.slice() : defaultClauses(S.warrantyYears);
+  S.createdAt = data.createdAt||Date.now();
+  activeCompany = Object.assign({}, COMPANY, data.company||{});
+  suppressAutosave=true;
+  pushStateIntoForm();
+  suppressAutosave=false;
+  renderPreview();
+  setAutosaveTag('saved','保存済みデータを編集中');
+  closeList();
+  showToast('注文書（No.'+(S.no||'-')+'）を開きました');
+}
+
+async function duplicateOrder(id){
+  var data = await storeGet('orders/'+id);
+  if(!data) return;
+  await openOrder(id);
+  S.docId=null;
+  S.no = await suggestNextNo();
+  S.date = todayISO();
+  suppressAutosave=true; pushStateIntoForm(); suppressAutosave=false;
+  renderPreview();
+  closeList();
+  showToast('複製して新規作成しました（元データは変更されません）');
+}
+
+async function deleteOrderConfirm(id, label){
+  if(!confirm('「'+label+'」を削除します。よろしいですか？（元に戻せません）')) return;
+  await orderDeleteId(id);
+  if(S.docId===id){ await doNew(); }
+  await renderList();
+}
+
+/* ============================================================
+   10. list modal
+   ============================================================ */
+var _ordersCache=[];
+async function renderList(){
+  var wrap=$('listWrap');
+  wrap.innerHTML = '<div class="empty-note">読み込み中…</div>';
+  _ordersCache = await ordersAll();
+  paintList();
+}
+function paintList(){
+  var q = ($('listSearch').value||'').trim();
+  var rows = _ordersCache.filter(function(o){
+    if(!q) return true;
+    var hay = (o.siteName||'')+' '+((o.contractor&&o.contractor.name)||'')+' '+(o.no||'');
+    return hay.indexOf(q)>=0;
+  });
+  var wrap=$('listWrap');
+  if(!rows.length){ wrap.innerHTML='<div class="empty-note">保存された注文書はまだありません</div>'; return; }
+  var html = '<table class="order-list"><thead><tr><th>No.</th><th>発注日</th><th>現場名</th><th>請負者</th><th>金額</th><th></th></tr></thead><tbody>';
+  rows.forEach(function(o){
+    var label = esc((o.no||'-')+' '+(o.siteName||''));
+    html += '<tr>'+
+      '<td>'+esc(o.no||'-')+'</td>'+
+      '<td>'+eraStr(o.date)+'</td>'+
+      '<td>'+esc(o.siteName||'')+'</td>'+
+      '<td>'+esc((o.contractor&&o.contractor.name)||'')+'</td>'+
+      '<td class="amt">'+money(o.total||0)+'</td>'+
+      '<td style="white-space:nowrap;text-align:right">'+
+        '<button class="btn sm" data-open="'+o.id+'">開く</button> '+
+        '<button class="btn sm" data-dup="'+o.id+'">複製</button> '+
+        '<button class="btn sm danger" data-del="'+o.id+'" data-label="'+label+'">削除</button>'+
+      '</td></tr>';
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+  wrap.querySelectorAll('[data-open]').forEach(function(b){ b.addEventListener('click', function(){ openOrder(b.dataset.open); }); });
+  wrap.querySelectorAll('[data-dup]').forEach(function(b){ b.addEventListener('click', function(){ duplicateOrder(b.dataset.dup); }); });
+  wrap.querySelectorAll('[data-del]').forEach(function(b){ b.addEventListener('click', function(){ deleteOrderConfirm(b.dataset.del, b.dataset.label); }); });
+}
+$('listSearch').addEventListener('input', paintList);
+
+function openList(){ $('ovList').classList.add('open'); renderList(); }
+function closeList(){ $('ovList').classList.remove('open'); }
+$('btnList').addEventListener('click', openList);
+$('btnListClose').addEventListener('click', closeList);
+$('ovList').addEventListener('click', function(e){ if(e.target===$('ovList')) closeList(); });
+
+/* ============================================================
+   11. settings modal (company + stamp)
+   ============================================================ */
+function paintSettingsForm(){
+  $('s-name').value=COMPANY.name||''; $('s-zip').value=COMPANY.zip||''; $('s-addr').value=COMPANY.address||'';
+  $('s-rep').value=COMPANY.representative||''; $('s-tel').value=COMPANY.tel||''; $('s-fax').value=COMPANY.fax||'';
+  $('stampColor').value=COMPANY.stampColor||'#b3272a';
+  $('stampScale').value=COMPANY.stampScale||100;
+  paintStampPreview();
+}
+function paintStampPreview(){
+  var box=$('stampPreviewBox');
+  if(COMPANY.stampImg){
+    box.innerHTML='<img src="'+COMPANY.stampImg+'" alt="印影プレビュー">';
+    $('stampStatus').textContent='登録済み（すべての注文書に使用されます）';
+    $('btnStampClear').style.display='inline-flex';
+  } else {
+    box.innerHTML='<span class="ph">未登録</span>';
+    $('stampStatus').textContent='未登録（注文書には印影欄の枠のみ表示されます）';
+    $('btnStampClear').style.display='none';
+  }
+}
+function openSettings(){ paintSettingsForm(); $('ovSettings').classList.add('open'); }
+function closeSettings(){ $('ovSettings').classList.remove('open'); }
+$('btnSettings').addEventListener('click', openSettings);
+$('btnSettingsClose').addEventListener('click', closeSettings);
+$('btnSettingsClose2').addEventListener('click', closeSettings);
+$('ovSettings').addEventListener('click', function(e){ if(e.target===$('ovSettings')) closeSettings(); });
+
+async function saveCompanySettings(){
+  COMPANY.name=$('s-name').value; COMPANY.zip=$('s-zip').value; COMPANY.address=$('s-addr').value;
+  COMPANY.representative=$('s-rep').value; COMPANY.tel=$('s-tel').value; COMPANY.fax=$('s-fax').value;
+  await storeSet('settings/company', COMPANY);
+  if(!S.docId){ activeCompany = Object.assign({}, COMPANY); renderPreview(); }
+  closeSettings();
+  showToast('会社情報を保存しました');
+}
+$('btnSettingsSave').addEventListener('click', saveCompanySettings);
+
+/* --- stamp image upload / tint --- */
+function processStampFile(file){
+  return new Promise(function(resolve,reject){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var img=new Image();
+      img.onload=function(){
+        try{
+          var maxDim=500;
+          var scale=Math.min(1, maxDim/Math.max(img.naturalWidth,img.naturalHeight));
+          var w=Math.max(1,Math.round(img.naturalWidth*scale)), h=Math.max(1,Math.round(img.naturalHeight*scale));
+          var cvs=document.createElement('canvas'); cvs.width=w; cvs.height=h;
+          var ctx=cvs.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+          var data=ctx.getImageData(0,0,w,h), d=data.data;
+          for(var i=0;i<d.length;i+=4){
+            var whiteness=(d[i]+d[i+1]+d[i+2])/3;
+            var inkAlpha=Math.max(0,Math.min(255,255-whiteness));
+            d[i+3]=Math.min(d[i+3], Math.round(inkAlpha*1.3));
+          }
+          ctx.putImageData(data,0,0);
+          resolve(cvs.toDataURL('image/png'));
+        }catch(err){ reject(err); }
+      };
+      img.onerror=function(){ reject(new Error('画像の読み込みに失敗しました')); };
+      img.src=e.target.result;
+    };
+    reader.onerror=function(){ reject(new Error('ファイルの読み込みに失敗しました')); };
+    reader.readAsDataURL(file);
+  });
+}
+function tintStamp(baseImg,color){
+  return new Promise(function(resolve){
+    if(!color){ resolve(baseImg); return; }
+    var img=new Image();
+    img.onload=function(){
+      try{
+        var cvs=document.createElement('canvas'); cvs.width=img.naturalWidth||1; cvs.height=img.naturalHeight||1;
+        var ctx=cvs.getContext('2d'); ctx.drawImage(img,0,0);
+        ctx.globalCompositeOperation='source-in'; ctx.fillStyle=color; ctx.fillRect(0,0,cvs.width,cvs.height);
+        resolve(cvs.toDataURL('image/png'));
+      }catch(e){ resolve(baseImg); }
+    };
+    img.onerror=function(){ resolve(baseImg); };
+    img.src=baseImg;
+  });
+}
+var stampRawImg=null; // untinted registered image
+$('btnStampPick').addEventListener('click', function(){ $('stampFile').click(); });
+$('stampFile').addEventListener('change', async function(e){
+  var file=e.target.files&&e.target.files[0]; e.target.value='';
+  if(!file) return;
+  try{
+    stampRawImg = await processStampFile(file);
+    var tinted = await tintStamp(stampRawImg, $('stampColor').value);
+    COMPANY.stampImg = tinted; COMPANY.stampRaw = stampRawImg; COMPANY.stampColor=$('stampColor').value;
+    await storeSet('settings/company', COMPANY);
+    paintStampPreview();
+    if(!S.docId){ activeCompany=Object.assign({},COMPANY); renderPreview(); }
+    showToast('印影画像を登録しました');
+  }catch(err){ alert('印影画像の読み込みに失敗しました。\n'+(err&&err.message||'')); }
+});
+$('btnStampClear').addEventListener('click', async function(){
+  if(!confirm('登録した印影画像を削除しますか？')) return;
+  COMPANY.stampImg=null; COMPANY.stampRaw=null;
+  await storeSet('settings/company', COMPANY);
+  paintStampPreview();
+  if(!S.docId){ activeCompany=Object.assign({},COMPANY); renderPreview(); }
+  showToast('印影の登録を解除しました');
+});
+$('stampColor').addEventListener('input', debounce(async function(){
+  if(!COMPANY.stampRaw) return;
+  COMPANY.stampColor=$('stampColor').value;
+  COMPANY.stampImg = await tintStamp(COMPANY.stampRaw, COMPANY.stampColor);
+  await storeSet('settings/company', COMPANY);
+  paintStampPreview();
+  if(!S.docId){ activeCompany=Object.assign({},COMPANY); renderPreview(); }
+},250));
+$('stampScale').addEventListener('input', debounce(async function(){
+  COMPANY.stampScale = Number($('stampScale').value)||100;
+  await storeSet('settings/company', COMPANY);
+  if(!S.docId){ activeCompany=Object.assign({},COMPANY); renderPreview(); }
+},150));
+
+/* ============================================================
+   12. top bar buttons
+   ============================================================ */
+$('btnNew').addEventListener('click', function(){
+  if(confirm('現在の内容を新規作成でクリアします。よろしいですか？（保存済みの注文書は削除されません）')) doNew();
+});
+$('btnSave').addEventListener('click', doSave);
+
+/* ============================================================
+   13. init
+   ============================================================ */
+async function init(){
+
+  var savedCompany = await storeGet('settings/company');
+  if(savedCompany){ COMPANY = Object.assign(COMPANY, savedCompany); }
+  else { await storeSet('settings/company', COMPANY); }
+  activeCompany = Object.assign({}, COMPANY);
+
+  bindForm();
+  refreshContactList();
+  $('btnPickProject').addEventListener('click', openProjectPicker);
+  $('btnProjectPickClose').addEventListener('click', closeProjectPicker);
+  $('ovProjectPick').addEventListener('click', function(e){ if(e.target===$('ovProjectPick')) closeProjectPicker(); });
+  $('projectPickSearch').addEventListener('input', paintProjectPick);
+
+  var draft = await storeGet('drafts/current');
+  suppressAutosave=true;
+  if(draft && (draft.siteName || (draft.contractor&&draft.contractor.name) || (draft.items&&draft.items.length>1))){
+    S = defaultState();
+    S.no=draft.no||''; S.date=draft.date||todayISO();
+    S.siteName=draft.siteName||''; S.workName=draft.workName||''; S.workLocation=draft.workLocation||'';
+    S.items=(draft.items&&draft.items.length)?draft.items.map(function(it){it.id=it.id||uid();return it;}):[blankItem()];
+    S.taxRate=draft.taxRate!=null?draft.taxRate:10; S.taxAuto=draft.taxAuto!==false; S.taxAmount=draft.taxAmount||0;
+    S.payment=draft.payment||S.payment; S.periodFrom=draft.periodFrom||''; S.periodTo=draft.periodTo||'';
+    S.delivery=draft.delivery||''; S.warrantyYears=draft.warrantyYears||S.warrantyYears; S.overview=draft.overview||'';
+    S.contractor=Object.assign({name:'',zip:'',address:'',tel:'',fax:'',representative:''}, draft.contractor||{});
+    S.clauses=(draft.clauses && draft.clauses.length===8) ? draft.clauses.slice() : defaultClauses(S.warrantyYears);
+    S.createdAt=draft.createdAt||Date.now();
+    pushStateIntoForm();
+    setTimeout(function(){ showToast('前回の下書きを復元しました'); }, 400);
+  } else {
+    S.no = await suggestNextNo();
+    pushStateIntoForm();
+  }
+  suppressAutosave=false;
+
+  renderPreview();
+  setAutosaveTag('','待機中');
+}
+init();
+
+})();
+</script>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  function setSidebar(open) {
+    document.getElementById("sidebar").classList.toggle("is-open", open);
+    document.getElementById("shellWrap").classList.toggle("sidebar-open", open);
+    document.getElementById("sidebarOverlay").classList.toggle("is-open", open && window.innerWidth <= 960);
+  }
+  document.getElementById("hamburgerBtn").addEventListener("click", function () {
+    setSidebar(!document.getElementById("sidebar").classList.contains("is-open"));
+  });
+  document.getElementById("sidebarOverlay").addEventListener("click", function () { setSidebar(false); });
+  setSidebar(window.innerWidth > 960);
+})();
+</script>
+</body>
+</html>
