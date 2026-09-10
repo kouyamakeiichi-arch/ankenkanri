@@ -228,6 +228,7 @@ body.stamp-edit .stamp-edit-hint{display:flex}
 .doc-note{border:1px solid #8b866c;border-radius:6px;padding:8px 11px 3px}
 .doc-note .ntitle{font-size:10.8px;font-weight:700;color:#4a4534;margin-bottom:5px;letter-spacing:.04em}
 .doc-note p{font-size:10.8px;line-height:1.7;color:#3c3826;margin:0 0 5px}
+.doc-note--full{margin-top:10px}
 
 .doc-foot{margin-top:14px;font-size:9.8px;color:#6b6550;display:flex;justify-content:space-between;gap:10px}
 
@@ -1071,12 +1072,12 @@ function buildDoc(){
         '<div class="doc-col">'+
           '<div class="doc-noDate"><span>No. '+esc(S.no||'')+'</span><span>'+eraStr(S.date)+'</span></div>'+
           partyHtml+
-          '<div class="doc-note">'+
-            '<div class="ntitle">〔備考〕</div>'+
-            '<p>'+nl2br(S.remarks||'')+'</p>'+
-          '</div>'+
           (S.showReceipt ? receiptHtml() : '')+
         '</div>'+
+      '</div>'+
+      '<div class="doc-note doc-note--full">'+
+        '<div class="ntitle">〔備考〕</div>'+
+        '<p>'+nl2br(S.remarks||'')+'</p>'+
       '</div>'+
       '<div class="doc-foot"><span>太豊建設 工事完了書ツール</span><span>作成日：'+eraStr(todayISO())+'</span></div>'+
     '</div>'
