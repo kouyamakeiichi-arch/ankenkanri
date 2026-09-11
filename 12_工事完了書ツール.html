@@ -1606,7 +1606,19 @@ async function init(){
   $('ovProjectPick').addEventListener('click', function(e){ if(e.target===$('ovProjectPick')) closeProjectPicker(); });
   $('projectPickSearch').addEventListener('input', paintProjectPick);
 
-  var draft = await storeGet('drafts/current');
+  // ①案件管理の「⑫工事完了書ツールを開く」リンクから ?project=ID で来た場合は、
+  // 前回の下書きよりもその案件の内容を優先する(案件を選んで開いたのに無関係な前回の下書きが出るのを防ぐ)
+  var qp = new URLSearchParams(window.location.search);
+  var pid = qp.get('project');
+  var projectToApply = null;
+  if (pid) {
+    try {
+      _projectsCache = await loadProjectsForPicker();
+      projectToApply = _projectsCache.find(function (x) { return x.id === pid; }) || null;
+    } catch (e) {}
+  }
+
+  var draft = projectToApply ? null : await storeGet('drafts/current');
   suppressAutosave=true;
   if(draft && (draft.siteName || (draft.destination&&draft.destination.name))){
     S = defaultState();
@@ -1631,16 +1643,7 @@ async function init(){
   renderPreview();
   setAutosaveTag('','待機中');
 
-  // ①案件管理の「⑫工事完了書ツールを開く」リンクから ?project=ID で来た場合、下書きの復元がなければ自動でその案件の内容を反映する
-  try {
-    var qp = new URLSearchParams(window.location.search);
-    var pid = qp.get('project');
-    var hadDraft = draft && (draft.siteName || (draft.destination && draft.destination.name));
-    if (pid && !hadDraft) {
-      _projectsCache = await loadProjectsForPicker();
-      if (_projectsCache.some(function (x) { return x.id === pid; })) applyProjectToForm(pid);
-    }
-  } catch (e) {}
+  if (projectToApply) applyProjectToForm(projectToApply.id);
 }
 init();
 
