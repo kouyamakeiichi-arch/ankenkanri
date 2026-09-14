@@ -2,168 +2,353 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="app-build" content="2026-09-14-1" />
+<meta name="app-build" content="2026-09-14-2" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>現場写真帳 | 太豊建設アプリ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;900&family=Shippori+Mincho:wght@600;800&family=Oswald:wght@500;600&display=swap">
 <style>
-  :root {
-    --bg: #F6F5FB; --surface: #FFFFFF; --primary: #6C47FF; --primary-dark: #5636D9;
-    --primary-soft: #EFEAFF; --text: #1E1B2E; --text-secondary: #6B6580; --text-tertiary: #9C97AE;
-    --border: #E7E4F0; --danger: #F0525C; --success: #10B981; --radius: 12px;
-    --shadow-sm: 0 1px 2px rgba(30,27,46,0.06); --shadow-md: 0 8px 24px rgba(30,27,46,0.12);
+  :root{
+    --ink:#1c2420;
+    --ink-soft:#4c5650;
+    --muted:#7a8177;
+    --paper:#faf7ee;
+    --paper-line:#d8cfb8;
+    --surface:#ffffff;
+    --shell:#f0ede4;
+    --shell-line:#ddd8c9;
+    --accent:#c2571c;
+    --accent-ink:#7a3510;
+    --accent-soft:#f4e2d1;
+    --good:#2f6f4e;
+    --danger:#b13b2c;
+    --shadow: 0 1px 2px rgba(28,36,32,.06), 0 8px 24px -12px rgba(28,36,32,.28);
+    --focus: #1c6e5e;
   }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
-  body { font-family: 'Hiragino Sans','Yu Gothic','Noto Sans JP',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; }
-
-  .shell { max-width: 1240px; margin: 0 auto; padding: 20px 20px 60px; }
-
-  .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
-  .page-header__title { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 22px; letter-spacing: 0.01em; }
-  .page-header__title .badge-count { font-family: 'Courier New', monospace; font-size: 12px; font-weight: 600; color: var(--primary); background: var(--primary-soft); padding: 3px 9px; border-radius: 100px; }
-  .page-header__actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-
-  .search-box { position: relative; }
-  .project-select { padding: 10px 34px 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); font-family: inherit; font-size: 14px; color: var(--text); min-width: 220px; max-width: 280px; }
-  .project-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); outline: none; }
-
-  .btn { display: inline-flex; align-items: center; gap: 6px; font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 10px 16px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; transition: transform .1s, background .15s, box-shadow .15s; white-space: nowrap; }
-  .btn:active { transform: scale(0.97); }
-  .btn:disabled { opacity: .5; cursor: not-allowed; }
-  .btn--primary { background: var(--primary); color: white; box-shadow: var(--shadow-sm); }
-  .btn--primary:hover:not(:disabled) { background: var(--primary-dark); }
-  .btn--ghost { background: transparent; color: var(--text-secondary); border-color: var(--border); }
-  .btn--ghost:hover { background: #F1EFFB; }
-  .btn--danger-ghost { background: transparent; color: var(--danger); border-color: #FBD5D8; }
-  .btn--danger-ghost:hover { background: #FEF1F2; }
-  .btn--sm { padding: 7px 12px; font-size: 12.5px; }
-
-  .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; }
-  .icon-btn:hover { background: #F1EFFB; color: var(--text); }
-
-  .cat-tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; scrollbar-width: none; }
-  .cat-tabs::-webkit-scrollbar { display: none; }
-  .cat-tab { display:flex; align-items:center; gap:6px; font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 8px 14px; border-radius: 999px; border: 1px solid transparent; background: transparent; color: var(--text-secondary); cursor: pointer; white-space: nowrap; transition: all .15s; }
-  .cat-tab:hover { background: #EDEAFA; }
-  .cat-tab.is-active { background: var(--text); color: white; }
-  .cat-tab .tab-count { font-family: 'Courier New', monospace; font-size: 10.5px; opacity: .75; }
-
-  .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
-  .photo-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; position: relative; box-shadow: var(--shadow-sm); }
-  .photo-card__thumb { width: 100%; aspect-ratio: 4/3; background: var(--bg); display: flex; align-items: center; justify-content: center; color: var(--text-tertiary); overflow: hidden; cursor: zoom-in; }
-  .photo-card__thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .photo-card__body { padding: 8px 10px 10px; }
-  .photo-card__cap { width: 100%; border: 1px solid var(--border); border-radius: 7px; padding: 6px 8px; font-size: 12.5px; font-family: inherit; color: var(--text); }
-  .photo-card__cap:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
-  .photo-card__del { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 8px; border: none; background: rgba(255,255,255,0.92); color: var(--danger); display: flex; align-items: center; justify-content: center; cursor: pointer; }
-  .photo-card__order { position: absolute; top: 6px; left: 6px; font-size: 10.5px; font-weight: 800; background: rgba(30,27,46,0.62); color: #fff; border-radius: 6px; padding: 2px 6px; }
-
-  .upload-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 1.6px dashed var(--border); border-radius: var(--radius); min-height: 140px; color: var(--text-tertiary); font-size: 12.5px; font-weight: 700; cursor: pointer; background: var(--surface); }
-  .upload-card:hover { background: #F1EFFB; border-color: var(--primary); color: var(--primary); }
-
-  .empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 60px 20px; color: var(--text-tertiary); gap: 8px; }
-  .empty-state__title { font-weight: 700; color: var(--text); font-size: 15px; margin-top: 6px; }
-  .empty-state__desc { font-size: 13px; margin-bottom: 10px; }
-
-  .modal-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 100; }
-  .preview-modal { background: var(--surface); border-radius: 16px; width: 100%; max-width: 720px; max-height: 92vh; display: flex; flex-direction: column; box-shadow: var(--shadow-md); overflow: hidden; }
-  .preview-modal__header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border); gap: 10px; }
-  .preview-modal__header h2 { font-size: 14px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .preview-modal__body { flex: 1; overflow: auto; background: var(--bg); display: flex; align-items: center; justify-content: center; min-height: 240px; }
-  .preview-modal__body img { max-width: 100%; max-height: 74vh; display: block; }
-
-  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--text); color: white; padding: 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-md); z-index: 200; display: flex; align-items: center; gap: 8px; }
-
-  .loading-wrap { display:flex; align-items:center; justify-content:center; padding: 80px 0; color: var(--text-tertiary); font-size: 13px; }
-  .spinner { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--primary-soft); border-top-color: var(--primary); animation: spin .7s linear infinite; margin-right: 8px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .hint-note { font-size: 12.5px; color: var(--text-tertiary); margin: -4px 0 14px; }
-
-  .cover-panel { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 14px; }
-  .cover-panel__field { display: flex; flex-direction: column; gap: 4px; flex: 1 1 180px; min-width: 140px; }
-  .cover-panel__field label { font-size: 11px; font-weight: 700; color: var(--text-tertiary); }
-  .cover-panel__field input, .cover-panel__field select { border: 1px solid var(--border); border-radius: 7px; padding: 7px 9px; font-size: 12.5px; font-family: inherit; color: var(--text); background: var(--bg); }
-  .cover-panel__field input:focus, .cover-panel__field select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
-  .cover-panel__field--layout { flex: 0 0 160px; }
-
-  /* ---------------- サイドバー / ハンバーガー ---------------- */
-  .hamburger-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; flex-shrink: 0; }
-  .hamburger-btn:hover { background: #F1EFFB; }
-  .shell-wrap { transition: margin-left .2s ease; }
-  @media (min-width: 961px) { .shell-wrap.sidebar-open { margin-left: 232px; } }
-
-  .sidebar {
-    position: fixed; top: 0; left: 0; bottom: 0; width: 232px; background: var(--surface);
-    border-right: 1px solid var(--border); padding: 18px 12px; display: flex; flex-direction: column;
-    gap: 2px; overflow-y: auto; z-index: 150; transform: translateX(-100%); transition: transform .2s ease;
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--shell);
+    color:var(--ink);
+    font-family:"Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif;
+    overflow-x:hidden;
   }
-  .sidebar.is-open { transform: translateX(0); box-shadow: var(--shadow-md); }
-  .sidebar__brand { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 15px; color: var(--primary); padding: 6px 10px 16px; text-decoration:none; }
-  .sidebar__section { font-size: 11px; font-weight: 700; color: var(--text-tertiary); padding: 14px 12px 4px; }
-  .sidebar__link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13.5px; font-weight: 700; color: var(--text-secondary); text-decoration: none; }
-  .sidebar__link:hover { background: #F1EFFB; color: var(--text); }
-  .sidebar__link.is-active { background: var(--primary-soft); color: var(--primary); }
-  .sidebar__link .soon { margin-left: auto; font-size: 9.5px; font-weight: 700; background: var(--bg); border: 1px solid var(--border); color: var(--text-tertiary); padding: 2px 6px; border-radius: 999px; white-space: nowrap; }
-  .sidebar-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); z-index: 140; display: none; }
-  .sidebar-overlay.is-open { display: block; }
+  ::selection{ background:var(--accent-soft); }
+  button{ font-family:inherit; }
+  .ce{ outline:none; }
+  .ce:empty:before{ content: attr(data-ph); color:var(--muted); font-weight:400; }
+  .ce:focus{ box-shadow: 0 0 0 2px var(--focus) inset; border-radius:2px; }
 
-  @media (max-width: 640px) {
-    .shell { padding: 14px 12px 80px; }
-    .page-header__title { font-size: 19px; }
-    .project-select { max-width: none; flex: 1; }
+  /* ---------- app shell ---------- */
+  #app{ display:flex; flex-direction:column; min-height:100vh; }
+
+  header.topbar{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:10px 18px; background:var(--surface);
+    border-bottom:1px solid var(--shell-line);
+    position:sticky; top:0; z-index:40;
+  }
+  .brand{ display:flex; align-items:baseline; gap:8px; margin-right:4px; }
+  .brand .mark{ font-family:"Oswald",sans-serif; font-weight:600; font-size:11px; letter-spacing:.14em; color:var(--accent); text-transform:uppercase; }
+  .brand .name{ font-family:"Shippori Mincho", serif; font-weight:800; font-size:19px; letter-spacing:.02em; }
+  .toolgroup{ display:flex; gap:6px; flex-wrap:wrap; }
+  .topbar .spacer{ flex:1 1 auto; }
+  .tbtn{
+    display:inline-flex; align-items:center; gap:6px;
+    background:transparent; border:1px solid var(--shell-line);
+    color:var(--ink-soft); padding:7px 12px; border-radius:7px;
+    font-size:12.5px; font-weight:500; cursor:pointer;
+    text-decoration:none;
+    transition:background .12s, border-color .12s, color .12s;
+    white-space:nowrap;
+  }
+  .tbtn:hover{ background:var(--shell); color:var(--ink); }
+  .tbtn.primary{ background:var(--accent); border-color:var(--accent); color:#fff8f0; font-weight:600; }
+  .tbtn.primary:hover{ filter:brightness(1.06); }
+  .tbtn[disabled]{ opacity:.45; cursor:not-allowed; }
+  .autosave{ font-size:11.5px; color:var(--muted); min-width:0; text-align:right; white-space:nowrap; }
+  .autosave.show{ color:var(--good); }
+
+  .project-select{
+    background:var(--surface); color:var(--ink); border:1px solid var(--shell-line);
+    border-radius:7px; padding:7px 10px; font-size:12.5px; font-family:inherit;
+    max-width:220px;
   }
 
-  /* ---------------- 印刷(写真台帳) ---------------- */
-  #printArea { display: none; }
-  @media print {
-    @page { size: 210mm 297mm; margin: 14mm; }
-    html, body { background: #fff !important; }
-    .no-print, .sidebar, .sidebar-overlay, .hamburger-btn { display: none !important; }
-    .shell-wrap { margin-left: 0 !important; }
-    .shell { max-width: none; padding: 0; }
-    #printArea { display: block; }
+  .banner{
+    display:flex; align-items:center; gap:10px;
+    background:var(--accent-soft); color:var(--accent-ink);
+    padding:9px 18px; font-size:13px; border-bottom:1px solid var(--paper-line);
+  }
 
-    /* 表紙(参考デザインを踏襲: 左フレーム罫+行組の台帳スタイル) */
-    .p-cover { position: relative; height: 269mm; padding: 8mm 6mm 8mm 14mm; }
-    .p-cover-frame { position: absolute; inset: 0; border-left: 2.4px solid #211f18; pointer-events: none; }
-    .p-cover-tag { font-size: 11.5px; letter-spacing: .3em; color: #6b6550; margin-bottom: 14px; }
-    .p-cover-title { font-family: 'Shippori Mincho', serif; font-weight: 800; font-size: 32px; letter-spacing: .55em; padding-left: .55em; border-top: 2.4px solid #211f18; border-bottom: 2.4px solid #211f18; padding-top: 14px; padding-bottom: 14px; margin-bottom: 22mm; text-align: center; }
-    .p-cover-rows { margin-top: 4mm; }
-    .p-cover-row { display: flex; border-bottom: 1px solid #8b8272; padding: 10px 0 10px 4mm; gap: 14px; min-height: 20px; align-items: baseline; }
-    .p-cover-row .p-lab { flex: none; width: 30mm; font-weight: 700; letter-spacing: .22em; font-size: 13px; color: #211f18; }
-    .p-cover-row .p-val { flex: 1; font-size: 14px; color: #211f18; }
-    .p-cover-row.period .p-period-sub { display: flex; gap: 20px; flex: 1; flex-wrap: wrap; }
-    .p-cover-row.period .p-period-sub span { font-size: 13.5px; }
-    .p-cover-note { margin-top: 16mm; font-size: 10.5px; color: #7a7261; text-align: center; }
+  .layout{ flex:1; display:flex; min-height:0; }
 
-    /* 写真ページ */
-    .p-page { page-break-before: always; padding-top: 2mm; }
-    .p-page-title { font-family: 'Shippori Mincho', serif; font-size: 16px; font-weight: 700; border-bottom: 2px solid #211f18; padding-bottom: 6px; margin-bottom: 12px; display:flex; justify-content:space-between; align-items:baseline; }
-    .p-page-title .p-sub { font-family: inherit; font-size: 11px; font-weight: 400; color: #6b6550; }
-    .p-empty { font-size: 12px; color: #8b866c; padding: 20px 0; }
+  /* ---------- sidebar (ページ一覧) ---------- */
+  aside.side{
+    width:230px; flex:none; background:var(--surface);
+    border-right:1px solid var(--shell-line);
+    display:flex; flex-direction:column; overflow-y:auto;
+  }
+  .side-section{ padding:12px 12px 4px; }
+  .side-label{ font-size:11px; font-weight:600; letter-spacing:.08em; color:var(--muted); text-transform:uppercase; padding:6px 4px 8px; }
+  .pagecard{
+    display:flex; align-items:center; gap:10px;
+    padding:8px 10px; border-radius:8px; cursor:pointer;
+    border:1px solid transparent; margin-bottom:4px; position:relative;
+  }
+  .pagecard:hover{ background:var(--shell); }
+  .pagecard.active{ background:var(--accent-soft); border-color:var(--paper-line); }
+  .pagecard .thumb{
+    width:34px; height:44px; flex:none; background:var(--paper);
+    border:1px solid var(--paper-line); border-radius:2px;
+    display:flex; flex-direction:column; gap:2px; padding:3px; overflow:hidden;
+  }
+  .pagecard .thumb i{ background:var(--shell-line); border-radius:1px; flex:1; display:block; }
+  .pagecard.active .thumb i{ background:var(--accent); opacity:.55; }
+  .pagecard .meta{ flex:1; min-width:0; }
+  .pagecard .t1{ font-size:12.5px; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pagecard .t2{ font-size:11px; color:var(--muted); }
+  .pagecard .del{
+    opacity:0; background:none; border:none; color:var(--muted); cursor:pointer;
+    font-size:15px; padding:2px 4px; border-radius:4px; flex:none;
+  }
+  .pagecard:hover .del{ opacity:1; }
+  .pagecard .del:hover{ color:var(--danger); background:var(--shell); }
 
-    /* 4枚/ページ(標準・2×2グリッド) */
-    .p-grid-4up { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm 8mm; }
-    .p-grid-4up .p-cell { break-inside: avoid; }
-    .p-grid-4up .p-cell__img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border: 1px solid #211f18; background: #eee; }
-    .p-grid-4up .p-cell__cap { font-size: 10.5px; color: #211f18; margin-top: 4px; line-height: 1.4; }
+  .addpage{ padding:8px 12px 14px; }
+  .addpage-title{ font-size:11px; color:var(--muted); margin-bottom:8px; }
+  .layout-choice{ display:flex; flex-direction:column; gap:6px; }
+  .lchoice{
+    display:flex; align-items:center; gap:9px;
+    border:1px dashed var(--shell-line); background:transparent;
+    padding:7px 9px; border-radius:8px; cursor:pointer; color:var(--ink-soft);
+    font-size:12.5px; text-align:left;
+  }
+  .lchoice:hover{ border-color:var(--accent); color:var(--ink); background:var(--accent-soft); }
+  .lchoice .ic{ width:22px; height:26px; flex:none; border:1.4px solid currentColor; border-radius:2px; display:flex; padding:2px; gap:1.5px; }
+  .lchoice .ic i{ background:currentColor; opacity:.45; flex:1; border-radius:1px; }
+  .ic.i3{ flex-direction:column; }
+  .ic.i2{ flex-direction:column; }
+  .ic.i4{ flex-wrap:wrap; }
+  .ic.i4 i{ width:45%; height:45%; }
 
-    /* 2枚/ページ(写真大きめ・縦積み) */
-    .p-grid-2up { display: flex; flex-direction: column; gap: 10mm; }
-    .p-grid-2up .p-cell { break-inside: avoid; flex: 1; }
-    .p-grid-2up .p-cell__img { width: 100%; height: 100mm; object-fit: cover; border: 1px solid #211f18; background: #eee; }
-    .p-grid-2up .p-cell__cap { font-size: 11.5px; color: #211f18; margin-top: 5px; line-height: 1.5; }
+  .side-footer{ margin-top:auto; padding:12px; border-top:1px solid var(--shell-line); }
+  .stat-row{ display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted); padding:2px 0; }
+  .stat-row b{ color:var(--ink-soft); font-variant-numeric:tabular-nums; font-weight:600; }
+  .stat-row.save b{ color:var(--good); }
 
-    /* 3枚/ページ(キャプション広め・横並び行) */
-    .p-grid-3up { display: flex; flex-direction: column; gap: 7mm; }
-    .p-grid-3up .p-cell { display: flex; gap: 5mm; break-inside: avoid; min-height: 52mm; }
-    .p-grid-3up .p-cell__img { flex: 1.4; min-width: 0; width: auto; height: 52mm; object-fit: cover; border: 1px solid #211f18; background: #eee; }
-    .p-grid-3up .p-cell__cap { flex: 1; font-size: 11.5px; color: #211f18; line-height: 1.6; padding-top: 2px; }
+  /* ---------- settings drawer ---------- */
+  .settings{
+    position:fixed; top:0; right:0; height:100vh; width:300px;
+    background:var(--surface); border-left:1px solid var(--shell-line);
+    box-shadow:var(--shadow); z-index:60; padding:18px;
+    transform:translateX(100%); transition:transform .18s ease; overflow-y:auto;
+  }
+  .settings.open{ transform:translateX(0); }
+  .settings h3{ font-size:15px; margin:0 0 4px; font-family:"Shippori Mincho",serif; font-weight:700; }
+  .settings .sub{ font-size:12px; color:var(--muted); margin-bottom:16px; }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:6px; }
+  .field select, .field input[type=range]{ width:100%; }
+  .switch-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .switch{ position:relative; width:38px; height:22px; flex:none; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider-tog{ position:absolute; inset:0; background:var(--shell-line); border-radius:99px; cursor:pointer; transition:.15s; }
+  .slider-tog:before{ content:""; position:absolute; width:16px; height:16px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.15s; }
+  .switch input:checked + .slider-tog{ background:var(--good); }
+  .switch input:checked + .slider-tog:before{ transform:translateX(16px); }
+  select{
+    background:var(--surface); color:var(--ink); border:1px solid var(--shell-line);
+    border-radius:6px; padding:6px 8px; font-size:13px;
+  }
+  input[type=range]{ accent-color:var(--accent); }
+  .qualityval{ font-variant-numeric:tabular-nums; color:var(--accent-ink); font-weight:600; }
+  .settings-close{ position:absolute; top:14px; right:14px; background:none; border:none; font-size:18px; cursor:pointer; color:var(--muted); }
+  .scrim{ position:fixed; inset:0; background:rgba(20,16,10,.28); z-index:55; }
+
+  /* ---------- canvas / sheet area ---------- */
+  main.canvas{
+    flex:1; overflow:auto; padding:34px 24px 80px;
+    display:flex; justify-content:center;
+  }
+  .empty-hint{ margin:auto; text-align:center; color:var(--muted); font-size:13.5px; max-width:320px; }
+  .empty-hint svg{ opacity:.55; margin-bottom:10px; }
+  .sheet{
+    width:210mm; min-height:297mm; flex:none;
+    background:var(--paper); box-shadow:var(--shadow);
+    padding:15mm 16mm; position:relative;
+    font-family:"Noto Sans JP",sans-serif; color:#1c2420;
+    display:flex; flex-direction:column;
+  }
+  .cap-memo{ overflow:hidden; }
+  .sheet, .sheet *{ color:#1c2420; }
+
+  /* cover sheet */
+  .cover-title{ text-align:center; margin:18mm 0 20mm; }
+  .cover-title .cjp{ font-family:"Shippori Mincho",serif; font-weight:800; font-size:34px; letter-spacing:.5em; padding-left:.5em; border-bottom:2.4px solid #1c2420; display:inline-block; padding-bottom:10px; }
+  .cover-frame{ position:absolute; inset:10mm; border-left:2.4px solid #1c2420; pointer-events:none; }
+  .cover-rows{ margin-top:24mm; }
+  .cover-row{ display:flex; border-bottom:1px solid #8b8272; padding:11px 0 11px 4mm; gap:14px; min-height:20px; }
+  .cover-row .lab{ flex:none; width:26mm; font-weight:700; letter-spacing:.28em; font-size:13.5px; }
+  .cover-row .val{ flex:1; font-size:14px; }
+  .cover-row.period{ align-items:flex-start; }
+  .period-sub{ display:flex; flex-direction:column; gap:14px; flex:1; }
+  .period-sub .pline{ display:flex; gap:14px; align-items:baseline; }
+  .period-sub .plab{ width:16mm; flex:none; font-weight:700; font-size:13px; letter-spacing:.2em; }
+  .cover-note{ margin-top:16mm; font-size:11px; color:#7a7261; text-align:center; }
+
+  /* photo sheet header/footer */
+  .sheet-head{ display:flex; justify-content:space-between; align-items:baseline; font-size:10.5px; color:#8b8272; border-bottom:1px solid var(--paper-line); padding-bottom:5mm; margin-bottom:5mm; }
+  .sheet-head .proj{ font-weight:600; color:#4c5650; }
+  .sheet-foot{ position:absolute; left:16mm; right:16mm; bottom:8mm; display:flex; justify-content:space-between; font-size:10px; color:#9c9484; border-top:1px solid var(--paper-line); padding-top:3mm; }
+
+  .grid3{ display:flex; flex-direction:column; gap:5mm; flex:1; }
+  .grid2{ display:flex; flex-direction:column; gap:7mm; flex:1; }
+  .grid4{ display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:5mm; flex:1; }
+
+  .slot{ display:flex; gap:4mm; flex:1; min-height:0; }
+  .grid4 .slot{ flex-direction:column; }
+
+  .photobox{
+    position:relative; flex:1.5; min-width:0; background:#fff;
+    border:1px solid var(--paper-line); overflow:hidden;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .grid4 .photobox{ flex:1; }
+  .photobox img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .photobox.empty{ border-style:dashed; background:#f3efe2; }
+  .photobox.uploading{ border-style:dashed; background:#f3efe2; cursor:default; }
+  .photobox .placeholder{ display:flex; flex-direction:column; align-items:center; gap:6px; color:#a89f8b; font-size:12px; }
+  .photobox .placeholder svg{ width:26px; height:26px; opacity:.7; }
+  .photobox .hoverbar{
+    position:absolute; top:0; left:0; right:0; display:flex; justify-content:flex-end; gap:4px;
+    padding:4px; opacity:0; transition:opacity .12s; background:linear-gradient(rgba(0,0,0,.35),transparent);
+  }
+  .photobox:hover .hoverbar{ opacity:1; }
+  .hoverbar button{
+    background:rgba(20,16,10,.66); color:#fff; border:none; border-radius:5px;
+    font-size:10.5px; padding:3px 7px; cursor:pointer;
+  }
+  .hoverbar button:hover{ background:rgba(20,16,10,.85); }
+  .badge{
+    position:absolute; left:4px; top:4px; background:var(--accent); color:#fff8f0;
+    font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:99px; letter-spacing:.03em;
+  }
+
+  .capbox{ flex:1; display:flex; flex-direction:column; min-width:0; font-size:11.5px; }
+  .grid4 .capbox{ flex:none; }
+  .chip-row{ display:flex; flex-wrap:wrap; gap:3px; margin-bottom:4px; }
+  .chip{
+    font-size:9.5px; border:1px solid var(--paper-line); color:#8b8272; background:#fff;
+    padding:1px 6px; border-radius:99px; cursor:pointer;
+  }
+  .chip:hover{ border-color:var(--accent); color:var(--accent-ink); }
+  .cap-category{ font-weight:700; font-size:13px; border-bottom:1.4px solid #1c2420; padding-bottom:3px; margin-bottom:5px; min-height:1.3em; }
+  .cap-memo{ flex:1; line-height:1.55; white-space:pre-wrap; min-height:1.4em; }
+  .cap-meta{ margin-top:auto; font-size:9.5px; color:#a89f8b; display:flex; flex-direction:column; gap:1px; padding-top:4px; }
+  .cap-meta .fn{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cap-meta .dt{ font-variant-numeric:tabular-nums; }
+
+  input.fileinput{ display:none; }
+
+  /* ---------- print ---------- */
+  #onlyactive{ display:contents; }
+  @media print{
+    header.topbar, aside.side, .banner, .settings, .scrim, .addpage, .chip-row, .hoverbar, .badge{ display:none !important; }
+    body{ background:#fff; }
+    main.canvas{ padding:0; overflow:visible; display:block; }
+    .sheet{ box-shadow:none; margin:0 auto; page-break-after:always; height:297mm; min-height:0; }
+    .photobox.empty{ border-style:solid; }
+  }
+  @page{ size:A4; margin:0; }
+
+  @media screen and (max-width: 900px){
+    aside.side{ width:180px; }
+    .sheet{ zoom:.55; }
+    .brand .name{ font-size:16px; }
   }
 </style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700;800&display=swap">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand"><span class="mark">Taiho App</span><span class="name">現場写真帳</span></div>
+    <div class="toolgroup">
+      <a class="tbtn" href="00_ダッシュボード.html">← 太豊建設アプリ</a>
+      <a class="tbtn" href="12_工事完了書ツール.html">工事完了書</a>
+      <a class="tbtn" href="13_注文書ツール.html">注文書</a>
+    </div>
+    <div class="spacer"></div>
+    <select class="project-select" id="projectSelect"><option value="">読み込み中...</option></select>
+    <span class="autosave" id="autosaveLabel"></span>
+    <div class="toolgroup">
+      <button class="tbtn" id="btnDownloadJson" disabled>⬇ JSONで保存</button>
+      <button class="tbtn" id="btnSettings">⚙ 圧縮設定</button>
+      <button class="tbtn primary" id="btnPrint" disabled>🖨 印刷 / PDF</button>
+    </div>
+  </header>
+
+  <div class="banner" id="noProjectBanner" style="display:none;">
+    <span>まず右上のプルダウンから案件を選択してください。①案件管理に登録した案件が表示されます。</span>
+  </div>
+
+  <div class="layout">
+    <aside class="side" id="sideNav" style="display:none;">
+      <div class="side-section">
+        <div class="side-label">ページ</div>
+      </div>
+      <div id="pageList" style="padding:0 8px;"></div>
+      <div class="addpage">
+        <div class="addpage-title">＋ ページを追加</div>
+        <div class="layout-choice">
+          <button class="lchoice" data-layout="3up"><span class="ic i3"><i></i><i></i><i></i></span>3枚 / ページ（縦）</button>
+          <button class="lchoice" data-layout="2up"><span class="ic i2"><i></i><i></i></span>2枚 / ページ（縦・大きめ）</button>
+          <button class="lchoice" data-layout="4up"><span class="ic i4"><i></i><i></i><i></i><i></i></span>4枚 / ページ（2×2）</button>
+        </div>
+      </div>
+      <div class="side-footer">
+        <div class="stat-row"><span>写真枚数</span><b id="statCount">0</b></div>
+        <div class="stat-row"><span>元サイズ合計</span><b id="statOrig">0 KB</b></div>
+        <div class="stat-row"><span>圧縮後サイズ</span><b id="statComp">0 KB</b></div>
+        <div class="stat-row save"><span>削減率</span><b id="statSaved">—</b></div>
+      </div>
+    </aside>
+
+    <main class="canvas" id="canvas">
+      <div class="empty-hint" id="emptyHint">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+        <div>案件を選択すると、その案件の工事写真帳を作成・編集できます。</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="scrim" id="scrim" style="display:none;"></div>
+  <div class="settings" id="settingsPanel">
+    <button class="settings-close" id="settingsClose">×</button>
+    <h3>写真の自動圧縮</h3>
+    <div class="sub">貼り付けた写真をブラウザ内で自動リサイズ・再圧縮してからアップロードし、ファイル容量を抑えます。設定はこれから追加する写真に適用されます。</div>
+    <div class="switch-row">
+      <label for="compressToggle" style="font-size:13px;font-weight:600;">自動圧縮を有効にする</label>
+      <span class="switch"><input type="checkbox" id="compressToggle" checked><span class="slider-tog"></span></span>
+    </div>
+    <div class="field">
+      <label for="maxDim">最大辺のサイズ</label>
+      <select id="maxDim">
+        <option value="800">800px（小・メール添付向け）</option>
+        <option value="1200">1200px</option>
+        <option value="1600" selected>1600px（標準）</option>
+        <option value="2000">2000px</option>
+        <option value="2400">2400px（大・高精細）</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="quality">画質 <span class="qualityval" id="qualityVal">75%</span></label>
+      <input type="range" id="quality" min="0.3" max="0.95" step="0.05" value="0.75">
+    </div>
+    <div class="sub" style="margin-top:-6px;">画質を下げるほどファイルは小さくなりますが、写真は粗くなります。現場記録用途では 70〜80% が目安です。</div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
@@ -183,270 +368,11 @@
   } catch (e) { window.db = null; window.fbStorage = null; }
 </script>
 <script>
-(function () {
-  "use strict";
-  var BACKUP_COLLECTION = "taiho_app_data";
-  var LAST_BACKUP_KEY = "taiho_last_auto_backup_date_v1";
-  var AUTO_BACKUP_TIME_KEY = "taiho_auto_backup_time_v1";
-  var DEFAULT_AUTO_BACKUP_TIME = "17:00";
-
-  function pad2(n) { return (n < 10 ? "0" : "") + n; }
-  function todayStr(d) {
-    d = d || new Date();
-    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
-  }
-  function getAutoBackupTime() {
-    var raw = null;
-    try { raw = window.localStorage.getItem(AUTO_BACKUP_TIME_KEY); } catch (e) {}
-    if (raw && /^([01]?\d|2[0-3]):[0-5]\d$/.test(raw)) return raw;
-    return DEFAULT_AUTO_BACKUP_TIME;
-  }
-  function getAutoBackupMinutes() {
-    var t = getAutoBackupTime().split(":");
-    return parseInt(t[0], 10) * 60 + parseInt(t[1], 10);
-  }
-  window.__taihoGetAutoBackupTime = getAutoBackupTime;
-  window.__taihoSetAutoBackupTime = function (v) {
-    if (!/^([01]?\d|2[0-3]):[0-5]\d$/.test(v)) return false;
-    try { window.localStorage.setItem(AUTO_BACKUP_TIME_KEY, v); } catch (e) {}
-    return true;
-  };
-  function collectFromLocalStorage() {
-    var out = {};
-    try {
-      for (var i = 0; i < window.localStorage.length; i++) {
-        var k = window.localStorage.key(i);
-        if (k && k.indexOf("taiho_") === 0) out[k] = window.localStorage.getItem(k);
-      }
-    } catch (e) {}
-    return out;
-  }
-  function collectAllData() {
-    return new Promise(function (resolve) {
-      if (window.db) {
-        window.db.collection(BACKUP_COLLECTION).get().then(function (snap) {
-          var out = {};
-          snap.forEach(function (doc) {
-            var d = doc.data();
-            out[doc.id] = (d && Object.prototype.hasOwnProperty.call(d, "value")) ? d.value : d;
-          });
-          resolve(out);
-        }).catch(function () { resolve(collectFromLocalStorage()); });
-      } else {
-        resolve(collectFromLocalStorage());
-      }
-    });
-  }
-  function downloadBackup(data) {
-    try {
-      var payload = { app: "太豊建設アプリ", exportedAt: new Date().toISOString(), data: data };
-      var json = JSON.stringify(payload, null, 2);
-      var blob = new Blob([json], { type: "application/json" });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement("a");
-      a.href = url;
-      a.download = "太豊建設アプリ_バックアップ_" + todayStr() + ".json";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-      return true;
-    } catch (e) { return false; }
-  }
-  var BANNER_ID = "taihoAutoBackupBanner";
-  var BANNER_DISMISS_KEY = "taiho_auto_backup_banner_dismissed_v1";
-  var LAST_BACKUP_AT_KEY = "taiho_last_backup_at_v1";
-  function runBackup() {
-    return collectAllData().then(function (data) {
-      var ok = downloadBackup(data);
-      try {
-        window.localStorage.setItem(LAST_BACKUP_KEY, todayStr());
-        if (ok) window.localStorage.setItem(LAST_BACKUP_AT_KEY, new Date().toLocaleString("ja-JP"));
-      } catch (e) {}
-      return ok;
-    });
-  }
-  window.__taihoGetLastBackupAt = function () {
-    try { return window.localStorage.getItem(LAST_BACKUP_AT_KEY); } catch (e) { return null; }
-  };
-  window.__taihoResetTodayBackupFlag = function () {
-    try {
-      window.localStorage.removeItem(LAST_BACKUP_KEY);
-      window.sessionStorage.removeItem(BANNER_DISMISS_KEY);
-    } catch (e) {}
-  };
-  window.__taihoRunBackup = function (manual) {
-    runBackup().then(function (ok) {
-      if (manual) {
-        if (ok) alert("バックアップを保存しました。ダウンロードフォルダをご確認ください。");
-        else alert("バックアップの保存に失敗しました。お手数ですが、もう一度お試しください。");
-      }
-    });
-  };
-  function showAutoBackupBanner() {
-    try {
-      if (document.getElementById(BANNER_ID)) return;
-      if (window.sessionStorage.getItem(BANNER_DISMISS_KEY) === todayStr()) return;
-    } catch (e) {}
-    if (!document.body) return;
-    var el = document.createElement("div");
-    el.id = BANNER_ID;
-    el.style.cssText = "position:fixed;right:16px;bottom:16px;z-index:99999;background:#1F2937;color:#fff;" +
-      "padding:14px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.28);font-size:13px;max-width:280px;" +
-      "line-height:1.6;font-family:inherit;";
-    el.innerHTML =
-      '<div style="font-weight:800;margin-bottom:6px;">⏰ 本日のバックアップの時間です</div>' +
-      '<div style="color:#D1D5DB;margin-bottom:10px;">クリックしてPCに保存してください。</div>' +
-      '<div style="display:flex;gap:8px;">' +
-      '<button type="button" id="taihoBackupBannerSave" style="flex:1;background:#7C6FF0;color:#fff;border:none;' +
-      'border-radius:8px;padding:8px 10px;font-weight:700;cursor:pointer;font-size:12.5px;">📥 今すぐ保存</button>' +
-      '<button type="button" id="taihoBackupBannerClose" style="background:transparent;color:#9CA3AF;border:none;' +
-      'cursor:pointer;font-size:16px;padding:0 6px;">×</button>' +
-      '</div>';
-    document.body.appendChild(el);
-    var saveBtn = document.getElementById("taihoBackupBannerSave");
-    var closeBtn = document.getElementById("taihoBackupBannerClose");
-    if (saveBtn) saveBtn.addEventListener("click", function () {
-      saveBtn.disabled = true;
-      saveBtn.textContent = "保存中...";
-      runBackup().then(function (ok) {
-        el.innerHTML = ok
-          ? '<div style="font-weight:800;">✅ バックアップを保存しました</div>'
-          : '<div style="font-weight:800;">⚠️ 保存に失敗しました</div>';
-        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 2200);
-      });
-    });
-    if (closeBtn) closeBtn.addEventListener("click", function () {
-      try { window.sessionStorage.setItem(BANNER_DISMISS_KEY, todayStr()); } catch (e) {}
-      if (el.parentNode) el.parentNode.removeChild(el);
-    });
-  }
-  function checkAutoBackup() {
-    try {
-      var now = new Date();
-      var last = window.localStorage.getItem(LAST_BACKUP_KEY);
-      if (last === todayStr(now)) return;
-      var nowMin = now.getHours() * 60 + now.getMinutes();
-      if (nowMin < getAutoBackupMinutes()) return;
-      showAutoBackupBanner();
-    } catch (e) {}
-  }
-  window.__taihoTestAutoBackup = function () {
-    try {
-      var now = new Date();
-      var nowMin = now.getHours() * 60 + now.getMinutes();
-      var thr = getAutoBackupMinutes();
-      if (nowMin < thr) return;
-      try { window.sessionStorage.removeItem(BANNER_DISMISS_KEY); } catch (e) {}
-      showAutoBackupBanner();
-    } catch (e) {}
-  };
-  document.addEventListener("DOMContentLoaded", function () {
-    var btn = document.getElementById("btnSidebarBackup");
-    if (btn) btn.addEventListener("click", function (e) { e.preventDefault(); window.__taihoRunBackup(true); });
-    setTimeout(checkAutoBackup, 1500);
-  });
-})();
-</script>
-</head>
-<body>
-
-<nav class="sidebar" id="sidebar">
-  <a class="sidebar__brand" href="00_ダッシュボード.html">太豊建設アプリ</a>
-  <a class="sidebar__link" href="00_ダッシュボード.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
-    ホーム
-  </a>
-  <a class="sidebar__link" href="01_案件管理.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
-    案件
-  </a>
-  <a class="sidebar__link" href="02_顧客建物管理.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-    顧客・建物
-  </a>
-  <a class="sidebar__link" href="03_ファイル管理.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
-    ファイル
-  </a>
-  <a class="sidebar__link" href="04_日報社内申請.html" data-pref-key="sidebar_worklog">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-    日報・社内申請
-  </a>
-  <a class="sidebar__link" href="05_金銭管理.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9 9a3 3 0 0 1 3-1c1.5 0 3 .8 3 2.2S13.5 12 12 12s-3 .8-3 2.2S10.5 16 12 16a3 3 0 0 0 3-1"/></svg>
-    金銭管理
-  </a>
-  <a class="sidebar__link" href="06_設定.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    設定
-  </a>
-  <a class="sidebar__link" href="07_工程表カレンダー.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-    工程表
-  </a>
-  <div class="sidebar__section">見積ツール</div>
-  <a class="sidebar__link" href="11_見積実行予算Pro.html" data-pref-key="sidebar_quote3">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 12h6M9 16h6M9 20h3"/></svg>
-    見積・実行予算Pro
-  </a>
-  <a class="sidebar__link" href="12_工事完了書ツール.html" data-pref-key="sidebar_kanryosho">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
-    工事完了書
-  </a>
-  <a class="sidebar__link" href="13_注文書ツール.html" data-pref-key="sidebar_orderform">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 12h6M9 16h4"/></svg>
-    注文書
-  </a>
-  <a class="sidebar__link is-active" href="14_現場写真帳.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-    現場写真帳
-  </a>
-  <div class="sidebar__section">サポート</div>
-  <a class="sidebar__link" href="99_ヘルプ.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
-    ヘルプ
-  </a>
-  <button type="button" class="sidebar__link" id="btnSidebarBackup" style="width:100%;background:none;border:none;text-align:left;cursor:pointer;font:inherit;">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-    バックアップ保存
-  </button>
-</nav>
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-<div class="shell-wrap" id="shellWrap">
-<div class="shell">
-  <div class="page-header no-print">
-    <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニュー"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
-    <div class="page-header__title">現場写真帳<span class="badge-count" id="countBadge">0件</span></div>
-    <div class="page-header__actions">
-      <select class="project-select" id="projectSelect"></select>
-      <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
-      <button class="btn btn--ghost" id="btnPrint" disabled>🖨 印刷</button>
-      <button class="btn btn--primary" id="btnUpload" disabled>📷 写真を追加</button>
-    </div>
-  </div>
-
-  <div class="hint-note no-print" id="noProjectHint" style="display:none">まず右上のプルダウンから案件を選択してください。①案件管理に登録した案件が表示されます。</div>
-
-  <div id="coverPanel" class="no-print"></div>
-
-  <div class="cat-tabs no-print" id="catTabs"></div>
-  <div id="resultsArea" class="no-print"></div>
-</div>
-</div>
-
-<div id="modalRoot"></div>
-<div id="toastRoot"></div>
-
-<div id="printArea"></div>
-
-<script>
-(function () {
+(function(){
   "use strict";
 
   /* ============================================================
-     0. storage abstraction — 他モジュールと同じFirebase(taiho_app_data)を共有
+     0. ストレージ(Firebase / localStorageフォールバック)
      ============================================================ */
   function storageGet(key) {
     return new Promise(function (resolve) {
@@ -488,98 +414,90 @@
   }
 
   var PROJECTS_KEY = "taiho_projects_v2"; // ①案件管理と共通(読み取りのみ)
-  var PHOTOS_KEY = "taiho_sitephotos_v1";
-  var ALBUM_META_KEY = "taiho_photobook_meta_v1"; // 表紙情報(工事箇所・施工者・印刷レイアウト)を案件ごとに保存
+  var PHOTOBOOK_KEY = "taiho_photobook_v2"; // 案件ごとの工事写真帳(表紙+ページ)をまとめて保存
   var DEFAULT_CONTRACTOR = "有限会社太豊建設";
+  var LAYOUT_SLOTS = { "3up": 3, "2up": 2, "4up": 4 };
+  var LAYOUT_LABEL = { "3up": "3枚/頁", "2up": "2枚/頁", "4up": "4枚/頁" };
+  var CATEGORY_PRESETS = ["施工前", "施工中", "施工後", "安全管理", "使用材料"];
 
-  function makePersistTransform(key, stateField) {
-    return function (transformFn) {
-      return storageGet(key).then(function (res) {
-        var fresh = null;
-        try { fresh = res && res.value ? JSON.parse(res.value) : null; } catch (e) { fresh = null; }
-        if (!Array.isArray(fresh)) fresh = state[stateField];
-        var next = transformFn(fresh);
-        state[stateField] = next;
-        return storageSet(key, JSON.stringify(next)).then(function () { return next; });
-      }).catch(function () {
-        var next = transformFn(state[stateField]);
-        state[stateField] = next;
-        return storageSet(key, JSON.stringify(next)).then(function () { return next; });
-      });
-    };
-  }
-
-  /* ============================================================
-     1. helpers
-     ============================================================ */
-  function $(id) { return document.getElementById(id); }
+  function uid() { return Math.random().toString(36).slice(2, 9); }
   function esc(s) { return (s == null ? "" : String(s)).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
+  function escapeHtml(s) { return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function eraStr(iso) {
     if (!iso) return "";
     var d = new Date(iso + "T00:00:00"); if (isNaN(d.getTime())) return "";
     return "R" + (d.getFullYear() - 2018) + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日";
   }
-  function todayISO() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
-
-  var ICON_CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
-  var ICON_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/></svg>';
-  var ICON_CAM40 = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>';
-
-  var toastTimer = null;
-  function showToast(msg) {
-    var root = $("toastRoot");
-    root.innerHTML = '<div class="toast">' + ICON_CHECK + ' ' + esc(msg) + '</div>';
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { root.innerHTML = ""; }, 2600);
+  function fmtBytes(n) {
+    if (!n) return "0 KB";
+    if (n < 1024 * 1024) return Math.round(n / 1024) + " KB";
+    return (n / 1024 / 1024).toFixed(2) + " MB";
   }
 
-  var CATEGORIES = [
-    { id: "cover", label: "表紙" },
-    { id: "before", label: "施工前" },
-    { id: "during", label: "施工中" },
-    { id: "after", label: "施工後" }
-  ];
-  function catOf(id) { return CATEGORIES.filter(function (c) { return c.id === id; })[0] || CATEGORIES[0]; }
-
-  var MAX_FILE_SIZE = 20 * 1024 * 1024;
-  var IMAGE_MAX_DIM = 1920;
-  var IMAGE_QUALITY = 0.8;
-
-  var state = {
-    loading: true,
-    projects: [],
-    photos: [],
-    albumMeta: [],
-    activeProjectId: "",
-    activeCat: "cover"
-  };
-  var persistPhotosTransform = makePersistTransform(PHOTOS_KEY, "photos");
-  var persistAlbumMetaTransform = makePersistTransform(ALBUM_META_KEY, "albumMeta");
-
-  function metaFor(projectId) {
-    var m = state.albumMeta.filter(function (x) { return x.projectId === projectId; })[0];
-    return m || { projectId: projectId, workLocation: "", contractor: "", layout: "4up" };
+  function emptySlot() { return { id: uid(), downloadURL: null, storagePath: "", filename: "", date: "", category: "", memo: "", origSize: 0, compSize: 0, uploading: false }; }
+  function newPage(layout) {
+    var n = LAYOUT_SLOTS[layout] || 3;
+    var slots = []; for (var i = 0; i < n; i++) slots.push(emptySlot());
+    return { id: uid(), layout: layout, slots: slots };
   }
-  var metaSaveTimer = null;
-  var pendingMetaPatch = {};
-  var pendingMetaProjectId = null;
-  function saveMeta(projectId, patch) {
-    if (pendingMetaProjectId !== projectId) { pendingMetaPatch = {}; pendingMetaProjectId = projectId; }
-    Object.assign(pendingMetaPatch, patch);
-    clearTimeout(metaSaveTimer);
-    metaSaveTimer = setTimeout(function () {
-      var patchToSave = pendingMetaPatch;
-      pendingMetaPatch = {}; pendingMetaProjectId = null;
-      persistAlbumMetaTransform(function (arr) {
-        arr = Array.isArray(arr) ? arr.slice() : [];
-        var idx = arr.findIndex(function (x) { return x.projectId === projectId; });
-        var base = idx >= 0 ? arr[idx] : { projectId: projectId, workLocation: "", contractor: "", layout: "4up" };
-        var rec = Object.assign({}, base, patchToSave, { projectId: projectId, updatedAt: Date.now() });
-        if (idx >= 0) arr[idx] = rec; else arr.push(rec);
-        state.albumMeta = arr;
-        return arr;
-      });
-    }, 500);
+  function defaultDoc(projectId, proj) {
+    return {
+      projectId: projectId,
+      cover: {
+        number: proj && proj.no != null ? String(proj.no) : "",
+        name: proj ? (proj.name || "") : "",
+        location: "",
+        start: proj && proj.startDate ? eraStr(proj.startDate) : "",
+        complete: proj && proj.completionDate ? eraStr(proj.completionDate) : "",
+        contractor: DEFAULT_CONTRACTOR
+      },
+      pages: [newPage("3up")],
+      settings: { compress: true, maxDim: 1600, quality: 0.75 },
+      updatedAt: null
+    };
+  }
+
+  /* ============================================================
+     1. 状態
+     ============================================================ */
+  var projects = [];
+  var docsCache = []; // storageから読み込んだ全案件分の写真帳(read-merge-write用)
+  var activeProjectId = "";
+  var doc = null; // 現在編集中の案件の写真帳
+  var activePageIndex = -1; // -1 = 表紙
+  var pendingSlot = null; // {pageId, slotIndex}
+
+  function $(id) { return document.getElementById(id); }
+
+  function findDoc(projectId) {
+    return docsCache.filter(function (d) { return d.projectId === projectId; })[0] || null;
+  }
+
+  var saveTimer = null;
+  function scheduleSave() {
+    if (!doc) return;
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(persist, 550);
+  }
+  function persist() {
+    if (!doc) return;
+    doc.updatedAt = Date.now();
+    var toSave = JSON.parse(JSON.stringify(doc));
+    storageGet(PHOTOBOOK_KEY).then(function (res) {
+      var arr = null;
+      try { arr = res && res.value ? JSON.parse(res.value) : null; } catch (e) { arr = null; }
+      if (!Array.isArray(arr)) arr = docsCache;
+      var idx = arr.findIndex(function (d) { return d.projectId === toSave.projectId; });
+      if (idx >= 0) arr[idx] = toSave; else arr.push(toSave);
+      docsCache = arr;
+      return storageSet(PHOTOBOOK_KEY, JSON.stringify(arr));
+    }).then(function () { flashAutosave(); }).catch(function () { flashAutosave(); });
+  }
+  function flashAutosave() {
+    var el = $("autosaveLabel");
+    el.textContent = "自動保存済み"; el.classList.add("show");
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.classList.remove("show"); el.textContent = ""; }, 1600);
   }
 
   /* ============================================================
@@ -587,344 +505,397 @@
      ============================================================ */
   function renderProjectSelect() {
     var sel = $("projectSelect");
-    if (state.projects.length === 0) {
+    if (!projects.length) {
       sel.innerHTML = '<option value="">案件がありません</option>';
       sel.disabled = true;
-      $("btnUpload").disabled = true;
-      $("btnPrint").disabled = true;
       return;
     }
     sel.disabled = false;
-    var opts = '<option value="">案件を選択してください</option>' +
-      state.projects.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === state.activeProjectId ? " selected" : "") + '>' + esc(p.name || "(無題の案件)") + '</option>'; }).join("");
-    sel.innerHTML = opts;
-    var hasProject = !!state.activeProjectId;
-    $("btnUpload").disabled = !hasProject;
-    $("btnPrint").disabled = !hasProject;
-    $("noProjectHint").style.display = hasProject ? "none" : "";
+    sel.innerHTML = '<option value="">案件を選択してください</option>' +
+      projects.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === activeProjectId ? " selected" : "") + '>' + esc(p.name || "(無題の案件)") + '</option>'; }).join("");
   }
-  $("projectSelect").addEventListener("change", function (e) {
-    state.activeProjectId = e.target.value;
-    try { history.replaceState(null, "", location.pathname + (state.activeProjectId ? "?project=" + encodeURIComponent(state.activeProjectId) : "")); } catch (ex) {}
+  $("projectSelect").addEventListener("change", function (e) { selectProject(e.target.value); });
+
+  function selectProject(projectId) {
+    activeProjectId = projectId;
+    try { history.replaceState(null, "", location.pathname + (activeProjectId ? "?project=" + encodeURIComponent(activeProjectId) : "")); } catch (ex) {}
     renderProjectSelect();
-    renderCoverPanel();
-    renderCatTabs();
-    renderResults();
-  });
-
-  /* ============================================================
-     2.5 表紙情報(工事箇所・施工者・印刷レイアウト)
-     ============================================================ */
-  function renderCoverPanel() {
-    var wrap = $("coverPanel");
-    if (!state.activeProjectId) { wrap.innerHTML = ""; return; }
-    var m = metaFor(state.activeProjectId);
-    wrap.innerHTML =
-      '<div class="cover-panel">' +
-        '<div class="cover-panel__field"><label for="metaLocation">工事箇所(表紙用・任意)</label><input type="text" id="metaLocation" placeholder="例：苫小牧市字勇払33番地" value="' + esc(m.workLocation || "") + '"></div>' +
-        '<div class="cover-panel__field"><label for="metaContractor">工事施工者(表紙用)</label><input type="text" id="metaContractor" placeholder="' + esc(DEFAULT_CONTRACTOR) + '" value="' + esc(m.contractor || "") + '"></div>' +
-        '<div class="cover-panel__field cover-panel__field--layout"><label for="metaLayout">印刷レイアウト(1ページの枚数)</label>' +
-          '<select id="metaLayout">' +
-            '<option value="3up"' + (m.layout === "3up" ? " selected" : "") + '>3枚/ページ(キャプション広め)</option>' +
-            '<option value="2up"' + (m.layout === "2up" ? " selected" : "") + '>2枚/ページ(写真大きめ)</option>' +
-            '<option value="4up"' + (m.layout !== "3up" && m.layout !== "2up" ? " selected" : "") + '>4枚/ページ(標準)</option>' +
-          '</select>' +
-        '</div>' +
-      '</div>';
-    $("metaLocation").addEventListener("input", function (e) { saveMeta(state.activeProjectId, { workLocation: e.target.value }); });
-    $("metaContractor").addEventListener("input", function (e) { saveMeta(state.activeProjectId, { contractor: e.target.value }); });
-    $("metaLayout").addEventListener("change", function (e) { saveMeta(state.activeProjectId, { layout: e.target.value }); });
-  }
-
-  /* ============================================================
-     3. カテゴリタブ
-     ============================================================ */
-  function photosFor(projectId, catId) {
-    return state.photos.filter(function (p) { return p.projectId === projectId && p.category === catId; })
-      .sort(function (a, b) { return (a.order || 0) - (b.order || 0) || (a.uploadedAt || 0) - (b.uploadedAt || 0); });
-  }
-  function renderCatTabs() {
-    var wrap = $("catTabs");
-    if (!state.activeProjectId) { wrap.innerHTML = ""; return; }
-    wrap.innerHTML = CATEGORIES.map(function (c) {
-      var n = photosFor(state.activeProjectId, c.id).length;
-      return '<button type="button" class="cat-tab' + (state.activeCat === c.id ? " is-active" : "") + '" data-cat="' + c.id + '">' + esc(c.label) + ' <span class="tab-count">' + n + '</span></button>';
-    }).join("");
-    wrap.querySelectorAll("[data-cat]").forEach(function (btn) {
-      btn.addEventListener("click", function () { state.activeCat = btn.getAttribute("data-cat"); renderCatTabs(); renderResults(); });
-    });
-  }
-
-  /* ============================================================
-     4. 一覧表示
-     ============================================================ */
-  function renderResults() {
-    var area = $("resultsArea");
-    if (state.loading) { area.innerHTML = '<div class="loading-wrap"><span class="spinner"></span>読み込み中...</div>'; return; }
-    if (!state.activeProjectId) {
-      area.innerHTML = '<div class="empty-state">' + ICON_CAM40 +
-        '<p class="empty-state__title">案件を選択してください</p><p class="empty-state__desc">案件ごとに施工前・施工中・施工後の写真を整理して保存・印刷できます。</p></div>';
+    if (!activeProjectId) {
+      doc = null;
+      $("noProjectBanner").style.display = "flex";
+      $("sideNav").style.display = "none";
+      $("btnPrint").disabled = true;
+      $("btnDownloadJson").disabled = true;
+      $("canvas").innerHTML = '<div class="empty-hint" id="emptyHint"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg><div>案件を選択すると、その案件の工事写真帳を作成・編集できます。</div></div>';
       return;
     }
-    var list = photosFor(state.activeProjectId, state.activeCat);
-    var html = '<div class="photo-grid">';
-    list.forEach(function (p, idx) {
-      html += '<div class="photo-card" data-pid="' + esc(p.id) + '">' +
-        '<button type="button" class="photo-card__del" data-del="' + esc(p.id) + '" aria-label="削除">' + ICON_TRASH + '</button>' +
-        '<div class="photo-card__order">' + (idx + 1) + '</div>' +
-        '<div class="photo-card__thumb" data-preview="' + esc(p.id) + '"><img src="' + esc(p.downloadURL) + '" alt="" loading="lazy"></div>' +
-        '<div class="photo-card__body"><input type="text" class="photo-card__cap" data-cap="' + esc(p.id) + '" placeholder="コメント(任意)" value="' + esc(p.caption || "") + '"></div>' +
-        '</div>';
-    });
-    html += '<label class="upload-card" for="fileInput">' + ICON_CAM40 + '写真を追加</label>';
-    html += '</div>';
-    area.innerHTML = html;
-
-    area.querySelectorAll("[data-preview]").forEach(function (el) {
-      el.addEventListener("click", function () { openPreview(el.getAttribute("data-preview")); });
-    });
-    area.querySelectorAll("[data-del]").forEach(function (el) {
-      el.addEventListener("click", function (e) { e.stopPropagation(); deletePhoto(el.getAttribute("data-del")); });
-    });
-    area.querySelectorAll("[data-cap]").forEach(function (el) {
-      el.addEventListener("change", function () { saveCaption(el.getAttribute("data-cap"), el.value); });
-    });
-
-    $("countBadge").textContent = list.length + "件";
-  }
-
-  function openPreview(id) {
-    var p = state.photos.filter(function (x) { return x.id === id; })[0];
-    if (!p) return;
-    var root = $("modalRoot");
-    root.innerHTML =
-      '<div class="modal-overlay" id="previewOverlay"><div class="preview-modal">' +
-      '<div class="preview-modal__header"><h2>' + esc(catOf(p.category).label) + (p.caption ? "　" + esc(p.caption) : "") + '</h2><button class="icon-btn" id="previewCloseBtn">✕</button></div>' +
-      '<div class="preview-modal__body"><img src="' + esc(p.downloadURL) + '" alt=""></div>' +
-      '</div></div>';
-    $("previewCloseBtn").addEventListener("click", closePreview);
-    $("previewOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "previewOverlay") closePreview(); });
-  }
-  function closePreview() { $("modalRoot").innerHTML = ""; }
-
-  function saveCaption(id, val) {
-    persistPhotosTransform(function (fresh) {
-      return fresh.map(function (p) { return p.id === id ? Object.assign({}, p, { caption: val }) : p; });
-    });
-  }
-
-  function deletePhoto(id) {
-    var p = state.photos.filter(function (x) { return x.id === id; })[0];
-    if (!p) return;
-    if (!confirm("この写真を削除します。よろしいですか？")) return;
-    persistPhotosTransform(function (fresh) { return fresh.filter(function (x) { return x.id !== id; }); }).then(function () {
-      if (p.storagePath && window.fbStorage) window.fbStorage.ref().child(p.storagePath).delete().catch(function () {});
-      renderCatTabs();
-      renderResults();
-      showToast("削除しました");
-    });
+    var proj = projects.filter(function (p) { return p.id === activeProjectId; })[0] || null;
+    var existing = findDoc(activeProjectId);
+    doc = existing ? existing : defaultDoc(activeProjectId, proj);
+    activePageIndex = -1;
+    $("noProjectBanner").style.display = "none";
+    $("sideNav").style.display = "flex";
+    $("btnPrint").disabled = false;
+    $("btnDownloadJson").disabled = false;
+    render();
   }
 
   /* ============================================================
-     5. アップロード(Firebase Storageに実ファイルを保存)
+     3. サイドバー(ページ一覧)
      ============================================================ */
-  function compressImage(file) {
-    return new Promise(function (resolve) {
-      if (!file.type || file.type.indexOf("image/") !== 0) { resolve(file); return; }
-      var reader = new FileReader();
-      reader.onload = function (e) {
-        var img = new Image();
-        img.onload = function () {
-          var w = img.width, h = img.height;
-          if (w > IMAGE_MAX_DIM || h > IMAGE_MAX_DIM) {
-            if (w >= h) { h = Math.round(h * IMAGE_MAX_DIM / w); w = IMAGE_MAX_DIM; }
-            else { w = Math.round(w * IMAGE_MAX_DIM / h); h = IMAGE_MAX_DIM; }
-          }
-          var canvas = document.createElement("canvas");
-          canvas.width = w; canvas.height = h;
-          var ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, w, h);
-          canvas.toBlob(function (blob) { resolve(blob || file); }, "image/jpeg", IMAGE_QUALITY);
-        };
-        img.onerror = function () { resolve(file); };
-        img.src = e.target.result;
-      };
-      reader.onerror = function () { resolve(file); };
-      reader.readAsDataURL(file);
+  function renderSidebar() {
+    var list = $("pageList");
+    list.innerHTML = "";
+
+    var cover = document.createElement("div");
+    cover.className = "pagecard" + (activePageIndex === -1 ? " active" : "");
+    cover.innerHTML = '<div class="thumb"><i style="flex:none;height:30%;"></i></div>' +
+      '<div class="meta"><div class="t1">表紙</div><div class="t2">' + escapeHtml(doc.cover.name || "工事名未入力") + '</div></div>';
+    cover.addEventListener("click", function () { activePageIndex = -1; render(); });
+    list.appendChild(cover);
+
+    doc.pages.forEach(function (pg, idx) {
+      var filled = pg.slots.filter(function (s) { return s.downloadURL; }).length;
+      var card = document.createElement("div");
+      card.className = "pagecard" + (activePageIndex === idx ? " active" : "");
+      var thumbInner = pg.slots.map(function () { return "<i></i>"; }).join("");
+      card.innerHTML = '<div class="thumb">' + thumbInner + '</div>' +
+        '<div class="meta"><div class="t1">' + (idx + 1) + 'ページ目・' + LAYOUT_LABEL[pg.layout] + '</div>' +
+        '<div class="t2">' + filled + ' / ' + pg.slots.length + ' 枚</div></div>' +
+        '<button class="del" title="このページを削除" data-del="' + idx + '">×</button>';
+      card.addEventListener("click", function (e) {
+        if (e.target.closest(".del")) return;
+        activePageIndex = idx; render();
+      });
+      card.querySelector(".del").addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (doc.pages.length <= 1) { alert("これ以上ページを削除できません（最低1ページ必要です）。"); return; }
+        if (!confirm((idx + 1) + "ページ目を削除しますか？中の写真も削除されます。")) return;
+        doc.pages.splice(idx, 1);
+        if (activePageIndex >= doc.pages.length) activePageIndex = doc.pages.length - 1;
+        scheduleSave(); render();
+      });
+      list.appendChild(card);
     });
+
+    document.querySelectorAll(".lchoice").forEach(function (btn) {
+      btn.onclick = function () {
+        doc.pages.push(newPage(btn.getAttribute("data-layout")));
+        activePageIndex = doc.pages.length - 1;
+        scheduleSave(); render();
+      };
+    });
+
+    var count = 0, orig = 0, comp = 0;
+    doc.pages.forEach(function (pg) { pg.slots.forEach(function (s) {
+      if (s.downloadURL) { count++; orig += s.origSize || 0; comp += s.compSize || 0; }
+    }); });
+    $("statCount").textContent = count;
+    $("statOrig").textContent = fmtBytes(orig);
+    $("statComp").textContent = fmtBytes(comp);
+    $("statSaved").textContent = orig ? Math.round((1 - comp / orig) * 100) + "% 削減" : "—";
   }
 
-  $("btnUpload").addEventListener("click", function () { $("fileInput").click(); });
-  $("fileInput").addEventListener("change", function (e) {
-    var files = Array.prototype.slice.call(e.target.files || []);
-    e.target.value = "";
-    if (files.length === 0) return;
-    if (!state.activeProjectId) { showToast("先に案件を選択してください"); return; }
-    if (!window.fbStorage) { showToast("アップロード機能が利用できません(クラウド未接続)"); return; }
+  /* ============================================================
+     4. キャンバス(表紙・写真ページ)
+     ============================================================ */
+  function ceAttrs(ph) { return 'contenteditable="true" data-ph="' + ph + '"'; }
+  function bindCE(el, onInput) {
+    el.addEventListener("input", onInput);
+    el.addEventListener("blur", onInput);
+  }
 
-    var accepted = [];
-    var rejected = 0;
-    files.forEach(function (f) {
-      if (!f.type || f.type.indexOf("image/") !== 0) { rejected++; return; }
-      if (f.size > MAX_FILE_SIZE) { rejected++; return; }
-      accepted.push(f);
+  function renderCover() {
+    var c = doc.cover;
+    var wrap = document.createElement("div");
+    wrap.className = "sheet";
+    wrap.innerHTML =
+      '<div class="cover-frame"></div>' +
+      '<div class="cover-title"><span class="cjp">現　場　写　真　帳</span></div>' +
+      '<div class="cover-rows">' +
+        coverRow("工事番号", "number", c.number, "例：R7-014") +
+        coverRow("工事名", "name", c.name, "工事名を入力") +
+        coverRow("工事箇所", "location", c.location, "工事箇所を入力") +
+        '<div class="cover-row period"><div class="lab">工　期</div><div class="period-sub">' +
+          periodLine("着手", "start", c.start) +
+          periodLine("竣工", "complete", c.complete) +
+        '</div></div>' +
+        coverRow("工事施工者", "contractor", c.contractor, "施工者名を入力") +
+      '</div>' +
+      '<div class="cover-note">太豊建設アプリ 現場写真帳</div>';
+    $("canvas").appendChild(wrap);
+
+    ["number", "name", "location", "contractor"].forEach(function (key) {
+      var el = wrap.querySelector('[data-field="' + key + '"]');
+      bindCE(el, function () { c[key] = el.textContent; renderSidebarLite(); scheduleSave(); });
     });
-    if (rejected > 0) showToast(rejected + "件は画像以外または容量(20MB超)のためスキップされました");
-    if (accepted.length === 0) return;
+    ["start", "complete"].forEach(function (key) {
+      var el = wrap.querySelector('[data-field="' + key + '"]');
+      bindCE(el, function () { c[key] = el.textContent; scheduleSave(); });
+    });
+  }
+  function coverRow(label, key, val, ph) {
+    return '<div class="cover-row"><div class="lab">' + label + '</div>' +
+      '<div class="val ce" data-field="' + key + '" ' + ceAttrs(ph) + '>' + escapeHtml(val) + '</div></div>';
+  }
+  function periodLine(label, key, val) {
+    return '<div class="pline"><div class="plab">' + label + '</div>' +
+      '<div class="val ce" data-field="' + key + '" ' + ceAttrs("例：R8年4月10日") + '>' + escapeHtml(val) + '</div></div>';
+  }
+  function renderSidebarLite() {
+    var t2 = document.querySelector('.pagecard .t2');
+    if (activePageIndex === -1 && t2) t2.textContent = doc.cover.name || "工事名未入力";
+  }
 
-    showToast(accepted.length + "件アップロード中...");
-    var projectId = state.activeProjectId, category = state.activeCat;
-    var baseOrder = photosFor(projectId, category).length;
+  function renderPhotoPage(pg, idx) {
+    var wrap = document.createElement("div");
+    wrap.className = "sheet";
+    var gridClass = pg.layout === "3up" ? "grid3" : pg.layout === "2up" ? "grid2" : "grid4";
+    wrap.innerHTML =
+      '<div class="sheet-head"><span class="proj">' + escapeHtml(doc.cover.name || "（工事名未設定）") + '</span><span>' + escapeHtml(doc.cover.number || "") + '</span></div>' +
+      '<div class="' + gridClass + '"></div>' +
+      '<div class="sheet-foot"><span>' + escapeHtml(doc.cover.location || "") + '</span><span>' + (idx + 1) + ' / ' + doc.pages.length + ' ページ</span></div>';
+    var grid = wrap.querySelector("." + gridClass);
+    pg.slots.forEach(function (slot, si) { grid.appendChild(renderSlot(pg, slot, si)); });
+    $("canvas").appendChild(wrap);
+  }
 
-    var uploadPromises = accepted.map(function (f, i) {
-      return compressImage(f).then(function (blob) {
-        var id = "ph-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7);
-        var path = "sitephotos/" + projectId + "/" + category + "/" + id + ".jpg";
-        var ref = window.fbStorage.ref().child(path);
-        return ref.put(blob, { contentType: "image/jpeg" }).then(function () {
-          return ref.getDownloadURL();
-        }).then(function (url) {
-          return {
-            id: id, projectId: projectId, category: category, caption: "",
-            storagePath: path, downloadURL: url, sizeBytes: blob.size,
-            order: baseOrder + i, uploadedAt: Date.now()
-          };
-        });
-      }).catch(function (err) {
-        console.error("アップロード失敗:", f.name, err);
-        return { __error: true, name: f.name, message: (err && err.message) ? err.message : String(err) };
+  function renderSlot(pg, slot, si) {
+    var el = document.createElement("div");
+    el.className = "slot";
+
+    var photobox = document.createElement("div");
+    photobox.className = "photobox" + (slot.uploading ? " uploading" : (slot.downloadURL ? "" : " empty"));
+    if (slot.uploading) {
+      photobox.innerHTML = '<div class="placeholder"><span>アップロード中…</span></div>';
+    } else if (slot.downloadURL) {
+      photobox.innerHTML = '<img src="' + esc(slot.downloadURL) + '" alt="">' +
+        '<div class="hoverbar"><button data-act="change">変更</button><button data-act="remove">削除</button></div>';
+      photobox.querySelector('[data-act="change"]').addEventListener("click", function (e) { e.stopPropagation(); triggerPick(pg.id, si); });
+      photobox.querySelector('[data-act="remove"]').addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (!confirm("この写真を削除しますか？")) return;
+        removePhoto(pg, slot, si);
       });
+    } else {
+      photobox.innerHTML = '<div class="placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 011 1v11a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z"/><circle cx="12" cy="13" r="3.4"/></svg><span>クリックして写真を追加</span></div>';
+      photobox.addEventListener("click", function () { triggerPick(pg.id, si); });
+    }
+    el.appendChild(photobox);
+
+    var cap = document.createElement("div");
+    cap.className = "capbox";
+    var chips = CATEGORY_PRESETS.map(function (c) { return '<button class="chip" data-c="' + c + '">' + c + '</button>'; }).join("");
+    cap.innerHTML =
+      '<div class="chip-row">' + chips + '</div>' +
+      '<div class="cap-category ce" ' + ceAttrs("工程（例：施工前）") + '>' + escapeHtml(slot.category) + '</div>' +
+      '<div class="cap-memo ce" ' + ceAttrs("摘要・撮影メモ") + '>' + escapeHtml(slot.memo) + '</div>' +
+      '<div class="cap-meta">' +
+        '<span class="fn">' + escapeHtml(slot.filename || "") + '</span>' +
+        '<span class="dt ce" ' + ceAttrs("撮影日") + '>' + escapeHtml(slot.date || "") + '</span>' +
+        (slot.downloadURL ? '<span>' + fmtBytes(slot.origSize) + ' → ' + fmtBytes(slot.compSize) + '</span>' : '') +
+      '</div>';
+    el.appendChild(cap);
+
+    var catEl = cap.querySelector(".cap-category");
+    var memoEl = cap.querySelector(".cap-memo");
+    var dateEl = cap.querySelector(".dt");
+    bindCE(catEl, function () { slot.category = catEl.textContent; scheduleSave(); });
+    bindCE(memoEl, function () { slot.memo = memoEl.textContent; scheduleSave(); });
+    bindCE(dateEl, function () { slot.date = dateEl.textContent; scheduleSave(); });
+    cap.querySelectorAll(".chip").forEach(function (chip) {
+      chip.addEventListener("click", function () { catEl.textContent = chip.getAttribute("data-c"); slot.category = catEl.textContent; scheduleSave(); });
     });
 
-    Promise.all(uploadPromises).then(function (results) {
-      var newPhotos = results.filter(function (r) { return r && !r.__error; });
-      var errors = results.filter(function (r) { return r && r.__error; });
-      var finish = function () {
-        var msg = "";
-        if (newPhotos.length) msg += newPhotos.length + "件アップロードしました";
-        if (errors.length) msg += (msg ? " / " : "") + errors.length + "件失敗しました";
-        showToast(msg || "アップロードできませんでした");
-        renderCatTabs();
-        renderResults();
-      };
-      if (!newPhotos.length) { finish(); return; }
-      persistPhotosTransform(function (fresh) { return fresh.concat(newPhotos); }).then(finish).catch(function () {
-        showToast("写真情報の保存に失敗しました");
-      });
-    });
+    return el;
+  }
+
+  function removePhoto(pg, slot, si) {
+    var oldPath = slot.storagePath;
+    pg.slots[si] = emptySlot();
+    scheduleSave(); render();
+    if (oldPath && window.fbStorage) {
+      try { window.fbStorage.ref().child(oldPath).delete().catch(function () {}); } catch (e) {}
+    }
+  }
+
+  function render() {
+    if (!doc) return;
+    renderSidebar();
+    var canvas = $("canvas");
+    canvas.innerHTML = "";
+    if (activePageIndex === -1) renderCover();
+    else renderPhotoPage(doc.pages[activePageIndex], activePageIndex);
+    applySettingsToUI();
+  }
+
+  function renderAllForPrint() {
+    if (!doc) return;
+    var canvas = $("canvas");
+    canvas.innerHTML = "";
+    renderCover();
+    doc.pages.forEach(function (pg, idx) { renderPhotoPage(pg, idx); });
+  }
+  window.addEventListener("beforeprint", renderAllForPrint);
+  window.addEventListener("afterprint", render);
+
+  /* ============================================================
+     5. 写真の追加(自動圧縮 + Firebase Storageアップロード)
+     ============================================================ */
+  var fileInput = document.createElement("input");
+  fileInput.type = "file"; fileInput.accept = "image/*"; fileInput.className = "fileinput";
+  document.body.appendChild(fileInput);
+
+  function triggerPick(pageId, slotIndex) {
+    pendingSlot = { pageId: pageId, slotIndex: slotIndex };
+    fileInput.value = "";
+    fileInput.click();
+  }
+  fileInput.addEventListener("change", function () {
+    var file = fileInput.files && fileInput.files[0];
+    if (!file || !pendingSlot) return;
+    processImage(file, pendingSlot.pageId, pendingSlot.slotIndex);
   });
 
-  /* ============================================================
-     6. 印刷(写真台帳)
-     ============================================================ */
-  function chunk(arr, n) {
-    var out = [];
-    for (var i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
-    return out;
+  function processImage(file, pageId, slotIndex) {
+    var pg = doc.pages.find(function (p) { return p.id === pageId; });
+    if (!pg) return;
+    var slot = pg.slots[slotIndex];
+    slot.uploading = true;
+    render();
+
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function () {
+      var maxDim = doc.settings.maxDim;
+      var w = img.naturalWidth, h = img.naturalHeight;
+      var scale = doc.settings.compress ? Math.min(1, maxDim / Math.max(w, h)) : 1;
+      var tw = Math.round(w * scale), th = Math.round(h * scale);
+
+      function finishWithBlob(blob) {
+        URL.revokeObjectURL(url);
+        var storagePath = "sitephotos/" + doc.projectId + "/" + pg.id + "/" + slot.id + ".jpg";
+        if (window.fbStorage) {
+          window.fbStorage.ref().child(storagePath).put(blob, { contentType: "image/jpeg" }).then(function (task) {
+            return task.ref.getDownloadURL();
+          }).then(function (downloadURL) {
+            applyUploadResult(slot, downloadURL, storagePath, file, blob.size);
+          }).catch(function () {
+            // Storageに失敗した場合はdataURLとして直接埋め込む(端末内のみ・オフライン対応)
+            embedAsDataUrl(blob, slot, file);
+          });
+        } else {
+          embedAsDataUrl(blob, slot, file);
+        }
+      }
+      function embedAsDataUrl(blob, slot, file) {
+        var reader = new FileReader();
+        reader.onload = function () { applyUploadResult(slot, reader.result, "", file, blob.size); };
+        reader.readAsDataURL(blob);
+      }
+
+      if (doc.settings.compress) {
+        var canvas = document.createElement("canvas");
+        canvas.width = tw; canvas.height = th;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, tw, th);
+        canvas.toBlob(function (blob) { finishWithBlob(blob || file); }, "image/jpeg", doc.settings.quality);
+      } else {
+        finishWithBlob(file);
+      }
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+      slot.uploading = false; render();
+      alert("画像を読み込めませんでした。別のファイルをお試しください。");
+    };
+    img.src = url;
   }
-  var LAYOUT_PER_PAGE = { "3up": 3, "2up": 2, "4up": 4 };
+
+  function applyUploadResult(slot, downloadURL, storagePath, file, compSize) {
+    slot.downloadURL = downloadURL;
+    slot.storagePath = storagePath;
+    slot.filename = file.name;
+    slot.origSize = file.size;
+    slot.compSize = compSize;
+    slot.uploading = false;
+    if (!slot.date) {
+      var d = new Date(file.lastModified || Date.now());
+      slot.date = d.getFullYear() + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getDate()).padStart(2, "0");
+    }
+    scheduleSave();
+    render();
+  }
+
+  /* ============================================================
+     6. ツールバー(JSON保存・印刷・圧縮設定)
+     ============================================================ */
+  $("btnDownloadJson").addEventListener("click", function () {
+    if (!doc) return;
+    var jsonStr = JSON.stringify(doc, null, 2);
+    var name = (doc.cover.name || "現場写真帳").replace(/[\\/:*?"<>|]/g, "_") + ".json";
+    try {
+      var blob = new Blob([jsonStr], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    } catch (e) { alert("この環境ではファイルへの保存ができません。「印刷 / PDF」から出力してください。"); }
+  });
 
   $("btnPrint").addEventListener("click", function () {
-    if (!state.activeProjectId) return;
-    var proj = state.projects.filter(function (p) { return p.id === state.activeProjectId; })[0];
-    var siteName = proj ? (proj.name || "") : "";
-    var meta = metaFor(state.activeProjectId);
-    var layout = LAYOUT_PER_PAGE[meta.layout] ? meta.layout : "4up";
-    var perPage = LAYOUT_PER_PAGE[layout];
-    var contractor = meta.contractor || DEFAULT_CONTRACTOR;
-
-    var html = '<div class="p-cover">' +
-      '<div class="p-cover-frame"></div>' +
-      '<div class="p-cover-tag">太豊建設アプリ</div>' +
-      '<div class="p-cover-title">現　場　写　真　帳</div>' +
-      '<div class="p-cover-rows">' +
-        '<div class="p-cover-row"><div class="p-lab">工事番号</div><div class="p-val">' + esc(proj && proj.no != null ? String(proj.no) : "") + '</div></div>' +
-        '<div class="p-cover-row"><div class="p-lab">工事名</div><div class="p-val">' + esc(siteName) + '</div></div>' +
-        '<div class="p-cover-row"><div class="p-lab">工事箇所</div><div class="p-val">' + esc(meta.workLocation || "") + '</div></div>' +
-        '<div class="p-cover-row period"><div class="p-lab">工　期</div><div class="p-period-sub">' +
-          '<span>着手　' + esc(proj && proj.startDate ? eraStr(proj.startDate) : "") + '</span>' +
-          '<span>竣工　' + esc(proj && proj.completionDate ? eraStr(proj.completionDate) : "") + '</span>' +
-        '</div></div>' +
-        '<div class="p-cover-row"><div class="p-lab">工事施工者</div><div class="p-val">' + esc(contractor) + '</div></div>' +
-      '</div>' +
-      '<div class="p-cover-note">作成日：' + eraStr(todayISO()) + '</div>' +
-      '</div>';
-
-    CATEGORIES.forEach(function (c) {
-      var list = photosFor(state.activeProjectId, c.id);
-      if (!list.length) {
-        html += '<div class="p-page"><div class="p-page-title">' + esc(c.label) + '<span class="p-sub">' + esc(siteName) + '</span></div>' +
-          '<div class="p-empty">(写真がありません)</div></div>';
-        return;
-      }
-      var pages = chunk(list, perPage);
-      pages.forEach(function (pageList, pi) {
-        html += '<div class="p-page"><div class="p-page-title">' + esc(c.label) +
-          (pages.length > 1 ? '(' + (pi + 1) + '/' + pages.length + ')' : '') +
-          '<span class="p-sub">' + esc(siteName) + '</span></div>';
-        html += '<div class="p-grid-' + layout + '">';
-        pageList.forEach(function (p, i) {
-          var no = pi * perPage + i + 1;
-          html += '<div class="p-cell"><img class="p-cell__img" src="' + esc(p.downloadURL) + '" alt="">' +
-            '<div class="p-cell__cap">' + no + '. ' + esc(p.caption || "") + '</div></div>';
-        });
-        html += '</div></div>';
-      });
-    });
-
-    $("printArea").innerHTML = html;
+    if (!doc) return;
+    renderAllForPrint();
     setTimeout(function () { window.print(); }, 60);
   });
 
-  /* ============================================================
-     7. サイドバー / 表示設定
-     ============================================================ */
-  function setSidebar(open) {
-    $("sidebar").classList.toggle("is-open", open);
-    $("shellWrap").classList.toggle("sidebar-open", open);
-    $("sidebarOverlay").classList.toggle("is-open", open && window.innerWidth <= 960);
+  var settingsPanel = $("settingsPanel");
+  var scrim = $("scrim");
+  function openSettings() { settingsPanel.classList.add("open"); scrim.style.display = "block"; }
+  function closeSettings() { settingsPanel.classList.remove("open"); scrim.style.display = "none"; }
+  $("btnSettings").addEventListener("click", openSettings);
+  $("settingsClose").addEventListener("click", closeSettings);
+  scrim.addEventListener("click", closeSettings);
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSettings(); });
+
+  $("compressToggle").addEventListener("change", function (e) { if (doc) { doc.settings.compress = e.target.checked; scheduleSave(); } });
+  $("maxDim").addEventListener("change", function (e) { if (doc) { doc.settings.maxDim = parseInt(e.target.value, 10); scheduleSave(); } });
+  $("quality").addEventListener("input", function (e) {
+    if (!doc) return;
+    doc.settings.quality = parseFloat(e.target.value);
+    $("qualityVal").textContent = Math.round(doc.settings.quality * 100) + "%";
+    scheduleSave();
+  });
+  function applySettingsToUI() {
+    if (!doc) return;
+    $("compressToggle").checked = doc.settings.compress;
+    $("maxDim").value = doc.settings.maxDim;
+    $("quality").value = doc.settings.quality;
+    $("qualityVal").textContent = Math.round(doc.settings.quality * 100) + "%";
   }
-  $("hamburgerBtn").addEventListener("click", function () { setSidebar(!$("sidebar").classList.contains("is-open")); });
-  $("sidebarOverlay").addEventListener("click", function () { setSidebar(false); });
-  setSidebar(window.innerWidth > 960);
-
-  (function applyUiPrefs() {
-    var prefs = {};
-    try { prefs = JSON.parse(window.localStorage.getItem("taiho_ui_prefs_v1") || "{}"); } catch (e) { prefs = {}; }
-    document.querySelectorAll("[data-pref-key]").forEach(function (el) {
-      var key = el.getAttribute("data-pref-key");
-      if (prefs[key] === false) el.style.display = "none";
-    });
-  })();
 
   /* ============================================================
-     8. 初期化
+     7. 初期化
      ============================================================ */
   function init() {
     var qp = new URLSearchParams(window.location.search);
     var pid = qp.get("project");
 
-    Promise.all([storageGet(PROJECTS_KEY), storageGet(PHOTOS_KEY), storageGet(ALBUM_META_KEY)]).then(function (res) {
-      try { state.projects = res[0] && res[0].value ? JSON.parse(res[0].value) : []; } catch (e) { state.projects = []; }
-      try { state.photos = res[1] && res[1].value ? JSON.parse(res[1].value) : []; } catch (e) { state.photos = []; }
-      try { state.albumMeta = res[2] && res[2].value ? JSON.parse(res[2].value) : []; } catch (e) { state.albumMeta = []; }
-      if (!Array.isArray(state.projects)) state.projects = [];
-      if (!Array.isArray(state.photos)) state.photos = [];
-      if (!Array.isArray(state.albumMeta)) state.albumMeta = [];
-      state.projects.sort(function (a, b) { return (b.no || 0) - (a.no || 0); });
-      if (pid && state.projects.some(function (p) { return p.id === pid; })) state.activeProjectId = pid;
-      state.loading = false;
+    Promise.all([storageGet(PROJECTS_KEY), storageGet(PHOTOBOOK_KEY)]).then(function (res) {
+      try { projects = res[0] && res[0].value ? JSON.parse(res[0].value) : []; } catch (e) { projects = []; }
+      try { docsCache = res[1] && res[1].value ? JSON.parse(res[1].value) : []; } catch (e) { docsCache = []; }
+      if (!Array.isArray(projects)) projects = [];
+      if (!Array.isArray(docsCache)) docsCache = [];
+      projects.sort(function (a, b) { return (b.no || 0) - (a.no || 0); });
       renderProjectSelect();
-      renderCoverPanel();
-      renderCatTabs();
-      renderResults();
+      if (pid && projects.some(function (p) { return p.id === pid; })) {
+        selectProject(pid);
+      }
     }).catch(function () {
-      state.loading = false;
       renderProjectSelect();
-      renderCoverPanel();
-      renderResults();
     });
   }
+
   init();
 })();
 </script>
