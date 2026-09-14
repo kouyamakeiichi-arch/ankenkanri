@@ -563,6 +563,14 @@ datalist{display:none}
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 12h6M9 16h4"/></svg>
     注文書
   </a>
+  <a class="sidebar__link" href="14_請求書.html" data-pref-key="sidebar_invoice">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h16v20l-3-2-3 2-3-2-3 2-3-2-1 2Z"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
+    請求書
+  </a>
+  <a class="sidebar__link" href="15_現場写真帳.html" data-pref-key="sidebar_photos">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3.5"/></svg>
+    現場写真帳
+  </a>
   <div class="sidebar__section">サポート</div>
   <a class="sidebar__link" href="99_ヘルプ.html">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
@@ -683,6 +691,7 @@ datalist{display:none}
       <div class="preview-toolbar no-print">
         <span class="badge">工事完了書</span>
         <span class="lead-note">写真は別途ご提出ください（本書には添付欄はありません）</span>
+        <button class="btn" id="btnOpenPhotoAlbum" disabled>📷 現場写真帳を開く</button>
         <button class="btn" id="btnStampEdit">📍 印影の位置を調整</button>
         <div class="print-actions">
           <button class="btn pri" id="btnPrint">🖨 印刷する</button>
@@ -953,6 +962,7 @@ function paintProjectPick() {
 function applyProjectToForm(id) {
   var p = _projectsCache.find(function (x) { return x.id === id; });
   if (!p) return;
+  S.projectId = p.id;
   S.siteName = p.name || S.siteName;
   if (p.startDate) S.periodFrom = p.startDate;
   if (p.completionDate) { S.periodTo = p.completionDate; S.completionDate = p.completionDate; }
@@ -961,7 +971,21 @@ function applyProjectToForm(id) {
   renderPreview();
   scheduleAutosave();
   closeProjectPicker();
+  updatePhotoAlbumLink();
   showToast('案件「' + (p.name || '') + '」の内容を反映しました');
+}
+function updatePhotoAlbumLink() {
+  var btn = $('btnOpenPhotoAlbum');
+  if (!btn) return;
+  if (S.projectId) {
+    btn.removeAttribute('disabled');
+    btn.title = '';
+    btn.onclick = function () { window.open('15_現場写真帳.html?project=' + encodeURIComponent(S.projectId), '_blank', 'noopener'); };
+  } else {
+    btn.setAttribute('disabled', 'disabled');
+    btn.title = '先に「①案件管理の案件から選んで自動入力」で案件を選んでください';
+    btn.onclick = null;
+  }
 }
 
 /* ============================================================
@@ -992,6 +1016,7 @@ function showToast(msg){
 function defaultState(){
   return {
     docId:null,
+    projectId:null, // ①案件管理から選んだ案件のid(現場写真帳などへのリンクに使用)
     no:'', date: todayISO(),
     siteName:'', workName:'', workLocation:'',
     destination:{name:'',representative:'',address:''},
@@ -1192,6 +1217,7 @@ function scheduleAutosave(){
 }
 function snapshotData(){
   return {
+    projectId:S.projectId,
     no:S.no, date:S.date, siteName:S.siteName, workName:S.workName, workLocation:S.workLocation,
     destination:S.destination,
     periodFrom:S.periodFrom, periodTo:S.periodTo, completionDate:S.completionDate, deliveryDate:S.deliveryDate,
@@ -1228,6 +1254,7 @@ function pushStateIntoForm(){
   FIELD_MAP.forEach(function(m){ $(m[0]).value = S[m[1]]||''; });
   DEST_MAP.forEach(function(m){ $(m[0]).value = S.destination[m[1]]||''; });
   $('f-show-receipt').checked = !!S.showReceipt;
+  updatePhotoAlbumLink();
 }
 function onFormChanged(){
   pullFormIntoState();
@@ -1299,6 +1326,7 @@ async function openDoc(id){
   if(!data){ showToast('データを読み込めませんでした'); return; }
   S = defaultState();
   S.docId=id;
+  S.projectId=data.projectId||null;
   S.no=data.no||''; S.date=data.date||todayISO();
   S.siteName=data.siteName||''; S.workName=data.workName||''; S.workLocation=data.workLocation||'';
   S.destination = Object.assign({name:'',representative:'',address:''}, data.destination||{});
