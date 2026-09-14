@@ -652,6 +652,10 @@ summary{outline:none}
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 12h6M9 16h4"/></svg>
     注文書
   </a>
+  <a class="sidebar__link" href="14_現場写真帳.html" data-pref-key="sidebar_photobook">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+    現場写真帳
+  </a>
   <div class="sidebar__section">サポート</div>
   <a class="sidebar__link" href="99_ヘルプ.html">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
@@ -693,7 +697,8 @@ summary{outline:none}
         <div class="section-title">基本情報</div>
         <div class="field" style="margin-bottom:14px;">
           <button type="button" class="btn sm" id="btnPickProject">📋 ①案件管理の案件から選んで自動入力</button>
-          <div class="hint">現場名・工期などを、①案件管理に登録済みの案件から自動で入力できます</div>
+          <button type="button" class="btn sm ghost" id="btnOpenPhotobook">📷 現場写真帳を開く</button>
+          <div class="hint">現場名・工期などを、①案件管理に登録済みの案件から自動で入力できます。現場写真帳は、案件を選んで自動入力すると自動でその案件に紐付いて開きます</div>
         </div>
         <div class="row2">
           <div class="field"><label for="f-no">注文番号(No.)</label><input type="text" id="f-no" placeholder="例：1"></div>
@@ -1054,11 +1059,18 @@ function applyProjectToForm(id) {
   if (p.startDate) S.periodFrom = p.startDate;
   if (p.completionDate) S.periodTo = p.completionDate;
   // 注文先(請負者)は案件の顧客とは別(協力業者)のため自動入力しない
+  S.projectId = p.id;
+  updatePhotobookBtn();
   suppressAutosave = true; pushStateIntoForm(); suppressAutosave = false;
   renderPreview();
   scheduleAutosave();
   closeProjectPicker();
   showToast('案件「' + (p.name || '') + '」の内容を反映しました');
+}
+function updatePhotobookBtn(){
+  var b = $('btnOpenPhotobook');
+  if (!b) return;
+  b.title = S.projectId ? '現場写真帳をこの案件に紐付けて開きます' : '現場写真帳を開きます(案件未選択のため、あとで写真帳側で案件を選んでください)';
 }
 
 /* ============================================================
@@ -1121,6 +1133,7 @@ function defaultState(){
     periodFrom:'', periodTo:'', delivery:'', warrantyYears:'1', overview:'',
     contractor:{name:'',zip:'',address:'',tel:'',fax:'',representative:''},
     clauses: defaultClauses('1'),
+    projectId:null,
     createdAt:null, updatedAt:null
   };
 }
@@ -1388,6 +1401,7 @@ function snapshotData(){
     payment:S.payment, periodFrom:S.periodFrom, periodTo:S.periodTo, delivery:S.delivery,
     warrantyYears:S.warrantyYears, overview:S.overview, contractor:S.contractor,
     clauses:S.clauses,
+    projectId:S.projectId||null,
     company: activeCompany,
     createdAt: S.createdAt || Date.now(), updatedAt: Date.now()
   };
@@ -1605,6 +1619,8 @@ async function openOrder(id){
   S.delivery=data.delivery||''; S.warrantyYears=data.warrantyYears||''; S.overview=data.overview||'';
   S.contractor = Object.assign({name:'',zip:'',address:'',tel:'',fax:'',representative:''}, data.contractor||{});
   S.clauses = (data.clauses && data.clauses.length===8) ? data.clauses.slice() : defaultClauses(S.warrantyYears);
+  S.projectId = data.projectId||null;
+  updatePhotobookBtn();
   S.createdAt = data.createdAt||Date.now();
   activeCompany = Object.assign({}, COMPANY, data.company||{});
   suppressAutosave=true;
@@ -1855,6 +1871,7 @@ async function init(){
     S.delivery=draft.delivery||''; S.warrantyYears=draft.warrantyYears||S.warrantyYears; S.overview=draft.overview||'';
     S.contractor=Object.assign({name:'',zip:'',address:'',tel:'',fax:'',representative:''}, draft.contractor||{});
     S.clauses=(draft.clauses && draft.clauses.length===8) ? draft.clauses.slice() : defaultClauses(S.warrantyYears);
+    S.projectId = draft.projectId||null;
     S.createdAt=draft.createdAt||Date.now();
     pushStateIntoForm();
     setTimeout(function(){ showToast('前回の下書きを復元しました'); }, 400);
@@ -1866,6 +1883,15 @@ async function init(){
 
   renderPreview();
   setAutosaveTag('','待機中');
+  updatePhotobookBtn();
+
+  var btnPhoto = $('btnOpenPhotobook');
+  if (btnPhoto) {
+    btnPhoto.addEventListener('click', function () {
+      var url = '14_現場写真帳.html' + (S.projectId ? ('?project=' + encodeURIComponent(S.projectId)) : '');
+      window.open(url, '_blank');
+    });
+  }
 
   if (projectToApply) applyProjectToForm(projectToApply.id);
 }

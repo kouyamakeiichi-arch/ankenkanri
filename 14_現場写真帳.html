@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="app-build" content="2026-09-14-1" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>現場写真帳 | 太豊建設アプリ</title>
+<style>
+  :root {
+    --bg: #F6F5FB; --surface: #FFFFFF; --primary: #6C47FF; --primary-dark: #5636D9;
+    --primary-soft: #EFEAFF; --text: #1E1B2E; --text-secondary: #6B6580; --text-tertiary: #9C97AE;
+    --border: #E7E4F0; --danger: #F0525C; --success: #10B981; --radius: 12px;
+    --shadow-sm: 0 1px 2px rgba(30,27,46,0.06); --shadow-md: 0 8px 24px rgba(30,27,46,0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Hiragino Sans','Yu Gothic','Noto Sans JP',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; }
+
+  .shell { max-width: 1240px; margin: 0 auto; padding: 20px 20px 60px; }
+
+  .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .page-header__title { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 22px; letter-spacing: 0.01em; }
+  .page-header__title .badge-count { font-family: 'Courier New', monospace; font-size: 12px; font-weight: 600; color: var(--primary); background: var(--primary-soft); padding: 3px 9px; border-radius: 100px; }
+  .page-header__actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+  .search-box { position: relative; }
+  .project-select { padding: 10px 34px 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); font-family: inherit; font-size: 14px; color: var(--text); min-width: 220px; max-width: 280px; }
+  .project-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); outline: none; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 10px 16px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; transition: transform .1s, background .15s, box-shadow .15s; white-space: nowrap; }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn--primary { background: var(--primary); color: white; box-shadow: var(--shadow-sm); }
+  .btn--primary:hover:not(:disabled) { background: var(--primary-dark); }
+  .btn--ghost { background: transparent; color: var(--text-secondary); border-color: var(--border); }
+  .btn--ghost:hover { background: #F1EFFB; }
+  .btn--danger-ghost { background: transparent; color: var(--danger); border-color: #FBD5D8; }
+  .btn--danger-ghost:hover { background: #FEF1F2; }
+  .btn--sm { padding: 7px 12px; font-size: 12.5px; }
+
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; }
+  .icon-btn:hover { background: #F1EFFB; color: var(--text); }
+
+  .cat-tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; scrollbar-width: none; }
+  .cat-tabs::-webkit-scrollbar { display: none; }
+  .cat-tab { display:flex; align-items:center; gap:6px; font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 8px 14px; border-radius: 999px; border: 1px solid transparent; background: transparent; color: var(--text-secondary); cursor: pointer; white-space: nowrap; transition: all .15s; }
+  .cat-tab:hover { background: #EDEAFA; }
+  .cat-tab.is-active { background: var(--text); color: white; }
+  .cat-tab .tab-count { font-family: 'Courier New', monospace; font-size: 10.5px; opacity: .75; }
+
+  .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+  .photo-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; position: relative; box-shadow: var(--shadow-sm); }
+  .photo-card__thumb { width: 100%; aspect-ratio: 4/3; background: var(--bg); display: flex; align-items: center; justify-content: center; color: var(--text-tertiary); overflow: hidden; cursor: zoom-in; }
+  .photo-card__thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-card__body { padding: 8px 10px 10px; }
+  .photo-card__cap { width: 100%; border: 1px solid var(--border); border-radius: 7px; padding: 6px 8px; font-size: 12.5px; font-family: inherit; color: var(--text); }
+  .photo-card__cap:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+  .photo-card__del { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 8px; border: none; background: rgba(255,255,255,0.92); color: var(--danger); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .photo-card__order { position: absolute; top: 6px; left: 6px; font-size: 10.5px; font-weight: 800; background: rgba(30,27,46,0.62); color: #fff; border-radius: 6px; padding: 2px 6px; }
+
+  .upload-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 1.6px dashed var(--border); border-radius: var(--radius); min-height: 140px; color: var(--text-tertiary); font-size: 12.5px; font-weight: 700; cursor: pointer; background: var(--surface); }
+  .upload-card:hover { background: #F1EFFB; border-color: var(--primary); color: var(--primary); }
+
+  .empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 60px 20px; color: var(--text-tertiary); gap: 8px; }
+  .empty-state__title { font-weight: 700; color: var(--text); font-size: 15px; margin-top: 6px; }
+  .empty-state__desc { font-size: 13px; margin-bottom: 10px; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 100; }
+  .preview-modal { background: var(--surface); border-radius: 16px; width: 100%; max-width: 720px; max-height: 92vh; display: flex; flex-direction: column; box-shadow: var(--shadow-md); overflow: hidden; }
+  .preview-modal__header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border); gap: 10px; }
+  .preview-modal__header h2 { font-size: 14px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .preview-modal__body { flex: 1; overflow: auto; background: var(--bg); display: flex; align-items: center; justify-content: center; min-height: 240px; }
+  .preview-modal__body img { max-width: 100%; max-height: 74vh; display: block; }
+
+  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--text); color: white; padding: 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-md); z-index: 200; display: flex; align-items: center; gap: 8px; }
+
+  .loading-wrap { display:flex; align-items:center; justify-content:center; padding: 80px 0; color: var(--text-tertiary); font-size: 13px; }
+  .spinner { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--primary-soft); border-top-color: var(--primary); animation: spin .7s linear infinite; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .hint-note { font-size: 12.5px; color: var(--text-tertiary); margin: -4px 0 14px; }
+
+  /* ---------------- サイドバー / ハンバーガー ---------------- */
+  .hamburger-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; flex-shrink: 0; }
+  .hamburger-btn:hover { background: #F1EFFB; }
+  .shell-wrap { transition: margin-left .2s ease; }
+  @media (min-width: 961px) { .shell-wrap.sidebar-open { margin-left: 232px; } }
+
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 232px; background: var(--surface);
+    border-right: 1px solid var(--border); padding: 18px 12px; display: flex; flex-direction: column;
+    gap: 2px; overflow-y: auto; z-index: 150; transform: translateX(-100%); transition: transform .2s ease;
+  }
+  .sidebar.is-open { transform: translateX(0); box-shadow: var(--shadow-md); }
+  .sidebar__brand { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 15px; color: var(--primary); padding: 6px 10px 16px; text-decoration:none; }
+  .sidebar__section { font-size: 11px; font-weight: 700; color: var(--text-tertiary); padding: 14px 12px 4px; }
+  .sidebar__link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13.5px; font-weight: 700; color: var(--text-secondary); text-decoration: none; }
+  .sidebar__link:hover { background: #F1EFFB; color: var(--text); }
+  .sidebar__link.is-active { background: var(--primary-soft); color: var(--primary); }
+  .sidebar__link .soon { margin-left: auto; font-size: 9.5px; font-weight: 700; background: var(--bg); border: 1px solid var(--border); color: var(--text-tertiary); padding: 2px 6px; border-radius: 999px; white-space: nowrap; }
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(20,17,36,0.45); z-index: 140; display: none; }
+  .sidebar-overlay.is-open { display: block; }
+
+  @media (max-width: 640px) {
+    .shell { padding: 14px 12px 80px; }
+    .page-header__title { font-size: 19px; }
+    .project-select { max-width: none; flex: 1; }
+  }
+
+  /* ---------------- 印刷(写真台帳) ---------------- */
+  #printArea { display: none; }
+  @media print {
+    @page { size: 210mm 297mm; margin: 14mm; }
+    html, body { background: #fff !important; }
+    .no-print, .sidebar, .sidebar-overlay, .hamburger-btn { display: none !important; }
+    .shell-wrap { margin-left: 0 !important; }
+    .shell { max-width: none; padding: 0; }
+    #printArea { display: block; }
+    .p-cover { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; height: 250mm; }
+    .p-cover .p-cover-tag { font-size: 13px; letter-spacing: .3em; color: #6b6550; margin-bottom: 18px; }
+    .p-cover .p-cover-title { font-size: 30px; font-weight: 900; letter-spacing: .2em; border-top: 2px solid #211f18; border-bottom: 2px solid #211f18; padding: 18px 30px; margin-bottom: 26px; }
+    .p-cover .p-cover-site { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
+    .p-cover .p-cover-meta { font-size: 12.5px; color: #4a4534; }
+    .p-page { page-break-before: always; }
+    .p-page-title { font-size: 15px; font-weight: 800; border-bottom: 2px solid #211f18; padding-bottom: 6px; margin-bottom: 12px; display:flex; justify-content:space-between; align-items:baseline; }
+    .p-page-title .p-sub { font-size: 11px; font-weight: 400; color: #6b6550; }
+    .p-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm 8mm; }
+    .p-cell { break-inside: avoid; }
+    .p-cell__img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border: 1px solid #211f18; background: #eee; }
+    .p-cell__cap { font-size: 10.5px; color: #211f18; margin-top: 4px; line-height: 1.4; }
+    .p-empty { font-size: 12px; color: #8b866c; padding: 20px 0; }
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyBVebyezaA9TxKBqfNjCZKhU44DtHqpG98",
+    authDomain: "ankenkanri-cfce2.firebaseapp.com",
+    projectId: "ankenkanri-cfce2",
+    storageBucket: "ankenkanri-cfce2.firebasestorage.app",
+    messagingSenderId: "1086701651367",
+    appId: "1:1086701651367:web:b59fe9f49a1e0335aba282"
+  };
+  try {
+    firebase.initializeApp(firebaseConfig);
+    window.db = firebase.firestore();
+    window.fbStorage = firebase.storage();
+  } catch (e) { window.db = null; window.fbStorage = null; }
+</script>
+<script>
+(function () {
+  "use strict";
+  var BACKUP_COLLECTION = "taiho_app_data";
+  var LAST_BACKUP_KEY = "taiho_last_auto_backup_date_v1";
+  var AUTO_BACKUP_TIME_KEY = "taiho_auto_backup_time_v1";
+  var DEFAULT_AUTO_BACKUP_TIME = "17:00";
+
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function todayStr(d) {
+    d = d || new Date();
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  }
+  function getAutoBackupTime() {
+    var raw = null;
+    try { raw = window.localStorage.getItem(AUTO_BACKUP_TIME_KEY); } catch (e) {}
+    if (raw && /^([01]?\d|2[0-3]):[0-5]\d$/.test(raw)) return raw;
+    return DEFAULT_AUTO_BACKUP_TIME;
+  }
+  function getAutoBackupMinutes() {
+    var t = getAutoBackupTime().split(":");
+    return parseInt(t[0], 10) * 60 + parseInt(t[1], 10);
+  }
+  window.__taihoGetAutoBackupTime = getAutoBackupTime;
+  window.__taihoSetAutoBackupTime = function (v) {
+    if (!/^([01]?\d|2[0-3]):[0-5]\d$/.test(v)) return false;
+    try { window.localStorage.setItem(AUTO_BACKUP_TIME_KEY, v); } catch (e) {}
+    return true;
+  };
+  function collectFromLocalStorage() {
+    var out = {};
+    try {
+      for (var i = 0; i < window.localStorage.length; i++) {
+        var k = window.localStorage.key(i);
+        if (k && k.indexOf("taiho_") === 0) out[k] = window.localStorage.getItem(k);
+      }
+    } catch (e) {}
+    return out;
+  }
+  function collectAllData() {
+    return new Promise(function (resolve) {
+      if (window.db) {
+        window.db.collection(BACKUP_COLLECTION).get().then(function (snap) {
+          var out = {};
+          snap.forEach(function (doc) {
+            var d = doc.data();
+            out[doc.id] = (d && Object.prototype.hasOwnProperty.call(d, "value")) ? d.value : d;
+          });
+          resolve(out);
+        }).catch(function () { resolve(collectFromLocalStorage()); });
+      } else {
+        resolve(collectFromLocalStorage());
+      }
+    });
+  }
+  function downloadBackup(data) {
+    try {
+      var payload = { app: "太豊建設アプリ", exportedAt: new Date().toISOString(), data: data };
+      var json = JSON.stringify(payload, null, 2);
+      var blob = new Blob([json], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "太豊建設アプリ_バックアップ_" + todayStr() + ".json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      return true;
+    } catch (e) { return false; }
+  }
+  var BANNER_ID = "taihoAutoBackupBanner";
+  var BANNER_DISMISS_KEY = "taiho_auto_backup_banner_dismissed_v1";
+  var LAST_BACKUP_AT_KEY = "taiho_last_backup_at_v1";
+  function runBackup() {
+    return collectAllData().then(function (data) {
+      var ok = downloadBackup(data);
+      try {
+        window.localStorage.setItem(LAST_BACKUP_KEY, todayStr());
+        if (ok) window.localStorage.setItem(LAST_BACKUP_AT_KEY, new Date().toLocaleString("ja-JP"));
+      } catch (e) {}
+      return ok;
+    });
+  }
+  window.__taihoGetLastBackupAt = function () {
+    try { return window.localStorage.getItem(LAST_BACKUP_AT_KEY); } catch (e) { return null; }
+  };
+  window.__taihoResetTodayBackupFlag = function () {
+    try {
+      window.localStorage.removeItem(LAST_BACKUP_KEY);
+      window.sessionStorage.removeItem(BANNER_DISMISS_KEY);
+    } catch (e) {}
+  };
+  window.__taihoRunBackup = function (manual) {
+    runBackup().then(function (ok) {
+      if (manual) {
+        if (ok) alert("バックアップを保存しました。ダウンロードフォルダをご確認ください。");
+        else alert("バックアップの保存に失敗しました。お手数ですが、もう一度お試しください。");
+      }
+    });
+  };
+  function showAutoBackupBanner() {
+    try {
+      if (document.getElementById(BANNER_ID)) return;
+      if (window.sessionStorage.getItem(BANNER_DISMISS_KEY) === todayStr()) return;
+    } catch (e) {}
+    if (!document.body) return;
+    var el = document.createElement("div");
+    el.id = BANNER_ID;
+    el.style.cssText = "position:fixed;right:16px;bottom:16px;z-index:99999;background:#1F2937;color:#fff;" +
+      "padding:14px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.28);font-size:13px;max-width:280px;" +
+      "line-height:1.6;font-family:inherit;";
+    el.innerHTML =
+      '<div style="font-weight:800;margin-bottom:6px;">⏰ 本日のバックアップの時間です</div>' +
+      '<div style="color:#D1D5DB;margin-bottom:10px;">クリックしてPCに保存してください。</div>' +
+      '<div style="display:flex;gap:8px;">' +
+      '<button type="button" id="taihoBackupBannerSave" style="flex:1;background:#7C6FF0;color:#fff;border:none;' +
+      'border-radius:8px;padding:8px 10px;font-weight:700;cursor:pointer;font-size:12.5px;">📥 今すぐ保存</button>' +
+      '<button type="button" id="taihoBackupBannerClose" style="background:transparent;color:#9CA3AF;border:none;' +
+      'cursor:pointer;font-size:16px;padding:0 6px;">×</button>' +
+      '</div>';
+    document.body.appendChild(el);
+    var saveBtn = document.getElementById("taihoBackupBannerSave");
+    var closeBtn = document.getElementById("taihoBackupBannerClose");
+    if (saveBtn) saveBtn.addEventListener("click", function () {
+      saveBtn.disabled = true;
+      saveBtn.textContent = "保存中...";
+      runBackup().then(function (ok) {
+        el.innerHTML = ok
+          ? '<div style="font-weight:800;">✅ バックアップを保存しました</div>'
+          : '<div style="font-weight:800;">⚠️ 保存に失敗しました</div>';
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 2200);
+      });
+    });
+    if (closeBtn) closeBtn.addEventListener("click", function () {
+      try { window.sessionStorage.setItem(BANNER_DISMISS_KEY, todayStr()); } catch (e) {}
+      if (el.parentNode) el.parentNode.removeChild(el);
+    });
+  }
+  function checkAutoBackup() {
+    try {
+      var now = new Date();
+      var last = window.localStorage.getItem(LAST_BACKUP_KEY);
+      if (last === todayStr(now)) return;
+      var nowMin = now.getHours() * 60 + now.getMinutes();
+      if (nowMin < getAutoBackupMinutes()) return;
+      showAutoBackupBanner();
+    } catch (e) {}
+  }
+  window.__taihoTestAutoBackup = function () {
+    try {
+      var now = new Date();
+      var nowMin = now.getHours() * 60 + now.getMinutes();
+      var thr = getAutoBackupMinutes();
+      if (nowMin < thr) return;
+      try { window.sessionStorage.removeItem(BANNER_DISMISS_KEY); } catch (e) {}
+      showAutoBackupBanner();
+    } catch (e) {}
+  };
+  document.addEventListener("DOMContentLoaded", function () {
+    var btn = document.getElementById("btnSidebarBackup");
+    if (btn) btn.addEventListener("click", function (e) { e.preventDefault(); window.__taihoRunBackup(true); });
+    setTimeout(checkAutoBackup, 1500);
+  });
+})();
+</script>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <a class="sidebar__brand" href="00_ダッシュボード.html">太豊建設アプリ</a>
+  <a class="sidebar__link" href="00_ダッシュボード.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    ホーム
+  </a>
+  <a class="sidebar__link" href="01_案件管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    案件
+  </a>
+  <a class="sidebar__link" href="02_顧客建物管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    顧客・建物
+  </a>
+  <a class="sidebar__link" href="03_ファイル管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+    ファイル
+  </a>
+  <a class="sidebar__link" href="04_日報社内申請.html" data-pref-key="sidebar_worklog">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    日報・社内申請
+  </a>
+  <a class="sidebar__link" href="05_金銭管理.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9 9a3 3 0 0 1 3-1c1.5 0 3 .8 3 2.2S13.5 12 12 12s-3 .8-3 2.2S10.5 16 12 16a3 3 0 0 0 3-1"/></svg>
+    金銭管理
+  </a>
+  <a class="sidebar__link" href="06_設定.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    設定
+  </a>
+  <a class="sidebar__link" href="07_工程表カレンダー.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    工程表
+  </a>
+  <div class="sidebar__section">見積ツール</div>
+  <a class="sidebar__link" href="11_見積実行予算Pro.html" data-pref-key="sidebar_quote3">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 12h6M9 16h6M9 20h3"/></svg>
+    見積・実行予算Pro
+  </a>
+  <a class="sidebar__link" href="12_工事完了書ツール.html" data-pref-key="sidebar_kanryosho">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+    工事完了書
+  </a>
+  <a class="sidebar__link" href="13_注文書ツール.html" data-pref-key="sidebar_orderform">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 12h6M9 16h4"/></svg>
+    注文書
+  </a>
+  <a class="sidebar__link is-active" href="14_現場写真帳.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+    現場写真帳
+  </a>
+  <div class="sidebar__section">サポート</div>
+  <a class="sidebar__link" href="99_ヘルプ.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
+    ヘルプ
+  </a>
+  <button type="button" class="sidebar__link" id="btnSidebarBackup" style="width:100%;background:none;border:none;text-align:left;cursor:pointer;font:inherit;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    バックアップ保存
+  </button>
+</nav>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="shell-wrap" id="shellWrap">
+<div class="shell">
+  <div class="page-header no-print">
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニュー"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    <div class="page-header__title">現場写真帳<span class="badge-count" id="countBadge">0件</span></div>
+    <div class="page-header__actions">
+      <select class="project-select" id="projectSelect"></select>
+      <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
+      <button class="btn btn--ghost" id="btnPrint" disabled>🖨 印刷</button>
+      <button class="btn btn--primary" id="btnUpload" disabled>📷 写真を追加</button>
+    </div>
+  </div>
+
+  <div class="hint-note no-print" id="noProjectHint" style="display:none">まず右上のプルダウンから案件を選択してください。①案件管理に登録した案件が表示されます。</div>
+
+  <div class="cat-tabs no-print" id="catTabs"></div>
+  <div id="resultsArea" class="no-print"></div>
+</div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<div id="printArea"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ============================================================
+     0. storage abstraction — 他モジュールと同じFirebase(taiho_app_data)を共有
+     ============================================================ */
+  function storageGet(key) {
+    return new Promise(function (resolve) {
+      if (window.db) {
+        var attempts = 0;
+        var tryFetch = function () {
+          window.db.collection("taiho_app_data").doc(key).get().then(function (doc) {
+            resolve(doc.exists ? { value: doc.data().value } : null);
+          }).catch(function () {
+            attempts++;
+            if (attempts < 3) { setTimeout(tryFetch, attempts * 700); }
+            else {
+              try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
+              catch (e) { resolve(null); }
+            }
+          });
+        };
+        tryFetch();
+      } else {
+        try { var raw = window.localStorage.getItem(key); resolve(raw ? { value: raw } : null); }
+        catch (e) { resolve(null); }
+      }
+    });
+  }
+  function storageSet(key, value) {
+    return new Promise(function (resolve) {
+      if (window.db) {
+        window.db.collection("taiho_app_data").doc(key).set({ value: value, updatedAt: Date.now() }).then(function () {
+          resolve({ value: value });
+        }).catch(function () {
+          try { window.localStorage.setItem(key, value); } catch (e) {}
+          resolve({ value: value });
+        });
+      } else {
+        try { window.localStorage.setItem(key, value); } catch (e) {}
+        resolve({ value: value });
+      }
+    });
+  }
+
+  var PROJECTS_KEY = "taiho_projects_v2"; // ①案件管理と共通(読み取りのみ)
+  var PHOTOS_KEY = "taiho_sitephotos_v1";
+
+  function makePersistTransform(key, stateField) {
+    return function (transformFn) {
+      return storageGet(key).then(function (res) {
+        var fresh = null;
+        try { fresh = res && res.value ? JSON.parse(res.value) : null; } catch (e) { fresh = null; }
+        if (!Array.isArray(fresh)) fresh = state[stateField];
+        var next = transformFn(fresh);
+        state[stateField] = next;
+        return storageSet(key, JSON.stringify(next)).then(function () { return next; });
+      }).catch(function () {
+        var next = transformFn(state[stateField]);
+        state[stateField] = next;
+        return storageSet(key, JSON.stringify(next)).then(function () { return next; });
+      });
+    };
+  }
+
+  /* ============================================================
+     1. helpers
+     ============================================================ */
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return (s == null ? "" : String(s)).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
+  function eraStr(iso) {
+    if (!iso) return "";
+    var d = new Date(iso + "T00:00:00"); if (isNaN(d.getTime())) return "";
+    return "R" + (d.getFullYear() - 2018) + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日";
+  }
+  function todayISO() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+
+  var ICON_CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  var ICON_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/></svg>';
+  var ICON_CAM40 = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>';
+
+  var toastTimer = null;
+  function showToast(msg) {
+    var root = $("toastRoot");
+    root.innerHTML = '<div class="toast">' + ICON_CHECK + ' ' + esc(msg) + '</div>';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { root.innerHTML = ""; }, 2600);
+  }
+
+  var CATEGORIES = [
+    { id: "cover", label: "表紙" },
+    { id: "before", label: "施工前" },
+    { id: "during", label: "施工中" },
+    { id: "after", label: "施工後" }
+  ];
+  function catOf(id) { return CATEGORIES.filter(function (c) { return c.id === id; })[0] || CATEGORIES[0]; }
+
+  var MAX_FILE_SIZE = 20 * 1024 * 1024;
+  var IMAGE_MAX_DIM = 1920;
+  var IMAGE_QUALITY = 0.8;
+
+  var state = {
+    loading: true,
+    projects: [],
+    photos: [],
+    activeProjectId: "",
+    activeCat: "cover"
+  };
+  var persistPhotosTransform = makePersistTransform(PHOTOS_KEY, "photos");
+
+  /* ============================================================
+     2. 案件セレクター
+     ============================================================ */
+  function renderProjectSelect() {
+    var sel = $("projectSelect");
+    if (state.projects.length === 0) {
+      sel.innerHTML = '<option value="">案件がありません</option>';
+      sel.disabled = true;
+      $("btnUpload").disabled = true;
+      $("btnPrint").disabled = true;
+      return;
+    }
+    sel.disabled = false;
+    var opts = '<option value="">案件を選択してください</option>' +
+      state.projects.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === state.activeProjectId ? " selected" : "") + '>' + esc(p.name || "(無題の案件)") + '</option>'; }).join("");
+    sel.innerHTML = opts;
+    var hasProject = !!state.activeProjectId;
+    $("btnUpload").disabled = !hasProject;
+    $("btnPrint").disabled = !hasProject;
+    $("noProjectHint").style.display = hasProject ? "none" : "";
+  }
+  $("projectSelect").addEventListener("change", function (e) {
+    state.activeProjectId = e.target.value;
+    try { history.replaceState(null, "", location.pathname + (state.activeProjectId ? "?project=" + encodeURIComponent(state.activeProjectId) : "")); } catch (ex) {}
+    renderProjectSelect();
+    renderCatTabs();
+    renderResults();
+  });
+
+  /* ============================================================
+     3. カテゴリタブ
+     ============================================================ */
+  function photosFor(projectId, catId) {
+    return state.photos.filter(function (p) { return p.projectId === projectId && p.category === catId; })
+      .sort(function (a, b) { return (a.order || 0) - (b.order || 0) || (a.uploadedAt || 0) - (b.uploadedAt || 0); });
+  }
+  function renderCatTabs() {
+    var wrap = $("catTabs");
+    if (!state.activeProjectId) { wrap.innerHTML = ""; return; }
+    wrap.innerHTML = CATEGORIES.map(function (c) {
+      var n = photosFor(state.activeProjectId, c.id).length;
+      return '<button type="button" class="cat-tab' + (state.activeCat === c.id ? " is-active" : "") + '" data-cat="' + c.id + '">' + esc(c.label) + ' <span class="tab-count">' + n + '</span></button>';
+    }).join("");
+    wrap.querySelectorAll("[data-cat]").forEach(function (btn) {
+      btn.addEventListener("click", function () { state.activeCat = btn.getAttribute("data-cat"); renderCatTabs(); renderResults(); });
+    });
+  }
+
+  /* ============================================================
+     4. 一覧表示
+     ============================================================ */
+  function renderResults() {
+    var area = $("resultsArea");
+    if (state.loading) { area.innerHTML = '<div class="loading-wrap"><span class="spinner"></span>読み込み中...</div>'; return; }
+    if (!state.activeProjectId) {
+      area.innerHTML = '<div class="empty-state">' + ICON_CAM40 +
+        '<p class="empty-state__title">案件を選択してください</p><p class="empty-state__desc">案件ごとに施工前・施工中・施工後の写真を整理して保存・印刷できます。</p></div>';
+      return;
+    }
+    var list = photosFor(state.activeProjectId, state.activeCat);
+    var html = '<div class="photo-grid">';
+    list.forEach(function (p, idx) {
+      html += '<div class="photo-card" data-pid="' + esc(p.id) + '">' +
+        '<button type="button" class="photo-card__del" data-del="' + esc(p.id) + '" aria-label="削除">' + ICON_TRASH + '</button>' +
+        '<div class="photo-card__order">' + (idx + 1) + '</div>' +
+        '<div class="photo-card__thumb" data-preview="' + esc(p.id) + '"><img src="' + esc(p.downloadURL) + '" alt="" loading="lazy"></div>' +
+        '<div class="photo-card__body"><input type="text" class="photo-card__cap" data-cap="' + esc(p.id) + '" placeholder="コメント(任意)" value="' + esc(p.caption || "") + '"></div>' +
+        '</div>';
+    });
+    html += '<label class="upload-card" for="fileInput">' + ICON_CAM40 + '写真を追加</label>';
+    html += '</div>';
+    area.innerHTML = html;
+
+    area.querySelectorAll("[data-preview]").forEach(function (el) {
+      el.addEventListener("click", function () { openPreview(el.getAttribute("data-preview")); });
+    });
+    area.querySelectorAll("[data-del]").forEach(function (el) {
+      el.addEventListener("click", function (e) { e.stopPropagation(); deletePhoto(el.getAttribute("data-del")); });
+    });
+    area.querySelectorAll("[data-cap]").forEach(function (el) {
+      el.addEventListener("change", function () { saveCaption(el.getAttribute("data-cap"), el.value); });
+    });
+
+    $("countBadge").textContent = list.length + "件";
+  }
+
+  function openPreview(id) {
+    var p = state.photos.filter(function (x) { return x.id === id; })[0];
+    if (!p) return;
+    var root = $("modalRoot");
+    root.innerHTML =
+      '<div class="modal-overlay" id="previewOverlay"><div class="preview-modal">' +
+      '<div class="preview-modal__header"><h2>' + esc(catOf(p.category).label) + (p.caption ? "　" + esc(p.caption) : "") + '</h2><button class="icon-btn" id="previewCloseBtn">✕</button></div>' +
+      '<div class="preview-modal__body"><img src="' + esc(p.downloadURL) + '" alt=""></div>' +
+      '</div></div>';
+    $("previewCloseBtn").addEventListener("click", closePreview);
+    $("previewOverlay").addEventListener("mousedown", function (e) { if (e.target.id === "previewOverlay") closePreview(); });
+  }
+  function closePreview() { $("modalRoot").innerHTML = ""; }
+
+  function saveCaption(id, val) {
+    persistPhotosTransform(function (fresh) {
+      return fresh.map(function (p) { return p.id === id ? Object.assign({}, p, { caption: val }) : p; });
+    });
+  }
+
+  function deletePhoto(id) {
+    var p = state.photos.filter(function (x) { return x.id === id; })[0];
+    if (!p) return;
+    if (!confirm("この写真を削除します。よろしいですか？")) return;
+    persistPhotosTransform(function (fresh) { return fresh.filter(function (x) { return x.id !== id; }); }).then(function () {
+      if (p.storagePath && window.fbStorage) window.fbStorage.ref().child(p.storagePath).delete().catch(function () {});
+      renderCatTabs();
+      renderResults();
+      showToast("削除しました");
+    });
+  }
+
+  /* ============================================================
+     5. アップロード(Firebase Storageに実ファイルを保存)
+     ============================================================ */
+  function compressImage(file) {
+    return new Promise(function (resolve) {
+      if (!file.type || file.type.indexOf("image/") !== 0) { resolve(file); return; }
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          var w = img.width, h = img.height;
+          if (w > IMAGE_MAX_DIM || h > IMAGE_MAX_DIM) {
+            if (w >= h) { h = Math.round(h * IMAGE_MAX_DIM / w); w = IMAGE_MAX_DIM; }
+            else { w = Math.round(w * IMAGE_MAX_DIM / h); h = IMAGE_MAX_DIM; }
+          }
+          var canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          canvas.toBlob(function (blob) { resolve(blob || file); }, "image/jpeg", IMAGE_QUALITY);
+        };
+        img.onerror = function () { resolve(file); };
+        img.src = e.target.result;
+      };
+      reader.onerror = function () { resolve(file); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  $("btnUpload").addEventListener("click", function () { $("fileInput").click(); });
+  $("fileInput").addEventListener("change", function (e) {
+    var files = Array.prototype.slice.call(e.target.files || []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    if (!state.activeProjectId) { showToast("先に案件を選択してください"); return; }
+    if (!window.fbStorage) { showToast("アップロード機能が利用できません(クラウド未接続)"); return; }
+
+    var accepted = [];
+    var rejected = 0;
+    files.forEach(function (f) {
+      if (!f.type || f.type.indexOf("image/") !== 0) { rejected++; return; }
+      if (f.size > MAX_FILE_SIZE) { rejected++; return; }
+      accepted.push(f);
+    });
+    if (rejected > 0) showToast(rejected + "件は画像以外または容量(20MB超)のためスキップされました");
+    if (accepted.length === 0) return;
+
+    showToast(accepted.length + "件アップロード中...");
+    var projectId = state.activeProjectId, category = state.activeCat;
+    var baseOrder = photosFor(projectId, category).length;
+
+    var uploadPromises = accepted.map(function (f, i) {
+      return compressImage(f).then(function (blob) {
+        var id = "ph-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7);
+        var path = "sitephotos/" + projectId + "/" + category + "/" + id + ".jpg";
+        var ref = window.fbStorage.ref().child(path);
+        return ref.put(blob, { contentType: "image/jpeg" }).then(function () {
+          return ref.getDownloadURL();
+        }).then(function (url) {
+          return {
+            id: id, projectId: projectId, category: category, caption: "",
+            storagePath: path, downloadURL: url, sizeBytes: blob.size,
+            order: baseOrder + i, uploadedAt: Date.now()
+          };
+        });
+      }).catch(function (err) {
+        console.error("アップロード失敗:", f.name, err);
+        return { __error: true, name: f.name, message: (err && err.message) ? err.message : String(err) };
+      });
+    });
+
+    Promise.all(uploadPromises).then(function (results) {
+      var newPhotos = results.filter(function (r) { return r && !r.__error; });
+      var errors = results.filter(function (r) { return r && r.__error; });
+      var finish = function () {
+        var msg = "";
+        if (newPhotos.length) msg += newPhotos.length + "件アップロードしました";
+        if (errors.length) msg += (msg ? " / " : "") + errors.length + "件失敗しました";
+        showToast(msg || "アップロードできませんでした");
+        renderCatTabs();
+        renderResults();
+      };
+      if (!newPhotos.length) { finish(); return; }
+      persistPhotosTransform(function (fresh) { return fresh.concat(newPhotos); }).then(finish).catch(function () {
+        showToast("写真情報の保存に失敗しました");
+      });
+    });
+  });
+
+  /* ============================================================
+     6. 印刷(写真台帳)
+     ============================================================ */
+  $("btnPrint").addEventListener("click", function () {
+    if (!state.activeProjectId) return;
+    var proj = state.projects.filter(function (p) { return p.id === state.activeProjectId; })[0];
+    var siteName = proj ? (proj.name || "") : "";
+    var html = '<div class="p-cover">' +
+      '<div class="p-cover-tag">太豊建設アプリ</div>' +
+      '<div class="p-cover-title">現　場　写　真　帳</div>' +
+      '<div class="p-cover-site">' + esc(siteName) + '</div>' +
+      '<div class="p-cover-meta">作成日：' + eraStr(todayISO()) + '</div>' +
+      '</div>';
+    CATEGORIES.forEach(function (c) {
+      var list = photosFor(state.activeProjectId, c.id);
+      html += '<div class="p-page"><div class="p-page-title">' + esc(c.label) + '<span class="p-sub">' + esc(siteName) + '</span></div>';
+      if (!list.length) {
+        html += '<div class="p-empty">(写真がありません)</div>';
+      } else {
+        html += '<div class="p-grid">';
+        list.forEach(function (p, i) {
+          html += '<div class="p-cell"><img class="p-cell__img" src="' + esc(p.downloadURL) + '" alt="">' +
+            '<div class="p-cell__cap">' + (i + 1) + '. ' + esc(p.caption || "") + '</div></div>';
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+    });
+    $("printArea").innerHTML = html;
+    setTimeout(function () { window.print(); }, 60);
+  });
+
+  /* ============================================================
+     7. サイドバー / 表示設定
+     ============================================================ */
+  function setSidebar(open) {
+    $("sidebar").classList.toggle("is-open", open);
+    $("shellWrap").classList.toggle("sidebar-open", open);
+    $("sidebarOverlay").classList.toggle("is-open", open && window.innerWidth <= 960);
+  }
+  $("hamburgerBtn").addEventListener("click", function () { setSidebar(!$("sidebar").classList.contains("is-open")); });
+  $("sidebarOverlay").addEventListener("click", function () { setSidebar(false); });
+  setSidebar(window.innerWidth > 960);
+
+  (function applyUiPrefs() {
+    var prefs = {};
+    try { prefs = JSON.parse(window.localStorage.getItem("taiho_ui_prefs_v1") || "{}"); } catch (e) { prefs = {}; }
+    document.querySelectorAll("[data-pref-key]").forEach(function (el) {
+      var key = el.getAttribute("data-pref-key");
+      if (prefs[key] === false) el.style.display = "none";
+    });
+  })();
+
+  /* ============================================================
+     8. 初期化
+     ============================================================ */
+  function init() {
+    var qp = new URLSearchParams(window.location.search);
+    var pid = qp.get("project");
+
+    Promise.all([storageGet(PROJECTS_KEY), storageGet(PHOTOS_KEY)]).then(function (res) {
+      try { state.projects = res[0] && res[0].value ? JSON.parse(res[0].value) : []; } catch (e) { state.projects = []; }
+      try { state.photos = res[1] && res[1].value ? JSON.parse(res[1].value) : []; } catch (e) { state.photos = []; }
+      if (!Array.isArray(state.projects)) state.projects = [];
+      if (!Array.isArray(state.photos)) state.photos = [];
+      state.projects.sort(function (a, b) { return (b.no || 0) - (a.no || 0); });
+      if (pid && state.projects.some(function (p) { return p.id === pid; })) state.activeProjectId = pid;
+      state.loading = false;
+      renderProjectSelect();
+      renderCatTabs();
+      renderResults();
+    }).catch(function () {
+      state.loading = false;
+      renderProjectSelect();
+      renderResults();
+    });
+  }
+  init();
+})();
+</script>
+</body>
+</html>
