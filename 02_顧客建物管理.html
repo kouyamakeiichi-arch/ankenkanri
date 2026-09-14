@@ -390,11 +390,11 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 12h6M9 16h6M9 20h3"/></svg>
     見積・実行予算Pro
   </a>
-  <a class="sidebar__link" href="12_工事完了書ツール.html">
+  <a class="sidebar__link" href="12_工事完了書ツール.html" data-pref-key="sidebar_kanryosho">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
     工事完了書
   </a>
-  <a class="sidebar__link" href="13_注文書ツール.html">
+  <a class="sidebar__link" href="13_注文書ツール.html" data-pref-key="sidebar_orderform">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 12h6M9 16h4"/></svg>
     注文書
   </a>
@@ -870,7 +870,7 @@
 
   /* ---------------- 顧客モーダル ---------------- */
   function openCustomerModal(isEdit, data) {
-    custModal = { isEdit: isEdit, data: data ? Object.assign({}, data) : { typeId: "individual", name: "", manager: "", honorific: "様", zip: "", address: "", phone: "" } };
+    custModal = { isEdit: isEdit, data: data ? Object.assign({}, data) : { typeId: "individual", name: "", manager: "", contactPerson: "", honorific: "様", zip: "", address: "", phone: "" } };
     renderCustomerModal();
   }
   function closeCustomerModal() { custModal = null; document.getElementById("modalRoot").innerHTML = ""; }
@@ -887,9 +887,10 @@
       '<div class="modal__header"><h2>' + (isEdit ? "顧客を編集" : "顧客を作成") + '</h2><button class="icon-btn" id="modalCloseBtn" aria-label="閉じる">' + ICON_X + '</button></div>' +
       '<div class="modal__body">' +
       '<div class="field"><label>顧客タイプ</label><select id="f_typeId">' + typeOptions + '</select></div>' +
-      '<div class="field"><label>顧客名 <span class="req">*</span></label><input type="text" id="f_name" placeholder="例: 山田太郎" value="' + esc(d.name) + '" /><p class="field__error" id="err_name" style="display:none"></p></div>' +
-      '<div class="field-row"><div class="field"><label>担当者</label><input type="text" id="f_manager" list="managerSuggestions" placeholder="社内担当者" value="' + esc(d.manager) + '" /></div>' +
+      '<div class="field-row"><div class="field"><label>顧客名 <span class="req">*</span></label><input type="text" id="f_name" placeholder="例: 山田太郎" value="' + esc(d.name) + '" /><p class="field__error" id="err_name" style="display:none"></p></div>' +
       '<div class="field" style="max-width:110px"><label>帳票敬称</label><input type="text" id="f_honorific" value="' + esc(d.honorific) + '" /></div></div>' +
+      '<div class="field-row"><div class="field"><label>先方の担当者 <span class="hint">(任意)</span></label><input type="text" id="f_contactPerson" placeholder="例: 山田様(法人のお客様の窓口)" value="' + esc(d.contactPerson) + '" /></div>' +
+      '<div class="field"><label>担当者(社内・屋号)</label><input type="text" id="f_manager" list="managerSuggestions" placeholder="例: 野田" value="' + esc(d.manager) + '" /></div></div>' +
       '<datalist id="managerSuggestions">' + managerOptions + '</datalist>' +
       '<div class="field-row"><div class="field" style="max-width:160px"><label>郵便番号</label><input type="text" id="f_zip" placeholder="000-0000" value="' + esc(d.zip) + '" /></div>' +
       '<div class="field"><label>顧客住所</label><input type="text" id="f_address" placeholder="都道府県から入力" value="' + esc(d.address) + '" /></div></div>' +
@@ -915,6 +916,7 @@
       var form = {
         id: d.id, typeId: document.getElementById("f_typeId").value, name: name,
         manager: document.getElementById("f_manager").value.trim(),
+        contactPerson: document.getElementById("f_contactPerson").value.trim(),
         honorific: document.getElementById("f_honorific").value.trim(),
         zip: document.getElementById("f_zip").value.trim(),
         address: document.getElementById("f_address").value.trim(),
