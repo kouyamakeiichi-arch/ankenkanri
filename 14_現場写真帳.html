@@ -80,6 +80,13 @@
 
   .hint-note { font-size: 12.5px; color: var(--text-tertiary); margin: -4px 0 14px; }
 
+  .cover-panel { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 14px; }
+  .cover-panel__field { display: flex; flex-direction: column; gap: 4px; flex: 1 1 180px; min-width: 140px; }
+  .cover-panel__field label { font-size: 11px; font-weight: 700; color: var(--text-tertiary); }
+  .cover-panel__field input, .cover-panel__field select { border: 1px solid var(--border); border-radius: 7px; padding: 7px 9px; font-size: 12.5px; font-family: inherit; color: var(--text); background: var(--bg); }
+  .cover-panel__field input:focus, .cover-panel__field select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+  .cover-panel__field--layout { flex: 0 0 160px; }
+
   /* ---------------- サイドバー / ハンバーガー ---------------- */
   .hamburger-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; flex-shrink: 0; }
   .hamburger-btn:hover { background: #F1EFFB; }
@@ -116,22 +123,47 @@
     .shell-wrap { margin-left: 0 !important; }
     .shell { max-width: none; padding: 0; }
     #printArea { display: block; }
-    .p-cover { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; height: 250mm; }
-    .p-cover .p-cover-tag { font-size: 13px; letter-spacing: .3em; color: #6b6550; margin-bottom: 18px; }
-    .p-cover .p-cover-title { font-size: 30px; font-weight: 900; letter-spacing: .2em; border-top: 2px solid #211f18; border-bottom: 2px solid #211f18; padding: 18px 30px; margin-bottom: 26px; }
-    .p-cover .p-cover-site { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
-    .p-cover .p-cover-meta { font-size: 12.5px; color: #4a4534; }
-    .p-page { page-break-before: always; }
-    .p-page-title { font-size: 15px; font-weight: 800; border-bottom: 2px solid #211f18; padding-bottom: 6px; margin-bottom: 12px; display:flex; justify-content:space-between; align-items:baseline; }
-    .p-page-title .p-sub { font-size: 11px; font-weight: 400; color: #6b6550; }
-    .p-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm 8mm; }
-    .p-cell { break-inside: avoid; }
-    .p-cell__img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border: 1px solid #211f18; background: #eee; }
-    .p-cell__cap { font-size: 10.5px; color: #211f18; margin-top: 4px; line-height: 1.4; }
+
+    /* 表紙(参考デザインを踏襲: 左フレーム罫+行組の台帳スタイル) */
+    .p-cover { position: relative; height: 269mm; padding: 8mm 6mm 8mm 14mm; }
+    .p-cover-frame { position: absolute; inset: 0; border-left: 2.4px solid #211f18; pointer-events: none; }
+    .p-cover-tag { font-size: 11.5px; letter-spacing: .3em; color: #6b6550; margin-bottom: 14px; }
+    .p-cover-title { font-family: 'Shippori Mincho', serif; font-weight: 800; font-size: 32px; letter-spacing: .55em; padding-left: .55em; border-top: 2.4px solid #211f18; border-bottom: 2.4px solid #211f18; padding-top: 14px; padding-bottom: 14px; margin-bottom: 22mm; text-align: center; }
+    .p-cover-rows { margin-top: 4mm; }
+    .p-cover-row { display: flex; border-bottom: 1px solid #8b8272; padding: 10px 0 10px 4mm; gap: 14px; min-height: 20px; align-items: baseline; }
+    .p-cover-row .p-lab { flex: none; width: 30mm; font-weight: 700; letter-spacing: .22em; font-size: 13px; color: #211f18; }
+    .p-cover-row .p-val { flex: 1; font-size: 14px; color: #211f18; }
+    .p-cover-row.period .p-period-sub { display: flex; gap: 20px; flex: 1; flex-wrap: wrap; }
+    .p-cover-row.period .p-period-sub span { font-size: 13.5px; }
+    .p-cover-note { margin-top: 16mm; font-size: 10.5px; color: #7a7261; text-align: center; }
+
+    /* 写真ページ */
+    .p-page { page-break-before: always; padding-top: 2mm; }
+    .p-page-title { font-family: 'Shippori Mincho', serif; font-size: 16px; font-weight: 700; border-bottom: 2px solid #211f18; padding-bottom: 6px; margin-bottom: 12px; display:flex; justify-content:space-between; align-items:baseline; }
+    .p-page-title .p-sub { font-family: inherit; font-size: 11px; font-weight: 400; color: #6b6550; }
     .p-empty { font-size: 12px; color: #8b866c; padding: 20px 0; }
+
+    /* 4枚/ページ(標準・2×2グリッド) */
+    .p-grid-4up { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm 8mm; }
+    .p-grid-4up .p-cell { break-inside: avoid; }
+    .p-grid-4up .p-cell__img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border: 1px solid #211f18; background: #eee; }
+    .p-grid-4up .p-cell__cap { font-size: 10.5px; color: #211f18; margin-top: 4px; line-height: 1.4; }
+
+    /* 2枚/ページ(写真大きめ・縦積み) */
+    .p-grid-2up { display: flex; flex-direction: column; gap: 10mm; }
+    .p-grid-2up .p-cell { break-inside: avoid; flex: 1; }
+    .p-grid-2up .p-cell__img { width: 100%; height: 100mm; object-fit: cover; border: 1px solid #211f18; background: #eee; }
+    .p-grid-2up .p-cell__cap { font-size: 11.5px; color: #211f18; margin-top: 5px; line-height: 1.5; }
+
+    /* 3枚/ページ(キャプション広め・横並び行) */
+    .p-grid-3up { display: flex; flex-direction: column; gap: 7mm; }
+    .p-grid-3up .p-cell { display: flex; gap: 5mm; break-inside: avoid; min-height: 52mm; }
+    .p-grid-3up .p-cell__img { flex: 1.4; min-width: 0; width: auto; height: 52mm; object-fit: cover; border: 1px solid #211f18; background: #eee; }
+    .p-grid-3up .p-cell__cap { flex: 1; font-size: 11.5px; color: #211f18; line-height: 1.6; padding-top: 2px; }
   }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700;800&display=swap">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
@@ -397,6 +429,8 @@
 
   <div class="hint-note no-print" id="noProjectHint" style="display:none">まず右上のプルダウンから案件を選択してください。①案件管理に登録した案件が表示されます。</div>
 
+  <div id="coverPanel" class="no-print"></div>
+
   <div class="cat-tabs no-print" id="catTabs"></div>
   <div id="resultsArea" class="no-print"></div>
 </div>
@@ -455,6 +489,8 @@
 
   var PROJECTS_KEY = "taiho_projects_v2"; // ①案件管理と共通(読み取りのみ)
   var PHOTOS_KEY = "taiho_sitephotos_v1";
+  var ALBUM_META_KEY = "taiho_photobook_meta_v1"; // 表紙情報(工事箇所・施工者・印刷レイアウト)を案件ごとに保存
+  var DEFAULT_CONTRACTOR = "有限会社太豊建設";
 
   function makePersistTransform(key, stateField) {
     return function (transformFn) {
@@ -513,10 +549,38 @@
     loading: true,
     projects: [],
     photos: [],
+    albumMeta: [],
     activeProjectId: "",
     activeCat: "cover"
   };
   var persistPhotosTransform = makePersistTransform(PHOTOS_KEY, "photos");
+  var persistAlbumMetaTransform = makePersistTransform(ALBUM_META_KEY, "albumMeta");
+
+  function metaFor(projectId) {
+    var m = state.albumMeta.filter(function (x) { return x.projectId === projectId; })[0];
+    return m || { projectId: projectId, workLocation: "", contractor: "", layout: "4up" };
+  }
+  var metaSaveTimer = null;
+  var pendingMetaPatch = {};
+  var pendingMetaProjectId = null;
+  function saveMeta(projectId, patch) {
+    if (pendingMetaProjectId !== projectId) { pendingMetaPatch = {}; pendingMetaProjectId = projectId; }
+    Object.assign(pendingMetaPatch, patch);
+    clearTimeout(metaSaveTimer);
+    metaSaveTimer = setTimeout(function () {
+      var patchToSave = pendingMetaPatch;
+      pendingMetaPatch = {}; pendingMetaProjectId = null;
+      persistAlbumMetaTransform(function (arr) {
+        arr = Array.isArray(arr) ? arr.slice() : [];
+        var idx = arr.findIndex(function (x) { return x.projectId === projectId; });
+        var base = idx >= 0 ? arr[idx] : { projectId: projectId, workLocation: "", contractor: "", layout: "4up" };
+        var rec = Object.assign({}, base, patchToSave, { projectId: projectId, updatedAt: Date.now() });
+        if (idx >= 0) arr[idx] = rec; else arr.push(rec);
+        state.albumMeta = arr;
+        return arr;
+      });
+    }, 500);
+  }
 
   /* ============================================================
      2. 案件セレクター
@@ -543,9 +607,34 @@
     state.activeProjectId = e.target.value;
     try { history.replaceState(null, "", location.pathname + (state.activeProjectId ? "?project=" + encodeURIComponent(state.activeProjectId) : "")); } catch (ex) {}
     renderProjectSelect();
+    renderCoverPanel();
     renderCatTabs();
     renderResults();
   });
+
+  /* ============================================================
+     2.5 表紙情報(工事箇所・施工者・印刷レイアウト)
+     ============================================================ */
+  function renderCoverPanel() {
+    var wrap = $("coverPanel");
+    if (!state.activeProjectId) { wrap.innerHTML = ""; return; }
+    var m = metaFor(state.activeProjectId);
+    wrap.innerHTML =
+      '<div class="cover-panel">' +
+        '<div class="cover-panel__field"><label for="metaLocation">工事箇所(表紙用・任意)</label><input type="text" id="metaLocation" placeholder="例：苫小牧市字勇払33番地" value="' + esc(m.workLocation || "") + '"></div>' +
+        '<div class="cover-panel__field"><label for="metaContractor">工事施工者(表紙用)</label><input type="text" id="metaContractor" placeholder="' + esc(DEFAULT_CONTRACTOR) + '" value="' + esc(m.contractor || "") + '"></div>' +
+        '<div class="cover-panel__field cover-panel__field--layout"><label for="metaLayout">印刷レイアウト(1ページの枚数)</label>' +
+          '<select id="metaLayout">' +
+            '<option value="3up"' + (m.layout === "3up" ? " selected" : "") + '>3枚/ページ(キャプション広め)</option>' +
+            '<option value="2up"' + (m.layout === "2up" ? " selected" : "") + '>2枚/ページ(写真大きめ)</option>' +
+            '<option value="4up"' + (m.layout !== "3up" && m.layout !== "2up" ? " selected" : "") + '>4枚/ページ(標準)</option>' +
+          '</select>' +
+        '</div>' +
+      '</div>';
+    $("metaLocation").addEventListener("input", function (e) { saveMeta(state.activeProjectId, { workLocation: e.target.value }); });
+    $("metaContractor").addEventListener("input", function (e) { saveMeta(state.activeProjectId, { contractor: e.target.value }); });
+    $("metaLayout").addEventListener("change", function (e) { saveMeta(state.activeProjectId, { layout: e.target.value }); });
+  }
 
   /* ============================================================
      3. カテゴリタブ
@@ -728,31 +817,61 @@
   /* ============================================================
      6. 印刷(写真台帳)
      ============================================================ */
+  function chunk(arr, n) {
+    var out = [];
+    for (var i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
+    return out;
+  }
+  var LAYOUT_PER_PAGE = { "3up": 3, "2up": 2, "4up": 4 };
+
   $("btnPrint").addEventListener("click", function () {
     if (!state.activeProjectId) return;
     var proj = state.projects.filter(function (p) { return p.id === state.activeProjectId; })[0];
     var siteName = proj ? (proj.name || "") : "";
+    var meta = metaFor(state.activeProjectId);
+    var layout = LAYOUT_PER_PAGE[meta.layout] ? meta.layout : "4up";
+    var perPage = LAYOUT_PER_PAGE[layout];
+    var contractor = meta.contractor || DEFAULT_CONTRACTOR;
+
     var html = '<div class="p-cover">' +
+      '<div class="p-cover-frame"></div>' +
       '<div class="p-cover-tag">太豊建設アプリ</div>' +
       '<div class="p-cover-title">現　場　写　真　帳</div>' +
-      '<div class="p-cover-site">' + esc(siteName) + '</div>' +
-      '<div class="p-cover-meta">作成日：' + eraStr(todayISO()) + '</div>' +
+      '<div class="p-cover-rows">' +
+        '<div class="p-cover-row"><div class="p-lab">工事番号</div><div class="p-val">' + esc(proj && proj.no != null ? String(proj.no) : "") + '</div></div>' +
+        '<div class="p-cover-row"><div class="p-lab">工事名</div><div class="p-val">' + esc(siteName) + '</div></div>' +
+        '<div class="p-cover-row"><div class="p-lab">工事箇所</div><div class="p-val">' + esc(meta.workLocation || "") + '</div></div>' +
+        '<div class="p-cover-row period"><div class="p-lab">工　期</div><div class="p-period-sub">' +
+          '<span>着手　' + esc(proj && proj.startDate ? eraStr(proj.startDate) : "") + '</span>' +
+          '<span>竣工　' + esc(proj && proj.completionDate ? eraStr(proj.completionDate) : "") + '</span>' +
+        '</div></div>' +
+        '<div class="p-cover-row"><div class="p-lab">工事施工者</div><div class="p-val">' + esc(contractor) + '</div></div>' +
+      '</div>' +
+      '<div class="p-cover-note">作成日：' + eraStr(todayISO()) + '</div>' +
       '</div>';
+
     CATEGORIES.forEach(function (c) {
       var list = photosFor(state.activeProjectId, c.id);
-      html += '<div class="p-page"><div class="p-page-title">' + esc(c.label) + '<span class="p-sub">' + esc(siteName) + '</span></div>';
       if (!list.length) {
-        html += '<div class="p-empty">(写真がありません)</div>';
-      } else {
-        html += '<div class="p-grid">';
-        list.forEach(function (p, i) {
-          html += '<div class="p-cell"><img class="p-cell__img" src="' + esc(p.downloadURL) + '" alt="">' +
-            '<div class="p-cell__cap">' + (i + 1) + '. ' + esc(p.caption || "") + '</div></div>';
-        });
-        html += '</div>';
+        html += '<div class="p-page"><div class="p-page-title">' + esc(c.label) + '<span class="p-sub">' + esc(siteName) + '</span></div>' +
+          '<div class="p-empty">(写真がありません)</div></div>';
+        return;
       }
-      html += '</div>';
+      var pages = chunk(list, perPage);
+      pages.forEach(function (pageList, pi) {
+        html += '<div class="p-page"><div class="p-page-title">' + esc(c.label) +
+          (pages.length > 1 ? '(' + (pi + 1) + '/' + pages.length + ')' : '') +
+          '<span class="p-sub">' + esc(siteName) + '</span></div>';
+        html += '<div class="p-grid-' + layout + '">';
+        pageList.forEach(function (p, i) {
+          var no = pi * perPage + i + 1;
+          html += '<div class="p-cell"><img class="p-cell__img" src="' + esc(p.downloadURL) + '" alt="">' +
+            '<div class="p-cell__cap">' + no + '. ' + esc(p.caption || "") + '</div></div>';
+        });
+        html += '</div></div>';
+      });
     });
+
     $("printArea").innerHTML = html;
     setTimeout(function () { window.print(); }, 60);
   });
@@ -785,20 +904,24 @@
     var qp = new URLSearchParams(window.location.search);
     var pid = qp.get("project");
 
-    Promise.all([storageGet(PROJECTS_KEY), storageGet(PHOTOS_KEY)]).then(function (res) {
+    Promise.all([storageGet(PROJECTS_KEY), storageGet(PHOTOS_KEY), storageGet(ALBUM_META_KEY)]).then(function (res) {
       try { state.projects = res[0] && res[0].value ? JSON.parse(res[0].value) : []; } catch (e) { state.projects = []; }
       try { state.photos = res[1] && res[1].value ? JSON.parse(res[1].value) : []; } catch (e) { state.photos = []; }
+      try { state.albumMeta = res[2] && res[2].value ? JSON.parse(res[2].value) : []; } catch (e) { state.albumMeta = []; }
       if (!Array.isArray(state.projects)) state.projects = [];
       if (!Array.isArray(state.photos)) state.photos = [];
+      if (!Array.isArray(state.albumMeta)) state.albumMeta = [];
       state.projects.sort(function (a, b) { return (b.no || 0) - (a.no || 0); });
       if (pid && state.projects.some(function (p) { return p.id === pid; })) state.activeProjectId = pid;
       state.loading = false;
       renderProjectSelect();
+      renderCoverPanel();
       renderCatTabs();
       renderResults();
     }).catch(function () {
       state.loading = false;
       renderProjectSelect();
+      renderCoverPanel();
       renderResults();
     });
   }
