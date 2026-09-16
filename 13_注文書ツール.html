@@ -1290,7 +1290,7 @@ function buildDoc(kind, sums){
         '<div class="doc-col-right">'+itemsTableHtml(sums)+'</div>'+
       '</div>'+
       clausesHtml()+
-      '<div class="doc-foot"><span>'+(kind==='order'?'太豊建設 注文書ツール':'太豊建設 注文書ツール（注文請書）')+'</span><span>作成日：'+eraStr(todayISO())+'</span></div>'+
+      '<div class="doc-foot" style="justify-content:flex-end;"><span>作成日：'+eraStr(todayISO())+'</span></div>'+
     '</div>'
   );
 }
