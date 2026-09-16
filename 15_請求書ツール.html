@@ -46,21 +46,37 @@
 
   /* ===== 請求書プレビュー(印刷対象) ===== */
   .doc { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 34px 38px; position: relative; width: 297mm; max-width: 100%; box-sizing: border-box; margin: 0 auto; }
-  .doc-topline { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-tertiary); margin-bottom: 10px; }
-  .doc-title { text-align: center; font-size: 24px; font-weight: 900; letter-spacing: .5em; padding-left: .5em; border-top: 3px double var(--text); border-bottom: 3px double var(--text); padding: 10px 0; margin-bottom: 18px; }
-  .doc-meta-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; gap: 16px; }
-  .doc-client { font-size: 17px; font-weight: 700; border-bottom: 2px solid var(--text); display: inline-block; padding-bottom: 4px; }
-  .doc-body-text { font-size: 13px; margin: 10px 0 16px; }
-  .doc-amount-box { text-align: center; border-top: 2px solid var(--text); border-bottom: 2px solid var(--text); padding: 14px 0; margin-bottom: 16px; }
-  .doc-amount-box .lbl { font-size: 16px; font-weight: 700; }
-  .doc-amount-box .val { font-size: 26px; font-weight: 900; letter-spacing: .04em; font-family: 'Courier New', monospace; color: var(--primary-dark); }
-  .doc-amount-box .sub { font-size: 11.5px; color: var(--text-secondary); margin-top: 6px; }
-  .doc-cols { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
-  .doc-left { font-size: 12.5px; line-height: 2; flex: 1; min-width: 220px; }
-  .doc-left .k { color: var(--text-tertiary); display: inline-block; width: 6.5em; }
-  .doc-right { font-size: 12.5px; line-height: 1.9; text-align: left; position: relative; min-width: 210px; }
-  .doc-right .co1 { font-size: 14px; font-weight: 700; }
-  .doc-right .co2 { font-size: 10.5px; color: var(--text-tertiary); }
+
+  /* ===== 御見積書(⑪見積・実行予算Pro)と同じ表紙レイアウト。御請求書はこの書式をそのまま流用する ===== */
+  .pq-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; font-size: 9.5pt; }
+  .pq-title-wrap { text-align: center; margin: 0 0 5px; }
+  .pq-title { display: inline-block; font-size: 20pt; font-weight: 700; letter-spacing: .5em; border-bottom: 3px double #000; padding: 0 16px 5px; }
+  .pq-left { display: flex; flex-direction: column; }
+  .pq-co { text-align: left; font-size: 9.5pt; line-height: 1.4; margin-right: 48px; position: relative; }
+  .pq-co-line { position: relative; z-index: 2; }
+  .pq-co .name { font-size: 14.5pt; font-weight: 700; }
+  .pq-client { font-size: 13pt; font-weight: 700; text-decoration: underline; margin: 6px 0 0; }
+  .pq-mid { display: flex; justify-content: space-between; align-items: flex-end; margin: 5px 0 5px; }
+  .pq-amount-col { width: 58%; }
+  .pq-amount-box { display: inline-block; white-space: nowrap; border-bottom: 2px solid #000; padding: 4px 26px 6px 0; }
+  .pq-amount-box .lbl { font-size: 11pt; }
+  .pq-amount-box .val { font-size: 16pt; font-weight: 700; letter-spacing: .05em; }
+  .pq-kojimei-wrap { margin-top: 6px; }
+  .pq-kojimei { font-size: 11pt; font-weight: 700; display: inline-block; border-bottom: 1px solid #000; padding-bottom: 2px; }
+  .pq-meta-col { width: 40%; margin-right: -120px; }
+  .pq-meta { display: flex; flex-direction: column; gap: 2px; font-size: 9pt; }
+  .pq-meta .bank-ttl { font-weight: 700; margin-bottom: 1px; }
+  .pq-meta .bank-line { line-height: 1.5; }
+  .pq-meta .bank-kana { margin-top: 2px; color: var(--text-secondary); }
+  table.pq-table { width: 100%; border-collapse: collapse; margin-top: 4px; color: var(--text); }
+  table.pq-table th, table.pq-table td { border: 1px solid #333; padding: 1.5px 6px; font-size: 8.5pt; }
+  table.pq-table th { background: #eee; color: #333; text-align: center; }
+  table.pq-table td.num { text-align: right; }
+  table.pq-table td.l { text-align: left; }
+  table.pq-table td.c { text-align: center; }
+  table.pq-table tr.total-row td { font-weight: 700; text-align: right; }
+  table.pq-table tr.total-row td.l { text-align: left; }
+
   .doc-stamp { position: absolute; opacity: .92; }
   .doc-stamp img { width: 100%; height: 100%; object-fit: contain; }
   .doc-stamp-ph { border: 1.4px dashed var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 9px; text-align: center; line-height: 1.3; opacity: .85; }
@@ -68,24 +84,9 @@
   body.stamp-edit [data-company-stamp]:active { cursor: grabbing; outline-color: var(--danger); }
   .stamp-edit-hint { display: none; align-items: center; gap: 10px; font-size: 12.5px; color: var(--primary-dark); background: var(--primary-soft); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; flex-wrap: wrap; }
   body.stamp-edit .stamp-edit-hint { display: flex; }
-  .doc-bank { margin-top: 18px; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 12.5px; line-height: 1.8; background: var(--bg); }
-  .doc-bank .ttl { font-weight: 700; margin-bottom: 4px; }
-  .doc-bank .bank-line { padding: 2px 0; }
   .doc-ref { margin-top: 14px; font-size: 11px; color: var(--text-tertiary); border-top: 1px dashed var(--border); padding-top: 8px; }
   .doc-remarks { margin-top: 12px; font-size: 11.5px; line-height: 1.7; white-space: pre-wrap; }
   .doc-issued-badge { position: absolute; top: 16px; right: 34px; font-size: 10.5px; font-weight: 700; color: var(--success); background: #E4F8EF; border: 1px solid #BEEBD4; padding: 3px 10px; border-radius: 999px; }
-
-  /* ===== 明細(工事内訳)添付ページ ===== */
-  .detail-cat-title { font-size: 13px; font-weight: 700; margin: 16px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--text); }
-  .detail-table { width: 100%; border-collapse: collapse; font-size: 11.5px; margin-bottom: 4px; }
-  .detail-table th, .detail-table td { border: 1px solid var(--border); padding: 4px 6px; }
-  .detail-table th { background: var(--primary-soft); font-size: 10.5px; color: var(--text-secondary); }
-  .detail-table td.l { text-align: left; }
-  .detail-table td.c { text-align: center; }
-  .detail-table td.num { text-align: right; font-family: 'Courier New', monospace; }
-  .detail-grand-total { text-align: right; font-size: 14px; font-weight: 900; margin-top: 10px; padding-top: 8px; border-top: 2px solid var(--text); }
-  .detail-grand-total-sub { text-align: right; font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
-  @media print { .doc-detail { page-break-before: always; } }
 
   /* ===== まとめ請求書(複数工事) ===== */
   .bundle-item-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; padding: 12px 0; border-bottom: 1px solid var(--border); }
@@ -114,7 +115,7 @@
 
   @media (max-width: 640px) {
     .doc { padding: 22px 18px; }
-    .doc-meta-row, .doc-cols { flex-direction: column; }
+    .pq-top, .pq-mid { flex-direction: column; }
   }
 
   @media print {
@@ -209,6 +210,7 @@
   var INVOICE_DOCS_KEY = 'taiho_invoice_docs_v1';
   var INVOICE_BUNDLES_KEY = 'taiho_invoice_bundles_v1'; // まとめ請求書(複数工事)の保存先
   var COMPANY_BANKS_KEY = 'taiho_invoice_company_banks_v1'; // 振込先(複数口座に対応)
+  var COMPANY_BANK_KANA_KEY = 'taiho_invoice_company_bank_kana_v1'; // 銀行振込用のカタカナ名義(会社全体・共通・自由編集)
   var COMPANY_STAMP_KEY = 'taiho_company_stamp_v1'; // ⑪見積・実行予算Proで登録した会社印影を共通で使う(読み取り専用)
   var STAMP_LAYOUT_KEY = 'taiho_invoice_stamp_layout_v1'; // 印影の位置・サイズ(このツールだけのローカル設定。画像・色は⑪と共通)
   var PX_PER_MM = 96 / 25.4;
@@ -290,6 +292,14 @@
     });
   }
   var companyBanks = []; // [{bankName,branchName,accountType,accountNumber,accountHolder}, ...] 会社全体・共通(複数口座対応)
+  var companyBankKana = ''; // 銀行振込用のカタカナ名義(会社全体・共通)。表記ゆれがあるため、事務員さんに確認しながら「🏦 振込先を設定」でいつでも編集できる。
+  // 実際の請求書(寺嶋工業様宛)の【取引銀行】欄と同じ内容。振込先が未登録(初回)の場合はこの内容を自動で登録しておく。
+  var DEF_BANKS = [
+    { bankName: '北洋銀行', branchName: '苫小牧中央支店', accountType: '普通', accountNumber: '4985116', accountHolder: '' },
+    { bankName: '北海道銀行', branchName: '苫小牧支店', accountType: '普通', accountNumber: '1291652', accountHolder: '' },
+    { bankName: '室蘭信用金庫', branchName: '苫小牧中央支店', accountType: '普通', accountNumber: '5360721', accountHolder: '' },
+    { bankName: '苫小牧信用金庫', branchName: '川沿支店', accountType: '普通', accountNumber: '1037661', accountHolder: '' }
+  ];
 
   var curProject = null;   // 選択中の⑪物件
   var draft = null;        // 編集中の請求書内容
@@ -304,12 +314,13 @@
     return {
       id: null, no: '請求' + issue.replace(/-/g, ''),
       clientName: '', honorific: '御中', issueDate: issue, dueDate: addDaysISO(issue, 30), remarks: '',
+      showBankKana: true,
       items: [],
       createdAt: null, updatedAt: null
     };
   }
   function newBundleItem() {
-    return { projectId: '', title: '', subtotal: 0, tax: 0, total: 0, discount: 0, includeDetail: false, detailCats: [] };
+    return { projectId: '', title: '', pre: 0, subtotal: 0, tax: 0, total: 0, discount: 0, includeDetail: false, detailCats: [] };
   }
 
   function findCaseName(caseId) {
@@ -333,10 +344,11 @@
       dueDate: addDaysISO(issue, 30),
       clientName: cfg.client || '', honorific: cfg.honorific || '御中',
       title: cfg.proj || '',
-      subtotal: totals.ad, tax: totals.tax, total: totals.total, discount: totals.disc,
+      pre: totals.pre, subtotal: totals.ad, tax: totals.tax, total: totals.total, discount: totals.disc,
       company: { co1: cfg.co1 || '', co2: cfg.co2 || '', rep: cfg.rep || '', zip: cfg.zip || '', addr1: cfg.addr1 || '', addr2: cfg.addr2 || '', tel: cfg.tel || '', fax: cfg.fax || '', inv: cfg.inv || '' },
       remarks: '',
       includeDetail: false, detailCats: [],
+      showBankKana: true,
       createdAt: null, updatedAt: null
     };
   }
@@ -489,17 +501,19 @@
         '</div>' +
         '<div class="field"><label>備考</label><textarea id="f_remarks" placeholder="例: 分割請求の場合はその旨など">' + esc(draft.remarks) + '</textarea></div>' +
         '<div class="field" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:0">' +
-          '<label style="display:flex;align-items:center;gap:6px;font-weight:700;margin:0"><input type="checkbox" id="f_includeDetail" style="width:auto"' + (draft.includeDetail ? ' checked' : '') + '> 明細(工事内訳)を添付する</label>' +
+          '<label style="display:flex;align-items:center;gap:6px;font-weight:700;margin:0"><input type="checkbox" id="f_includeDetail" style="width:auto"' + (draft.includeDetail ? ' checked' : '') + '> 内訳(工事内訳)を表示する</label>' +
           '<button type="button" class="btn" id="btnRefreshDetail" style="padding:6px 10px;font-size:12px">📥 見積の最新内容を取り込む</button>' +
           '<span class="hint" id="detailHint">' + (draft.detailCats && draft.detailCats.length ? ('取込み済み(' + draft.detailCats.length + '工種)') : '未取込み') + '</span>' +
         '</div>' +
-        '<div class="hint" style="margin-top:4px">お客様から工事の内訳を求められた場合に使います。見積ツール(⑪)の工事名称・数量・単位・単価・金額・形状寸法等のみを取り込みます(原価・利益などの社内情報は含まれません)。</div>' +
+        '<div class="hint" style="margin-top:4px">オフの場合は「工事一式」の1行のみ、オンの場合は見積ツール(⑪)の工事名称・数量・単位・単価・金額・形状寸法等をそのまま内訳として表示します(原価・利益などの社内情報は含まれません)。</div>' +
+        '<div class="field" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0 0">' +
+          '<label style="display:flex;align-items:center;gap:6px;font-weight:700;margin:0"><input type="checkbox" id="f_showBankKana" style="width:auto"' + (draft.showBankKana !== false ? ' checked' : '') + '> 振込名義(カタカナ)を記載する</label>' +
+          '<span class="hint">銀行振込用のカタカナ名義は「🏦 振込先を設定」で編集できます。</span>' +
+        '</div>' +
       '</div>' +
-      '<div class="doc" id="docPreview"></div>' +
-      '<div class="doc doc-detail" id="docDetailPreview" style="margin-top:16px;display:none"></div>';
+      '<div class="doc" id="docPreview"></div>';
 
     renderDocPreview();
-    renderDetailPreview();
 
     document.getElementById('btnChangeProject').addEventListener('click', function () {
       curProject = null; draft = null; currentInvoiceId = null;
@@ -522,14 +536,18 @@
       if (draft.includeDetail && (!draft.detailCats || !draft.detailCats.length)) {
         refreshDetailFromProject();
       } else {
-        renderDetailPreview();
+        renderDocPreview();
       }
+    });
+    document.getElementById('f_showBankKana').addEventListener('change', function () {
+      draft.showBankKana = document.getElementById('f_showBankKana').checked;
+      renderDocPreview();
     });
 
     ['f_invoiceNo', 'f_issueDate', 'f_dueDate', 'f_clientName', 'f_honorific', 'f_title', 'f_total', 'f_remarks'].forEach(function (id) {
       var elx = document.getElementById(id);
-      elx.addEventListener('input', function () { pullForm(); renderDocPreview(); renderDetailPreview(); });
-      elx.addEventListener('change', function () { pullForm(); renderDocPreview(); renderDetailPreview(); });
+      elx.addEventListener('input', function () { pullForm(); renderDocPreview(); });
+      elx.addEventListener('change', function () { pullForm(); renderDocPreview(); });
     });
   }
 
@@ -538,7 +556,7 @@
     draft.detailCats = buildDetailSnapshot(curProject);
     var hintEl = document.getElementById('detailHint');
     if (hintEl) hintEl.textContent = draft.detailCats.length ? ('取込み済み(' + draft.detailCats.length + '工種) ' + fmtJp(todayISO()) + '時点') : 'この物件には明細データがありません';
-    renderDetailPreview();
+    renderDocPreview();
   }
 
   function pullForm() {
@@ -554,51 +572,93 @@
   }
 
   // ===== 振込先(複数口座)の表示HTML =====
-  function bankListHtml() {
+  // 実際の請求書(寺嶋工業様宛)の【取引銀行】欄と同じく、会社情報のすぐ下(pq-meta-col)にまとめて表示する。
+  // d.showBankKana が true の場合のみ、カタカナ名義(companyBankKana)を1行添える。
+  function bankListHtml(d) {
     var banks = (companyBanks || []).filter(function (b) { return b.bankName || b.accountNumber; });
     if (!banks.length) return '';
     var lines = banks.map(function (b) {
-      return '<div class="bank-line">' + esc(b.bankName) + '　' + esc(b.branchName) + '　' + esc(b.accountType || '普通') + '　' + esc(b.accountNumber) + '　（口座名義：' + esc(b.accountHolder) + '）</div>';
+      return '<div class="r bank-line">' + esc(b.bankName) + '　' + esc(b.branchName) + '（' + esc((b.accountType || '普通').charAt(0)) + '）' + esc(b.accountNumber) + '</div>';
     }).join('');
-    return '<div class="doc-bank"><div class="ttl">お振込先' + (banks.length > 1 ? '(いずれかへお振込みください)' : '') + '</div>' + lines + '</div>';
+    var kana = (d && d.showBankKana !== false && companyBankKana) ? ('<div class="r bank-kana">口座名義：' + esc(companyBankKana) + '</div>') : '';
+    return '<div class="r bank-ttl">【取引銀行】</div>' + lines + kana;
   }
 
   // ===== 請求書1枚分のHTMLを組み立てる(通常モード・まとめモード共通) =====
+  // レイアウトは、⑪見積・実行予算Proの御見積書(表紙)と全く同じ書式をそのまま流用している。
+  // タイトル(御請求書)→(左)発行日・請求書番号・宛先／(右)自社情報＋印→ご請求金額＋工事件名→(右)取引銀行→内訳表(種別/規格寸法/数量/単位/単価/金額/備考)＋小計/消費税/合計
   function buildInvoiceDocHtml(d) {
     var co = d.company || {};
     var caseName = findCaseName(d.caseId);
+    var noText = d.invoiceNo ? d.invoiceNo : '　　　';
+    var discRow = d.discount ? ('<tr class="total-row"><td class="l" colspan="2">値引き</td><td colspan="4" class="num">-' + fmtYen(d.discount) + '</td><td></td></tr>') : '';
+
+    // ===== 内訳表の行 =====
+    // 「内訳(工事内訳)を表示する」がオフの場合は、工事一式1行のみ(御見積書と同じ、種別+数量1式+金額の書き方)。
+    // オンの場合は、見積の明細(全工種・全項目)をそのまま行として並べる。
+    var rows = '';
+    var dataRowsUsed = 0;
+    if (d.includeDetail && d.detailCats && d.detailCats.length) {
+      d.detailCats.forEach(function (cat) {
+        (cat.items || []).forEach(function (it) {
+          if (!it.name && !it.qty && it.amount == null) return;
+          rows += '<tr><td class="l">' + esc(it.name) + '</td><td class="l">' + esc(it.kei) + '</td>' +
+            '<td class="num">' + (it.qty ? esc(it.qty) : '') + '</td><td class="c">' + esc(it.unit) + '</td>' +
+            '<td class="num">' + (it.unitPrice != null ? fmtYen(it.unitPrice) : '') + '</td>' +
+            '<td class="num">' + (it.amount != null ? fmtYen(it.amount) : '') + '</td><td class="l"></td></tr>';
+          dataRowsUsed++;
+        });
+      });
+      if (!dataRowsUsed) {
+        rows = '<tr><td class="l">' + esc(d.title || '工事一式') + '</td><td class="l"></td><td class="num">1</td><td class="c">式</td><td class="num"></td><td class="num">' + fmtYen(d.pre != null ? d.pre : d.subtotal) + '</td><td class="l"></td></tr>';
+        dataRowsUsed = 1;
+      }
+    } else {
+      rows = '<tr><td class="l">' + esc(d.title || '工事一式') + '</td><td class="l"></td><td class="num">1</td><td class="c">式</td><td class="num"></td><td class="num">' + fmtYen(d.pre != null ? d.pre : d.subtotal) + '</td><td class="l"></td></tr>';
+      dataRowsUsed = 1;
+    }
+    // 種別数が少ない場合、御見積書と同様に表全体が常に13行になるよう空行で埋める(印刷時の見た目を安定させるため)
+    var totalRowsCount = 3 + (d.discount ? 1 : 0); // 小計・[値引き]・消費税・合計
+    var padCount = Math.max(0, 13 - 1 - totalRowsCount - dataRowsUsed);
+    for (var pi = 0; pi < padCount; pi++) {
+      rows += '<tr><td class="l">&nbsp;</td><td class="l"></td><td class="num"></td><td class="c"></td><td class="num"></td><td class="num"></td><td class="l"></td></tr>';
+    }
+
     return (
       (d.id ? '<div class="doc-issued-badge no-print-keep">発行済み</div>' : '') +
-      '<div class="doc-topline"><span>No.&nbsp;' + esc(d.invoiceNo) + '</span><span>' + esc(fmtJp(d.issueDate)) + '</span></div>' +
-      '<div class="doc-title">御　請　求　書</div>' +
-      '<div class="doc-meta-row">' +
-        '<div><div class="doc-client">' + esc(d.clientName) + '　' + esc(d.honorific || '御中') + '</div>' +
-          '<div class="doc-body-text">件名：' + esc(d.title) + '<br>下記の通りご請求申し上げます。</div></div>' +
-      '</div>' +
-      '<div class="doc-amount-box">' +
-        '<div class="lbl">ご請求金額</div>' +
-        '<div class="val">' + fmtYen(d.total) + '　－</div>' +
-        '<div class="sub">(内消費税及び地方消費税　' + fmtYen(d.tax) + '　／　税抜金額　' + fmtYen(d.subtotal) + ')</div>' +
-        (d.discount ? '<div class="sub" style="color:var(--danger)">(値引き　▲' + fmtYen(d.discount) + '　を含む金額です。税抜金額は値引後の金額です)</div>' : '') +
-      '</div>' +
-      '<div class="doc-cols">' +
-        '<div class="doc-left">' +
-          '<div><span class="k">お支払期限</span>' + esc(fmtJp(d.dueDate)) + '</div>' +
+      '<div class="pq-title-wrap"><span class="pq-title">御請求書</span></div>' +
+      '<div class="pq-top">' +
+        '<div class="pq-left">' +
+          '<div>' + esc(fmtJp(d.issueDate)) + '<br>請求書番号　第　' + esc(noText) + '　号</div>' +
+          '<div class="pq-client">' + esc(d.clientName) + '　' + esc(d.honorific || '御中') + '</div>' +
         '</div>' +
-        '<div class="doc-right">' +
-          (co.co2 ? '<div class="co2">' + esc(co.co2) + '</div>' : '') +
-          '<div class="co1">' + esc(co.co1) + '</div>' +
-          '<div>' + esc(co.rep) + '</div>' +
-          '<div>' + esc(co.zip) + '</div>' +
-          '<div>' + esc(co.addr1) + (co.addr2 ? ' ' + esc(co.addr2) : '') + '</div>' +
-          '<div>TEL.&nbsp;' + esc(co.tel) + '</div><div>FAX.&nbsp;' + esc(co.fax) + '</div>' +
-          (co.inv ? '<div style="margin-top:4px"><span style="font-size:11px">インボイス登録番号&nbsp;' + esc(co.inv) + '</span></div>' : '') +
+        '<div class="pq-co">' +
+          (co.co2 ? '<div class="pq-co-line" style="font-size:9pt;color:#666">' + esc(co.co2) + '</div>' : '') +
+          '<div class="pq-co-line name">' + esc(co.co1) + '</div>' +
+          '<div class="pq-co-line">' + esc(co.rep) + '</div>' +
+          '<div class="pq-co-line">' + esc(co.zip) + ' ' + esc(co.addr1) + (co.addr2 ? ' ' + esc(co.addr2) : '') + '</div>' +
+          '<div class="pq-co-line">TEL ' + esc(co.tel) + '　FAX ' + esc(co.fax) + '</div>' +
+          (co.inv ? '<div class="pq-co-line">インボイス登録番号　' + esc(co.inv) + '</div>' : '') +
           stampHtml() +
         '</div>' +
       '</div>' +
-      bankListHtml() +
-      (d.remarks ? '<div class="doc-remarks"><b>備考：</b><br>' + escNl(d.remarks) + '</div>' : '') +
-      (d.includeDetail ? '<div class="doc-remarks">別紙「工事内訳明細書」を添付しております。</div>' : '') +
+      '<div class="pq-mid">' +
+        '<div class="pq-amount-col">' +
+          '<div class="pq-amount-box"><span class="lbl">ご請求金額　</span><span class="val">' + fmtYen(d.total) + '　－</span></div>' +
+          '<div class="pq-kojimei-wrap"><span class="pq-kojimei">工事件名　' + esc(d.title) + '</span></div>' +
+        '</div>' +
+        '<div class="pq-meta-col">' +
+          '<div class="pq-meta">' + bankListHtml(d) + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<table class="pq-table"><thead><tr><th style="width:15%;">種別</th><th style="width:10%;">規格・寸法</th><th style="width:7%;">数量</th><th style="width:7%;">単位</th><th style="width:9%;">単価</th><th style="width:13%;">金額</th><th style="width:20%;">備考</th></tr></thead><tbody>' +
+        rows +
+        '<tr class="total-row"><td class="l" colspan="2">小　計</td><td colspan="4" class="num">' + fmtYen(d.pre != null ? d.pre : d.subtotal) + '</td><td></td></tr>' +
+        discRow +
+        '<tr class="total-row"><td class="l" colspan="2">消費税　10%</td><td colspan="4" class="num">' + fmtYen(d.tax) + '</td><td></td></tr>' +
+        '<tr class="total-row"><td class="l" colspan="2">合　計</td><td colspan="4" class="num">' + fmtYen(d.total) + '</td><td></td></tr>' +
+      '</tbody></table>' +
+      (d.remarks ? '<div class="doc-remarks"><b>備考：</b>' + escNl(d.remarks) + '</div>' : '') +
       '<div class="doc-ref">' +
         (d.quoteNo ? ('本請求は御見積書 No.' + esc(d.quoteNo) + (d.quoteDate ? '(' + esc(d.quoteDate) + ')' : '') + ' に基づきます。') : '') +
         (caseName ? '　／　案件管理: ' + esc(caseName) : '') +
@@ -606,62 +666,10 @@
     );
   }
 
-  // ===== 明細(工事内訳)ページのHTMLを組み立てる(通常モード・まとめモード共通) =====
-  function buildDetailDocHtml(d) {
-    if (!d || !d.includeDetail || !d.detailCats || !d.detailCats.length) return '';
-    var grandTotal = 0;
-    var catsHtml = d.detailCats.map(function (cat) {
-      var rows = (cat.items || []).map(function (it) {
-        if (!it.name && !it.qty && it.amount == null) return '';
-        return '<tr>' +
-          '<td class="l">' + esc(it.name) + '</td>' +
-          '<td class="c">' + esc(it.qty) + '</td>' +
-          '<td class="c">' + esc(it.unit) + '</td>' +
-          '<td class="num">' + (it.unitPrice != null ? fmtYen(it.unitPrice) : '') + '</td>' +
-          '<td class="num">' + (it.amount != null ? fmtYen(it.amount) : '') + '</td>' +
-          '<td class="l">' + esc(it.kei) + '</td>' +
-        '</tr>';
-      }).join('');
-      if (!rows) return '';
-      grandTotal += cat.subtotal || 0;
-      return (
-        '<div class="detail-cat-title">' + esc(cat.name) + '</div>' +
-        '<table class="detail-table"><thead><tr><th>工事名称</th><th>数量</th><th>単位</th><th>単価</th><th>金額</th><th>形状寸法等</th></tr></thead>' +
-        '<tbody>' + rows + '</tbody>' +
-        '<tfoot><tr><td colspan="4" class="num" style="font-weight:700">小計</td><td class="num" style="font-weight:700">' + fmtYen(cat.subtotal || 0) + '</td><td></td></tr></tfoot></table>'
-      );
-    }).join('');
-    if (!catsHtml) return '';
-    var discount = d.discount || 0;
-    var totalsHtml = discount ? (
-      '<div class="detail-grand-total-sub" style="border-top:2px solid var(--text);padding-top:8px;margin-top:10px">小計(値引き前・税抜)　' + fmtYen(grandTotal) + '</div>' +
-      '<div class="detail-grand-total-sub" style="color:var(--danger)">値引き　▲' + fmtYen(discount) + '</div>' +
-      '<div class="detail-grand-total" style="border-top:none;margin-top:4px;padding-top:0">明細合計(税抜・値引後)　' + fmtYen(grandTotal - discount) + '</div>'
-    ) : (
-      '<div class="detail-grand-total">明細合計(税抜)　' + fmtYen(grandTotal) + '</div>'
-    );
-    return (
-      '<div class="doc-topline"><span>No.&nbsp;' + esc(d.invoiceNo) + '　工事内訳明細</span><span>' + esc(fmtJp(d.issueDate)) + '</span></div>' +
-      '<div class="doc-title" style="font-size:19px;letter-spacing:.3em;padding-left:.3em">工事内訳明細書</div>' +
-      '<div class="doc-body-text">件名：' + esc(d.title) + '<br>宛先：' + esc(d.clientName) + '　' + esc(d.honorific || '御中') + '</div>' +
-      catsHtml +
-      totalsHtml
-    );
-  }
-
   function renderDocPreview() {
     var wrap = document.getElementById('docPreview');
     if (!wrap || !draft) return;
     wrap.innerHTML = buildInvoiceDocHtml(draft);
-  }
-
-  function renderDetailPreview() {
-    var wrap = document.getElementById('docDetailPreview');
-    if (!wrap) return;
-    var html = draft ? buildDetailDocHtml(draft) : '';
-    if (!html) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
-    wrap.style.display = '';
-    wrap.innerHTML = html;
   }
 
   // ===== 振込先(会社全体・共通・複数口座)設定モーダル =====
@@ -691,6 +699,11 @@
         '<div class="modal__header"><h3>🏦 振込先を設定</h3><button class="icon-btn" id="bankCloseBtn">✕</button></div>' +
         '<div class="modal__body">' +
           '<p class="hint" style="margin-bottom:12px">ここで登録した振込先は、会社全体でこのツールから発行するすべての請求書に共通で使われます。複数口座を登録すると、請求書にすべて並べて印字されます。</p>' +
+          '<div class="field" style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)">' +
+            '<label>銀行振込名義(カタカナ)</label>' +
+            '<input type="text" id="b_kana" placeholder="例：ユウゲンガイシャ）タイホウケンセツ" value="' + esc(companyBankKana) + '">' +
+            '<div class="hint" style="margin-top:4px">表記の例：ユウゲンガイシャ）タイホウケンセツ／（ユ）タイホウケンセツ／ユウゲンガイシャ　タイホウケンセツ　など。金融機関によって表記が異なる場合があるため、事務員さんに確認のうえご入力ください。請求書ごとに「振込名義を記載する」☑で表示・非表示を切り替えられます。</div>' +
+          '</div>' +
           '<div id="bankRowsWrap">' + renderRows() + '</div>' +
           '<button type="button" class="btn" id="bankAddRowBtn">＋ 口座を追加</button>' +
         '</div>' +
@@ -733,7 +746,11 @@
           accountHolder: (b.accountHolder || '').trim()
         };
       }).filter(function (b) { return b.bankName || b.accountNumber; });
-      writeArr(COMPANY_BANKS_KEY, companyBanks).then(function () {
+      companyBankKana = document.getElementById('b_kana').value.trim();
+      Promise.all([
+        writeArr(COMPANY_BANKS_KEY, companyBanks),
+        storageSet(COMPANY_BANK_KANA_KEY, companyBankKana)
+      ]).then(function () {
         close();
         renderDocPreview();
       });
@@ -880,6 +897,7 @@
           '<div class="field"><label>支払期限</label><input type="date" id="bd_dueDate" value="' + esc(bundle.dueDate) + '"></div>' +
         '</div>' +
         '<div class="field"><label>備考(共通・各請求書ページに表示)</label><textarea id="bd_remarks" placeholder="例: 分割請求の場合はその旨など">' + esc(bundle.remarks) + '</textarea></div>' +
+        '<label style="display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px"><input type="checkbox" id="bd_showBankKana" style="width:auto"' + (bundle.showBankKana !== false ? ' checked' : '') + '> 振込名義(カタカナ)を記載する</label>' +
       '</div>' +
       '<div class="panel no-print">' +
         '<h2>工事ごとの請求内容(' + bundle.items.length + '件)</h2>' +
@@ -904,6 +922,7 @@
     document.getElementById('bd_issueDate').addEventListener('input', function () { bundle.issueDate = this.value; renderBundlePrintArea(); });
     document.getElementById('bd_dueDate').addEventListener('input', function () { bundle.dueDate = this.value; renderBundlePrintArea(); });
     document.getElementById('bd_remarks').addEventListener('input', function () { bundle.remarks = this.value; renderBundlePrintArea(); });
+    document.getElementById('bd_showBankKana').addEventListener('change', function () { bundle.showBankKana = this.checked; renderBundlePrintArea(); });
 
     el.querySelectorAll('.bi-project').forEach(function (sel) {
       sel.addEventListener('change', function () {
@@ -914,8 +933,8 @@
         if (proj) {
           var totals = calcTotals(proj);
           item.title = (proj.cfg && proj.cfg.proj) || proj.name || item.title;
-          item.subtotal = totals.ad; item.tax = totals.tax; item.total = totals.total; item.discount = totals.disc;
-          if (item.includeDetail) item.detailCats = buildDetailSnapshot(proj);
+          item.pre = totals.pre; item.subtotal = totals.ad; item.tax = totals.tax; item.total = totals.total; item.discount = totals.disc;
+          item.detailCats = buildDetailSnapshot(proj);
         }
         renderBundle();
       });
@@ -958,7 +977,7 @@
         var proj = projects.find(function (p) { return p.id === item.projectId; });
         if (!proj) return;
         var totals = calcTotals(proj);
-        item.subtotal = totals.ad; item.tax = totals.tax; item.total = totals.total; item.discount = totals.disc;
+        item.pre = totals.pre; item.subtotal = totals.ad; item.tax = totals.tax; item.total = totals.total; item.discount = totals.disc;
         item.detailCats = buildDetailSnapshot(proj);
         renderBundle();
       });
@@ -997,43 +1016,44 @@
     for (var ci2 = 0; ci2 < bundle.items.length; ci2++) {
       if (bundle.items[ci2].projectId) { coverCo = bundleCompanyInfo(bundle.items[ci2]); break; }
     }
+    var coverNoText = bundle.no ? bundle.no : '　　　';
     var coverHtml =
-      '<div class="doc-topline"><span>No.&nbsp;' + esc(bundle.no) + '</span><span>' + esc(fmtJp(bundle.issueDate)) + '</span></div>' +
-      '<div class="doc-title" style="font-size:20px">御　請　求　書　（　合　計　）</div>' +
-      '<div class="doc-meta-row"><div><div class="doc-client">' + esc(bundle.clientName) + '　' + esc(bundle.honorific || '御中') + '</div>' +
-        '<div class="doc-body-text">下記工事につき、合計にてご請求申し上げます。(内訳は次ページ以降の各請求書をご覧ください)</div></div></div>' +
-      '<div class="doc-amount-box"><div class="lbl">ご請求金額合計</div><div class="val">' + fmtYen(grand) + '　－</div></div>' +
-      '<div class="doc-cols">' +
-        '<div class="doc-left">' +
-          (bundle.dueDate ? '<div><span class="k">お支払期限</span>' + esc(fmtJp(bundle.dueDate)) + '</div>' : '') +
+      '<div class="pq-title-wrap"><span class="pq-title" style="font-size:16pt">御請求書（合計）</span></div>' +
+      '<div class="pq-top">' +
+        '<div class="pq-left">' +
+          '<div>' + esc(fmtJp(bundle.issueDate)) + '<br>請求書番号　第　' + esc(coverNoText) + '　号</div>' +
+          '<div class="pq-client">' + esc(bundle.clientName) + '　' + esc(bundle.honorific || '御中') + '</div>' +
         '</div>' +
-        '<div class="doc-right">' +
-          (coverCo.co2 ? '<div class="co2">' + esc(coverCo.co2) + '</div>' : '') +
-          '<div class="co1">' + esc(coverCo.co1) + '</div>' +
-          '<div>' + esc(coverCo.rep) + '</div>' +
-          '<div>' + esc(coverCo.zip) + '</div>' +
-          '<div>' + esc(coverCo.addr1) + (coverCo.addr2 ? ' ' + esc(coverCo.addr2) : '') + '</div>' +
-          '<div>TEL.&nbsp;' + esc(coverCo.tel) + '</div><div>FAX.&nbsp;' + esc(coverCo.fax) + '</div>' +
-          (coverCo.inv ? '<div style="margin-top:4px"><span style="font-size:11px">インボイス登録番号&nbsp;' + esc(coverCo.inv) + '</span></div>' : '') +
+        '<div class="pq-co">' +
+          (coverCo.co2 ? '<div class="pq-co-line" style="font-size:9pt;color:#666">' + esc(coverCo.co2) + '</div>' : '') +
+          '<div class="pq-co-line name">' + esc(coverCo.co1) + '</div>' +
+          '<div class="pq-co-line">' + esc(coverCo.rep) + '</div>' +
+          '<div class="pq-co-line">' + esc(coverCo.zip) + ' ' + esc(coverCo.addr1) + (coverCo.addr2 ? ' ' + esc(coverCo.addr2) : '') + '</div>' +
+          '<div class="pq-co-line">TEL ' + esc(coverCo.tel) + '　FAX ' + esc(coverCo.fax) + '</div>' +
+          (coverCo.inv ? '<div class="pq-co-line">インボイス登録番号　' + esc(coverCo.inv) + '</div>' : '') +
           stampHtml() +
         '</div>' +
       '</div>' +
-      bankListHtml() +
-      '<table class="hist" style="margin-top:14px"><thead><tr><th>No</th><th>請求書番号</th><th>工事名</th><th style="text-align:right">金額(税込)</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-      (bundle.remarks ? '<div class="doc-remarks"><b>備考：</b><br>' + escNl(bundle.remarks) + '</div>' : '');
+      '<div class="pq-mid">' +
+        '<div class="pq-amount-col">' +
+          '<div class="pq-amount-box"><span class="lbl">ご請求金額合計　</span><span class="val">' + fmtYen(grand) + '　－</span></div>' +
+          (bundle.dueDate ? '<div class="pq-kojimei-wrap"><span class="pq-kojimei">お支払期限　' + esc(fmtJp(bundle.dueDate)) + '</span></div>' : '') +
+        '</div>' +
+        '<div class="pq-meta-col"><div class="pq-meta">' + bankListHtml(bundle) + '</div></div>' +
+      '</div>' +
+      '<div class="hint" style="margin:2px 0 4px;font-size:9pt;color:var(--text-secondary)">下記工事につき、合計にてご請求申し上げます。(内訳は次ページ以降の各請求書をご覧ください)</div>' +
+      '<table class="hist"><thead><tr><th>No</th><th>請求書番号</th><th>工事名</th><th style="text-align:right">金額(税込)</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      (bundle.remarks ? '<div class="doc-remarks"><b>備考：</b>' + escNl(bundle.remarks) + '</div>' : '');
 
     var pagesHtml = bundle.items.map(function (it, idx) {
       var d = {
         id: bundle.id, invoiceNo: bundleItemInvoiceNo(bundle, idx), issueDate: bundle.issueDate, dueDate: bundle.dueDate,
         clientName: bundle.clientName, honorific: bundle.honorific, title: it.title,
-        total: it.total, tax: it.tax, subtotal: it.subtotal, discount: it.discount || 0, company: bundleCompanyInfo(it),
-        remarks: bundle.remarks, includeDetail: it.includeDetail, detailCats: it.detailCats,
+        pre: it.pre, total: it.total, tax: it.tax, subtotal: it.subtotal, discount: it.discount || 0, company: bundleCompanyInfo(it),
+        remarks: bundle.remarks, includeDetail: it.includeDetail, detailCats: it.detailCats, showBankKana: bundle.showBankKana,
         quoteNo: '', quoteDate: '', caseId: ''
       };
-      var page = '<div class="doc doc-cover bundle-page">' + buildInvoiceDocHtml(d) + '</div>';
-      var detailHtml = buildDetailDocHtml(d);
-      if (detailHtml) page += '<div class="doc doc-detail bundle-page">' + detailHtml + '</div>';
-      return page;
+      return '<div class="doc doc-cover bundle-page">' + buildInvoiceDocHtml(d) + '</div>';
     }).join('');
 
     wrap.innerHTML = '<div class="doc doc-cover">' + coverHtml + '</div>' + pagesHtml;
@@ -1118,18 +1138,30 @@
       readArr(CASE_PROJECTS_KEY),
       readArr(INVOICE_DOCS_KEY),
       readObj(COMPANY_STAMP_KEY),
-      readArr(COMPANY_BANKS_KEY),
+      storageGet(COMPANY_BANKS_KEY),
       readObj(STAMP_LAYOUT_KEY),
-      readArr(INVOICE_BUNDLES_KEY)
+      readArr(INVOICE_BUNDLES_KEY),
+      readRaw(COMPANY_BANK_KANA_KEY)
     ]).then(function (res) {
       projects = Array.isArray(res[0]) ? res[0] : [];
       var curId = res[1] || '';
       caseProjects = res[2] || [];
       invoiceDocs = res[3] || [];
       companyStamp = res[4] || { img: null };
-      companyBanks = res[5] || [];
       stampLayout = res[6] || null;
       bundleDocs = res[7] || [];
+      companyBankKana = res[8] || '';
+
+      // 振込先が一度も保存されていない(初回起動)場合は、実際の請求書(寺嶋工業様宛)と同じ4口座を自動で登録しておく。
+      // 一度でも保存されていれば(空にした場合も含め)、その内容をそのまま尊重する。
+      var bankRaw = res[5];
+      if (bankRaw === null) {
+        companyBanks = DEF_BANKS;
+        writeArr(COMPANY_BANKS_KEY, companyBanks);
+      } else {
+        try { var parsedBanks = bankRaw.value ? JSON.parse(bankRaw.value) : []; companyBanks = Array.isArray(parsedBanks) ? parsedBanks : []; }
+        catch (e) { companyBanks = []; }
+      }
 
       var target = null;
       if (pid) target = projects.find(function (p) { return p.id === pid; });
