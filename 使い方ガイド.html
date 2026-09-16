@@ -27,6 +27,10 @@
   .toc { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
   .toc a { font-size: 12px; font-weight: 700; color: var(--primary); background: var(--primary-soft); padding: 7px 13px; border-radius: 999px; text-decoration: none; }
   .toc a:hover { background: #E2DBFF; }
+  .toc a.hot { font-size: 16px; font-weight: 900; color: #fff; background: linear-gradient(135deg,var(--primary),var(--primary-dark)); padding: 10px 20px; }
+  .toc a.hot:hover { opacity: .9; background: linear-gradient(135deg,var(--primary),var(--primary-dark)); }
+  .toc-note { font-size: 12.5px; color: var(--text-secondary); background: #FFF8EC; border: 1px solid #F5E3BE; border-radius: 10px; padding: 10px 14px; margin: -12px 0 22px; }
+  .toc-note b { color: var(--text); }
 
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; margin-bottom: 18px; box-shadow: var(--shadow-sm); }
   .card h2 { font-size: 16.5px; margin: 0 0 6px; display: flex; align-items: center; gap: 8px; }
@@ -147,8 +151,9 @@
     <a href="#modules">画面ごとの使い方</a>
     <a href="#patterns">共通のルール</a>
     <a href="#chatinfo">チャットで質問する</a>
-    <a href="import_guide.html" target="_blank">📥 見積データの読み込み方法</a>
+    <a class="hot" href="import_guide.html" target="_blank">★おすすめAI機能を使って見積を作る</a>
   </div>
+  <div class="toc-note">📁 <b>11_見積実行予算Pro</b>は <b>Z:\工事部\0.管理ソフト\見積Pro</b> にあります。コピーして使ってください。</div>
 
   <!-- ============ checklist ============ -->
   <div class="card" id="checklist">
@@ -315,7 +320,7 @@
       tabs: "明細入力 / 見積鏡 / 見積鏡Ⅱ / 御見積書 / 御見積書Ⅱ（画面切替ボタン）",
       fields: [["明細行", "工事名称、形状寸法等、数量、単位、単価(実行)→実行金額(自動)、掛率、決定単価、決定金額、粗利"], ["会社・見積設定", "会社名、代表者、住所、TEL/FAX、インボイス番号、見積番号、見積担当者、発行日、有効期限、支払条件、宛先、工事件名、工事場所、工事期間 など"]],
       steps: ["「📁 物件を選択」→ 物件名を入力して作成（①案件管理から開くと自動で案件情報が入る）", "工種タブごとに明細行を入力（➕挿入／✕削除）", "「⚙ 会社設定」で発行者情報を入力", "「見積鏡」「御見積書」で内容を確認し「🖨 印刷」または「📄 PDFで保存」"],
-      note: "①案件管理の詳細ハブから開くと、宛先・工事件名・工事場所が案件情報と自動で同期されます。「Ⅱ」系のボタンは工事タブが1件かつ明細8行以内のときだけ使えます。協力会社の見積書(PDF)などから物件データ(JSON)を作ってもらい、画面上部の「📤📥 書き出し・読み込み」メニューから読み込む方法もあります。手順はこのページ上部「見積データの読み込み方法」リンク、またはチャットで「PDFから読み込みたい」と聞いてください。"
+      note: "①案件管理の詳細ハブから開くと、宛先・工事件名・工事場所が案件情報と自動で同期されます。「Ⅱ」系のボタンは工事タブが1件かつ明細8行以内のときだけ使えます。協力会社の見積書(PDF)などから物件データ(JSON)を作ってもらい、画面上部の「📤📥 書き出し・読み込み」メニューから読み込む方法もあります。手順はこのページ上部「★おすすめAI機能を使って見積を作る」リンク、またはチャットで「PDFから読み込みたい」と聞いてください。"
     },
     {
       id: "m12", file: "12_工事完了書ツール.html", color: "#10B981", icon: "📋",
