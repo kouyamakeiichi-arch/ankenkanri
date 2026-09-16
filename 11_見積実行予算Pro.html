@@ -309,6 +309,7 @@ table.pq-table tr.total-row td.l{text-align:left}
     <button class="btn pri no-print" onclick="savePDF()" style="background:#e53e3e;border-color:#e53e3e">📄 PDFで保存</button>
     <button class="btn pri no-print" id="btn-print2" onclick="doPrint2()" title="見積鏡Ⅱ・御見積書Ⅱと同条件（工事1件・明細1〜8行）の場合のみ利用できます">🖨 印刷Ⅱ</button>
     <button class="btn pri no-print" id="btn-pdf2" onclick="savePDF2()" style="background:#e53e3e;border-color:#e53e3e" title="見積鏡Ⅱ・御見積書Ⅱと同条件（工事1件・明細1〜8行）の場合のみ利用できます">📄 PDFで保存Ⅱ</button>
+    <button class="btn pri no-print" onclick="makeInvoice()" style="background:#0891b2;border-color:#0891b2" title="この物件のデータをもとに、請求書(書類)を作成する画面を新しいタブで開きます">🧾 請求書を作る</button>
     <div style="position:relative;display:inline-block" class="no-print">
       <button class="btn" onclick="toggleIoMenu(event)">📤📥 書き出し・読み込み ▾</button>
       <div class="dropmenu" id="iomenu">
@@ -2434,6 +2435,10 @@ function renderAll(){
   else if(curView==='summary2')renderSummary2();
   else if(curView==='quote2')renderQuote2();
   else renderQuote();
+}
+function makeInvoice(){
+  if(!curProj()){alert('先に物件を選択してください。');return;}
+  window.open('15_請求書ツール.html?project='+encodeURIComponent(curProj().id),'_blank','noopener');
 }
 
 // ①案件管理から「?caseId=...&caseName=...」付きで開かれた場合、
