@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="app-build" content="2026-09-16-1" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>使い方ガイド | 太豊建設アプリ</title>
+<style>
+  :root {
+    --bg: #F6F5FB; --surface: #FFFFFF; --primary: #6C47FF; --primary-dark: #5636D9;
+    --primary-soft: #EFEAFF; --text: #1E1B2E; --text-secondary: #6B6580; --text-tertiary: #9C97AE;
+    --border: #E7E4F0; --danger: #F0525C; --success: #10B981; --warn: #F59E0B; --radius: 12px;
+    --shadow-sm: 0 1px 2px rgba(30,27,46,0.06); --shadow-md: 0 8px 24px rgba(30,27,46,0.16);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Hiragino Sans','Yu Gothic','Noto Sans JP',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; }
+
+  .shell { max-width: 880px; margin: 0 auto; padding: 24px 20px 100px; }
+
+  /* ---------- header ---------- */
+  .hero { background: linear-gradient(135deg,var(--primary),#8B6FFF); border-radius: 20px; padding: 28px 26px; color: #fff; margin-bottom: 22px; box-shadow: var(--shadow-md); }
+  .hero__badge { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.18); font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:999px; margin-bottom:10px; }
+  .hero h1 { font-size: 21px; margin: 0 0 8px; font-weight: 900; }
+  .hero p { font-size: 13px; margin: 0; opacity: .92; line-height: 1.7; }
+
+  .toc { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+  .toc a { font-size: 12px; font-weight: 700; color: var(--primary); background: var(--primary-soft); padding: 7px 13px; border-radius: 999px; text-decoration: none; }
+  .toc a:hover { background: #E2DBFF; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; margin-bottom: 18px; box-shadow: var(--shadow-sm); }
+  .card h2 { font-size: 16.5px; margin: 0 0 6px; display: flex; align-items: center; gap: 8px; }
+  .card p.lead { color: var(--text-secondary); font-size: 13px; margin: 0 0 16px; line-height: 1.7; }
+
+  /* ---------- setup checklist ---------- */
+  .checklist { display: flex; flex-direction: column; gap: 8px; }
+  .check-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); cursor: pointer; }
+  .check-item input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--primary); flex-shrink: 0; cursor: pointer; }
+  .check-item__body { flex: 1; }
+  .check-item__title { font-weight: 700; font-size: 13.5px; }
+  .check-item__desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; line-height: 1.6; }
+  .check-item__link { font-size: 11.5px; font-weight: 700; color: var(--primary); text-decoration: none; white-space: nowrap; margin-left: 6px; }
+  .check-item.is-done .check-item__title { text-decoration: line-through; color: var(--text-tertiary); }
+  .progress-bar { height: 7px; border-radius: 999px; background: var(--border); overflow: hidden; margin: 4px 0 14px; }
+  .progress-bar__fill { height: 100%; background: var(--primary); border-radius: 999px; transition: width .25s ease; width: 0%; }
+  .progress-label { font-size: 12px; color: var(--text-tertiary); font-weight: 700; margin-bottom: 4px; }
+
+  /* ---------- flow diagram ---------- */
+  .flow-row { display: flex; align-items: stretch; gap: 6px; overflow-x: auto; padding-bottom: 6px; }
+  .flow-node { flex: 0 0 auto; min-width: 118px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; text-align: center; }
+  .flow-node__num { width: 22px; height: 22px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; }
+  .flow-node__label { font-size: 12px; font-weight: 700; line-height: 1.4; }
+  .flow-arrow2 { flex: 0 0 auto; display: flex; align-items: center; color: var(--text-tertiary); font-size: 16px; padding: 0 2px; }
+
+  /* ---------- module accordion ---------- */
+  .mod-list { display: flex; flex-direction: column; gap: 10px; }
+  .mod { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--surface); }
+  .mod__head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; user-select: none; }
+  .mod__dot { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .mod__title { flex: 1; }
+  .mod__title b { font-size: 14px; }
+  .mod__title span { display: block; font-size: 11.5px; color: var(--text-tertiary); font-weight: 600; margin-top: 1px; }
+  .mod__chevron { color: var(--text-tertiary); transition: transform .18s ease; flex-shrink: 0; }
+  .mod.is-open .mod__chevron { transform: rotate(180deg); }
+  .mod__body { display: none; padding: 0 16px 18px; border-top: 1px solid var(--border); }
+  .mod.is-open .mod__body { display: block; padding-top: 14px; }
+  .mod__openlink { font-size: 11.5px; font-weight: 700; color: var(--primary); text-decoration: none; background: var(--primary-soft); padding: 6px 12px; border-radius: 999px; flex-shrink: 0; }
+
+  .sub-h { font-size: 12px; font-weight: 800; color: var(--text-tertiary); margin: 14px 0 6px; letter-spacing: .02em; }
+  .sub-h:first-child { margin-top: 0; }
+  table.field-table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 12.5px; }
+  table.field-table th { text-align: left; padding: 7px 9px; color: var(--text-tertiary); font-size: 11px; border-bottom: 1px solid var(--border); }
+  table.field-table td { padding: 8px 9px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.field-table tr:last-child td { border-bottom: none; }
+  table.field-table td.req::after { content: " *"; color: var(--danger); font-weight: 900; }
+
+  .steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .steps li { display: flex; gap: 10px; font-size: 12.5px; line-height: 1.6; }
+  .steps li b.n { flex-shrink:0; width: 20px; height: 20px; border-radius: 50%; background: var(--primary-soft); color: var(--primary-dark); font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+
+  .note { font-size: 12px; color: var(--text-secondary); background: #FFF8EC; border: 1px solid #F5E3BE; border-radius: 10px; padding: 10px 13px; margin-top: 12px; line-height: 1.65; }
+  .note.link-note { background: #EFF6FF; border-color: #C9DDFB; }
+
+  /* ---------- common patterns ---------- */
+  .pattern-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px,1fr)); gap: 12px; }
+  .pattern { padding: 14px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); }
+  .pattern__icon { font-size: 20px; margin-bottom: 6px; }
+  .pattern__title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+  .pattern__desc { font-size: 12px; color: var(--text-secondary); line-height: 1.65; }
+
+  @media (max-width: 640px) {
+    .shell { padding: 16px 12px 100px; }
+    .hero { padding: 22px 18px; }
+  }
+
+  /* ================= chatbot ================= */
+  #chatFab {
+    position: fixed; right: 18px; bottom: 18px; z-index: 500; width: 56px; height: 56px; border-radius: 50%;
+    background: var(--primary); color: #fff; border: none; box-shadow: var(--shadow-md); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 24px;
+  }
+  #chatFab:hover { background: var(--primary-dark); }
+  #chatPanel {
+    position: fixed; right: 18px; bottom: 86px; z-index: 500; width: 340px; max-width: calc(100vw - 28px);
+    height: 460px; max-height: calc(100vh - 130px); background: var(--surface); border-radius: 18px;
+    box-shadow: var(--shadow-md); border: 1px solid var(--border); display: none; flex-direction: column; overflow: hidden;
+  }
+  #chatPanel.is-open { display: flex; }
+  .chat-head { background: linear-gradient(135deg,var(--primary),#8B6FFF); color: #fff; padding: 14px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .chat-head__avatar { width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,.22); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .chat-head__title { font-weight: 800; font-size: 13.5px; }
+  .chat-head__sub { font-size: 10.5px; opacity: .85; margin-top: 1px; }
+  .chat-head__close { margin-left: auto; background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; opacity: .85; padding: 4px; }
+  .chat-body { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; background: var(--bg); }
+  .chat-msg { max-width: 88%; font-size: 12.5px; line-height: 1.65; padding: 9px 12px; border-radius: 12px; }
+  .chat-msg.bot { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
+  .chat-msg.user { align-self: flex-end; background: var(--primary); color: #fff; border-bottom-right-radius: 3px; }
+  .chat-msg a { color: var(--primary-dark); font-weight: 700; text-decoration: underline; }
+  .chat-msg.bot a { color: var(--primary-dark); }
+  .chat-chips { display: flex; flex-wrap: wrap; gap: 6px; align-self: flex-start; max-width: 100%; }
+  .chat-chip { font-size: 11.5px; font-weight: 700; color: var(--primary); background: var(--primary-soft); border: none; padding: 7px 12px; border-radius: 999px; cursor: pointer; text-align: left; }
+  .chat-chip:hover { background: #E2DBFF; }
+  .chat-input-row { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
+  .chat-input-row input { flex: 1; border: 1px solid var(--border); border-radius: 999px; padding: 9px 14px; font-size: 12.5px; font-family: inherit; outline: none; }
+  .chat-input-row input:focus { border-color: var(--primary); }
+  .chat-input-row button { background: var(--primary); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 15px; flex-shrink: 0; }
+  .chat-input-row button:hover { background: var(--primary-dark); }
+  .chat-typing { display: flex; gap: 4px; align-self: flex-start; padding: 10px 14px; }
+  .chat-typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-tertiary); animation: chatBlink 1s infinite ease-in-out; }
+  .chat-typing span:nth-child(2){ animation-delay:.15s; } .chat-typing span:nth-child(3){ animation-delay:.3s; }
+  @keyframes chatBlink { 0%,80%,100%{opacity:.25;} 40%{opacity:1;} }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <div class="hero">
+    <span class="hero__badge">📘 太豊建設アプリ 使い方ガイド</span>
+    <h1>はじめて使う方へ</h1>
+    <p>このガイドは印刷物ではなく、Webページとして開いたまま操作しながら参照できます。各画面の入力項目・操作の流れをまとめています。右下の 💬 ボタンから、チャット形式で質問することもできます。ブラウザの「お気に入り」に登録しておくと便利です。</p>
+  </div>
+
+  <div class="toc">
+    <a href="#checklist">はじめての設定チェックリスト</a>
+    <a href="#flow">全体の流れ</a>
+    <a href="#modules">画面ごとの使い方</a>
+    <a href="#patterns">共通のルール</a>
+    <a href="#chatinfo">チャットで質問する</a>
+  </div>
+
+  <!-- ============ checklist ============ -->
+  <div class="card" id="checklist">
+    <h2>✅ はじめての設定チェックリスト</h2>
+    <p class="lead">上から順番に進めるとスムーズです。チェックはこのブラウザにだけ記憶されます（他のPCやスマホには反映されません）。</p>
+    <div class="progress-label" id="progressLabel">0 / 6 完了</div>
+    <div class="progress-bar"><div class="progress-bar__fill" id="progressFill"></div></div>
+    <div class="checklist" id="checklistArea"></div>
+  </div>
+
+  <!-- ============ flow ============ -->
+  <div class="card" id="flow">
+    <h2>🧭 全体の流れ（案件が1つできるまで）</h2>
+    <p class="lead">実際の建設案件は、だいたいこの順番でアプリの画面を移動しながら進みます。番号はサイドバーの並びとは限らず、実際の作業順です。</p>
+    <div class="flow-row" id="flowRow"></div>
+    <div class="note">💡 途中の画面を飛ばしても構いません。たとえば見積が不要な小さな工事なら、⑪見積は使わずに①案件管理だけで完了させることもできます。</div>
+  </div>
+
+  <!-- ============ modules ============ -->
+  <div class="card" id="modules">
+    <h2>🗂 画面ごとの使い方</h2>
+    <p class="lead">タップ（クリック）すると詳しい入力項目が開きます。</p>
+    <div class="mod-list" id="modList"></div>
+  </div>
+
+  <!-- ============ common patterns ============ -->
+  <div class="card" id="patterns">
+    <h2>🔁 どの画面にも共通するルール</h2>
+    <p class="lead">この6つを覚えておくと、どの画面でも迷わず操作できます。</p>
+    <div class="pattern-grid">
+      <div class="pattern"><div class="pattern__icon">☰</div><div class="pattern__title">左上のハンバーガーメニュー</div><div class="pattern__desc">3本線のボタンで、全画面共通のサイドバーが開きます。ここから他の画面へ移動します。</div></div>
+      <div class="pattern"><div class="pattern__icon">➕</div><div class="pattern__title">新規登録は「作成」ボタン</div><div class="pattern__desc">一覧画面の右上にある「〜を作成」「〜を追加」ボタンからモーダル（入力用の小窓）が開きます。<b>*</b>印は入力必須の項目です。</div></div>
+      <div class="pattern"><div class="pattern__icon">✏️</div><div class="pattern__title">編集は行・カードをクリック</div><div class="pattern__desc">一覧に並んだ行やカードをクリックすると、同じ入力フォームが編集モードで開きます。</div></div>
+      <div class="pattern"><div class="pattern__icon">🗑️</div><div class="pattern__title">削除は「ゴミ箱」で復元できる</div><div class="pattern__desc">削除してもすぐには消えず、「ゴミ箱」タブに移動します。間違えても「元に戻す」で復元できます。「完全に削除」を押すと本当に消えます。</div></div>
+      <div class="pattern"><div class="pattern__icon">☁️</div><div class="pattern__title">自動でクラウドに保存される</div><div class="pattern__desc">入力した内容は自動でクラウド（Firebase）に保存され、他のPC・スマホでも同じ内容が見られます。保存ボタンを押し忘れても基本的に大丈夫です。</div></div>
+      <div class="pattern"><div class="pattern__icon">🔗</div><div class="pattern__title">案件を選ぶと他の画面に連携する</div><div class="pattern__desc">①案件管理で登録した案件は、⑤金銭管理・⑪見積・⑫工事完了書・⑬注文書・⑭現場写真帳などから「案件を選んで自動入力」で呼び出せます。同じ案件情報を何度も手入力する必要はありません。</div></div>
+    </div>
+    <div class="note">📥 念のため、月に一度は「設定」画面（またはサイドバー下部の「バックアップ保存」）からバックアップのJSONファイルを保存しておくことをおすすめします。</div>
+  </div>
+
+  <div class="card" id="chatinfo" style="text-align:center;">
+    <h2 style="justify-content:center;">💬 わからないことはチャットで質問できます</h2>
+    <p class="lead" style="margin-bottom:8px;">右下の丸いボタンを押すと、よくある質問に答えるチャットが開きます。文章を自由に入力しても、キーワードから近い回答を探します。</p>
+    <p style="font-size:11.5px;color:var(--text-tertiary);">※このチャットはインターネット上のAIと通信するものではなく、このページの中だけで動く「よくある質問」検索です。込み入った質問には答えられない場合があります。</p>
+  </div>
+
+</div>
+
+<!-- ============ chatbot widget ============ -->
+<button id="chatFab" aria-label="チャットを開く">💬</button>
+<div id="chatPanel">
+  <div class="chat-head">
+    <div class="chat-head__avatar">🤖</div>
+    <div>
+      <div class="chat-head__title">使い方アシスタント</div>
+      <div class="chat-head__sub">よくある質問にお答えします</div>
+    </div>
+    <button class="chat-head__close" id="chatClose">✕</button>
+  </div>
+  <div class="chat-body" id="chatBody"></div>
+  <div class="chat-input-row">
+    <input type="text" id="chatInput" placeholder="質問を入力（例：案件の登録方法）" />
+    <button id="chatSend" aria-label="送信">➤</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* =====================================================================
+     1. データ定義：チェックリスト／全体フロー／画面別ガイド
+        （チャットのFAQもこのデータを再利用する）
+     ===================================================================== */
+
+  var MODULES = [
+    {
+      id: "m06", file: "06_設定.html", color: "#94A3B8", icon: "⚙️",
+      title: "⓪ 設定", sub: "会社情報・単価表・メンバーの準備（最初に一度）",
+      purpose: "単価表・会社情報・メンバー・案件ステータスなどのマスタ情報をまとめて管理します。他の画面はここで登録した内容を参照するため、最初にひととおり確認しておくと後が楽になります。",
+      tabs: "単価表・単位設定 / 事業者情報 / メンバー管理 / タイプ・大項目設定 / 表示設定 / データバックアップ / ゴミ箱",
+      fields: [
+        ["事業者情報", "会社名・屋号 *、業者種別、建設業許可番号、郵便番号、住所、電話、FAX、適格請求書発行事業者登録番号、決算日、開始・終了時刻、休憩時間(分)"],
+        ["単価を追加", "名称 *、大項目 *、ジャンル、仕様・摘要、単位、予定原価(税抜)、係数(自動計算)、販売価格(税抜)"],
+        ["メンバーを追加", "ユーザー名 *、メールアドレス、権限(オーナー/管理者/経理/一般)"]
+      ],
+      steps: ["「事業者情報」タブで会社名・住所・許可番号などを入力し「保存」", "「単価表」タブで良く使う工事の単価を登録（⑪見積・実行予算Proの見積データから一括登録も可）", "「メンバー管理」で使う人を追加", "「データバックアップ」で自動バックアップの時刻を設定"],
+      note: "単価表のジャンル名は⑪見積・実行予算Proの工種タブと同じ名称で揃えられています。案件ステータスや案件タイプもここで編集できます（①案件管理・⑦工程表と共通）。"
+    },
+    {
+      id: "m02", file: "02_顧客建物管理.html", color: "#60A5FA", icon: "🏠",
+      title: "② 顧客・建物管理", sub: "発注者と現場の基本情報を登録",
+      purpose: "顧客（発注者）と建物（現場）の情報を管理します。①案件管理で案件を作るときの選択肢になるため、案件より先に登録しておくとスムーズです。",
+      tabs: "顧客 / 建物 / ゴミ箱",
+      fields: [
+        ["顧客を作成", "顧客タイプ(個人/個人事業主/法人)、顧客名 *、帳票敬称(様/御中)、先方の担当者、担当者(社内)、郵便番号、住所、電話番号"],
+        ["建物を作成", "建物タイプ、建物名 *、顧客、郵便番号、住所"]
+      ],
+      steps: ["「顧客を作成」→ 顧客名などを入力 →「作成」", "「建物を作成」→ 建物名と紐づく顧客を選択 →「作成」", "編集は一覧の名前をクリック、削除はゴミ箱経由"],
+      note: "必須項目は名前だけです。①案件管理の新規登録モーダルからも「＋新規顧客を登録」「＋新規建物を登録」でこの画面に直接遷移して登録できます。"
+    },
+    {
+      id: "m01", file: "01_案件管理.html", color: "#6C47FF", icon: "📁",
+      title: "① 案件管理", sub: "すべての中心になるハブ画面",
+      purpose: "工事案件を1件ずつ登録する、アプリ全体の中心となる画面です。案件の詳細ページ（詳細ハブ）から、ファイル・工程表・金銭・日報など他の画面の情報もまとめて確認できます。",
+      tabs: "案件タイプ別タブ × ステータスで絞り込み／詳細ハブのタブ：基本情報・ネクストアクション・見積・顧客・建物・ファイル・工程表・金銭・日報・申請・作業時間",
+      fields: [
+        ["案件を作成", "案件タイプ *、案件名 *、顧客／建物、契約日、着工日、完工日、担当者、作成者、契約金額、発注金額(実行金額)、契約確度(S/A/B/C)、工事内容、備考"]
+      ],
+      steps: ["一覧右上「作成」→ モーダルで案件タイプ・案件名などを入力 →「作成」", "一覧の案件名をクリックして詳細ハブを開く", "詳細ハブの各タブから、ファイル添付・見積・工程表・金銭管理などをまとめて確認", "進捗に応じて編集モーダルでステータス（依頼受付→現調→見積中→…→完工→原価確定）を進める"],
+      note: "案件タイプが「社内頼まれ事」の場合は項目が「依頼先」「進捗」などに変わります。発注金額を入力すると⑤金銭管理の「発注」に自動反映される旨の注記があります。削除した案件はゴミ箱タブから復元できます。"
+    },
+    {
+      id: "m03", file: "03_ファイル管理.html", color: "#34D399", icon: "📎",
+      title: "③ ファイル管理", sub: "図面・見積書・写真などの保管庫",
+      purpose: "案件ごとに図面・見積書・写真・請求書などのファイルをクラウド上に保管します。",
+      tabs: "全業者共有 / 写真 / 見積書 / 注文書 / 請書 / 実行予算 / 工程表 / 検収書 / 売上請求書 / 資料（歯車アイコンから種別の追加・変更が可能）",
+      fields: [["アップロード", "入力フォームはなく、案件とフォルダ（種別）タブを選んだ状態で「アップロード」ボタンからファイルを選ぶだけ"]],
+      steps: ["上部の案件セレクターで案件を選ぶ", "フォルダタブ（見積書・写真など）を選ぶ", "「アップロード」ボタンでファイルを選択（複数選択可）", "ファイルカードをクリックすると画面内でプレビューできる"],
+      note: "1ファイル20MBまで。画像は自動で圧縮されます。案件が1件も登録されていないとアップロードボタンが使えないため、先に①案件管理で案件を作成してください。"
+    },
+    {
+      id: "m04", file: "04_日報社内申請.html", color: "#F59E0B", icon: "📝",
+      title: "④ 日報・社内申請", sub: "作業時間の記録と社内の承認申請",
+      purpose: "作業員ごとの日報（作業時間・内容）と、社内での承認申請（見積承認依頼など）を管理します。",
+      tabs: "日報 / 社内申請 / ゴミ箱",
+      fields: [
+        ["日報を追加", "作業者 *、案件、作業日、開始・終了時刻、休憩(分)、単価、作業内容、備考（時間と単価から金額を自動計算）"],
+        ["申請を追加", "申請件名 *、申請者、承認者、案件、申請内容"]
+      ],
+      steps: ["「日報を追加」→ 作業者・時間・作業内容を入力 →「作成」", "「申請を追加」→ 件名・内容を入力 →「作成」", "申請は一覧上でステータス（承認／却下）を変更できる"],
+      note: "日報タブは月ごとの表示です。当月以外に入力したデータは、月送りナビで対象月に切り替えないと表示されません。"
+    },
+    {
+      id: "m05", file: "05_金銭管理.html", color: "#F472B6", icon: "💰",
+      title: "⑤ 金銭管理", sub: "協力業者・発注・支払い・請求の4本柱",
+      purpose: "協力業者（下請け）への発注、支払い、そして顧客への請求という「お金の流れ」を一元管理します。",
+      tabs: "協力業者 / 発注 / 支払い / 請求 / ゴミ箱（すべてカード表示、横スクロールなし）",
+      fields: [
+        ["協力業者を登録", "事業者名 *、職種、ランク(S/A/B/C)、対応地域、担当者氏名、電話、メール、備考"],
+        ["発注を追加", "発注名 *、発注先(協力業者)、案件、ステータス(見積中/発注済み/完了/キャンセル)、着工日、完工日、発注金額"],
+        ["支払いを追加", "事業者 *、関連する発注、ステータス(支払予定/支払完了)、振込先、期限、金額"],
+        ["請求を追加", "案件 *、ステータス(未請求/請求済み/入金済み)、完工日、次回入金予定日、売上合計、入金済み金額"]
+      ],
+      steps: ["まず「協力業者」タブで発注先の業者を登録", "「発注」タブで案件と協力業者を紐づけて発注を登録", "「支払い」タブで発注に対する支払いを記録", "「請求」タブで案件を選ぶと契約金額が自動で売上合計に入る"],
+      note: "案件を選ぶと、その案件の契約金額などが自動で入力されます。以前はテーブル表示で横スクロールが必要でしたが、現在はすべてカード表示に統一され、スクロールなしで使えます。"
+    },
+    {
+      id: "m07", file: "07_工程表カレンダー.html", color: "#22D3EE", icon: "🗓️",
+      title: "⑦ 工程表カレンダー", sub: "総合・月間・週間の3つの表示",
+      purpose: "案件ごとの工程（スケジュール）を可視化します。案件を1つだけ選ぶと、工種ごとに管理できる「単一案件モード」になります。",
+      tabs: "総合工程表(ガントチャート) / 月間工程表 / 週間工程表 / カレンダー(Googleカレンダーへのリンク)",
+      fields: [
+        ["日付セルへの入力", "「この日の工事内容」テキスト（月間・週間表示で日付セルをクリック）"],
+        ["単一案件モード", "工種名、開始日・終了日、担当業者、作成日、現場代理人、備考(打ち合わせ/社内検査/監理者検査/その他)"]
+      ],
+      steps: ["左の「案件で絞り込み」から表示したい案件を選ぶ", "案件を1つだけ選ぶと単一案件モードに自動で切り替わる", "工種ごとに開始日〜終了日を入れると、カレンダーに色付きで表示される", "印刷は用紙サイズ(A3よこ推奨)を選んで「🖨 印刷」"],
+      note: "工種の追加・削除は案件ごとに独立しています。「カレンダー」タブは自前の機能ではなく、Googleカレンダーを開くリンクです。"
+    },
+    {
+      id: "m11", file: "11_見積実行予算Pro.html", color: "#6C47FF", icon: "🧮",
+      title: "⑪ 見積・実行予算Pro", sub: "実行予算と見積書をまとめて作成",
+      purpose: "工事の明細を入力し、実行予算（仕入コスト）と見積金額（決定金額）を同時に管理して、粗利・利益率を自動計算しながら御見積書を印刷します。",
+      tabs: "明細入力 / 見積鏡 / 見積鏡Ⅱ / 御見積書 / 御見積書Ⅱ（画面切替ボタン）",
+      fields: [["明細行", "工事名称、形状寸法等、数量、単位、単価(実行)→実行金額(自動)、掛率、決定単価、決定金額、粗利"], ["会社・見積設定", "会社名、代表者、住所、TEL/FAX、インボイス番号、見積番号、見積担当者、発行日、有効期限、支払条件、宛先、工事件名、工事場所、工事期間 など"]],
+      steps: ["「📁 物件を選択」→ 物件名を入力して作成（①案件管理から開くと自動で案件情報が入る）", "工種タブごとに明細行を入力（➕挿入／✕削除）", "「⚙ 会社設定」で発行者情報を入力", "「見積鏡」「御見積書」で内容を確認し「🖨 印刷」または「📄 PDFで保存」"],
+      note: "①案件管理の詳細ハブから開くと、宛先・工事件名・工事場所が案件情報と自動で同期されます。「Ⅱ」系のボタンは工事タブが1件かつ明細8行以内のときだけ使えます。"
+    },
+    {
+      id: "m12", file: "12_工事完了書ツール.html", color: "#10B981", icon: "📋",
+      title: "⑫ 工事完了書ツール", sub: "工事完了書(A4横)の作成・印刷",
+      purpose: "工事完了書を作成・保存・印刷するための書式ツールです。",
+      tabs: "基本情報 / 提出先(発注者) / 工事内容 / 検査結果・是正事項 / 備考 / 受領確認欄",
+      fields: [["主な項目", "文書番号、発行日、現場名、工事名、施工場所、提出先(会社名・宛先・担当者・住所)、工期(自/至)、完成年月日、引渡年月日、検査結果、検査日、是正事項、備考"]],
+      steps: ["「＋ 新規作成」→「📋 案件管理の案件から選んで自動入力」（または手入力）", "各セクションを入力して「💾 保存」", "「📍 印影の位置を調整」で会社の角印の位置を調整", "「🖨 印刷する」（A4横専用）"],
+      note: "案件を選んで自動入力すると「📷 現場写真帳を開く」ボタンからそのまま⑭現場写真帳に進めます。写真添付欄はなく、「写真は別途ご提出ください」の文言が入ります。"
+    },
+    {
+      id: "m13", file: "13_注文書ツール.html", color: "#22D3EE", icon: "🧾",
+      title: "⑬ 注文書ツール", sub: "注文書・注文請書を1つのデータから作成",
+      purpose: "協力業者への注文書と、それに対する注文請書の2つの書式を、同じデータから作成・印刷します。",
+      tabs: "注文書 / 注文請書（プレビュー側タブ）",
+      fields: [["主な項目", "注文番号、発注日、現場名、工事名、施工場所、請負者(会社名・住所・TEL/FAX)、工事明細(名称・仕様・数量・単価・金額)、支払条件、工期、引渡、瑕疵担保、工事概要"]],
+      steps: ["「＋ 新規作成」→「📋 案件から選んで自動入力」（または手入力）", "「＋ 行を追加」で工事明細を入力", "必要なら「〔注文条項〕を編集する」で文言を調整", "「💾 保存」→ タブで注文書／注文請書を確認 →「🖨 表示中を印刷」または「両方を印刷」"],
+      note: "⑫と同じく「📷 現場写真帳を開く」ボタンで案件を紐づけたまま⑭現場写真帳を開けます。注文条項は通常そのままで問題ありません。"
+    },
+    {
+      id: "m14", file: "14_現場写真帳.html", color: "#F97316", icon: "📷",
+      title: "⑭ 現場写真帳", sub: "表紙＋写真ページを画面上でそのまま編集",
+      purpose: "案件ごとに工事写真帳（表紙＋写真ページ）を、画面に表示されているものをそのまま編集・印刷できるツールです。",
+      tabs: "左サイドバーにページ一覧（表紙＋各ページ）、レイアウトは3枚/ページ・2枚/ページ・4枚/ページから選択",
+      fields: [["表紙", "工事番号、工事名、工事箇所、工期(着手/竣工)、工事施工者（クリックして直接入力）"], ["写真ページの各枠", "写真、カテゴリ(施工前/施工中/施工後/安全管理/使用材料)、工程、摘要・撮影メモ、撮影日"]],
+      steps: ["右上のプルダウンで案件を選択（未選択だと編集できません）", "表紙の項目をクリックして直接入力", "「＋ ページを追加」でレイアウトを選び、枠をクリックして写真を追加", "カテゴリ・メモ・撮影日を入力（自動保存）", "「🖨 印刷 / PDF」でA4縦の写真帳として出力"],
+      note: "⑫⑬ツールの「📷 現場写真帳を開く」ボタンから、選んでいる案件のまま直接この画面に移動できます。ページは最低1ページ必要です。"
+    }
+  ];
+
+  var FLOW = [
+    ["⓪", "設定で会社情報・単価表を準備"],
+    ["②", "顧客・建物を登録"],
+    ["①", "案件を作成"],
+    ["⑪", "見積・実行予算を作成"],
+    ["⑤", "発注・支払い・請求を管理"],
+    ["③", "図面・見積書などをアップロード"],
+    ["⑦", "工程表でスケジュール管理"],
+    ["④", "日報をつける"],
+    ["⑭", "現場写真を記録"],
+    ["⑫⑬", "工事完了書・注文書を発行"]
+  ];
+
+  var CHECKLIST = [
+    { title: "①案件管理と②顧客・建物管理の画面を開いて、全体の雰囲気を見てみる", desc: "まずは触ってみるだけでOK。何もしなくても壊れることはありません。", link: "01_案件管理.html" },
+    { title: "⓪設定で会社名・住所などの事業者情報を入力する", desc: "⑪⑫⑬の書類に自動で反映されます。", link: "06_設定.html" },
+    { title: "②顧客・建物管理で、取引先を1件だけ試しに登録してみる", desc: "顧客名だけでも登録できます。", link: "02_顧客建物管理.html" },
+    { title: "①案件管理で、案件を1件作成してみる", desc: "案件タイプと案件名の2つだけでも作成できます。", link: "01_案件管理.html" },
+    { title: "作成した案件の「詳細ハブ」から、ファイル・工程表・金銭のタブを確認する", desc: "案件名をクリックすると詳細ハブが開きます。", link: "01_案件管理.html" },
+    { title: "サイドバー下部の「バックアップ保存」を一度押してみる", desc: "手元にJSONファイルが保存されることを確認しておくと安心です。", link: "06_設定.html" }
+  ];
+
+  var PATTERNS_TEXT = "どの画面にも共通するルール：左上のハンバーガーメニューで画面を移動。新規登録は「作成」ボタンからモーダルを開く（*は必須項目）。編集は一覧の行やカードをクリック。削除してもすぐには消えず「ゴミ箱」タブに移動し、復元できる。入力内容は自動でクラウド(Firebase)に保存され、他のPC・スマホでも共有される。①案件管理で登録した案件は⑤⑪⑫⑬⑭から「案件を選んで自動入力」で呼び出せる。";
+
+  /* =====================================================================
+     2. 画面描画
+     ===================================================================== */
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+
+  function renderChecklist() {
+    var done = {};
+    try { done = JSON.parse(window.localStorage.getItem("taiho_guide_checklist_v1") || "{}"); } catch (e) { done = {}; }
+    var area = document.getElementById("checklistArea");
+    area.innerHTML = CHECKLIST.map(function (item, i) {
+      var isDone = !!done[i];
+      return '<label class="check-item' + (isDone ? " is-done" : "") + '" data-idx="' + i + '">' +
+        '<input type="checkbox" ' + (isDone ? "checked" : "") + ' data-idx="' + i + '">' +
+        '<div class="check-item__body"><div class="check-item__title">' + esc(item.title) + '</div><div class="check-item__desc">' + esc(item.desc) + '</div></div>' +
+        '<a class="check-item__link" href="' + item.link + '" target="_blank" onclick="event.stopPropagation();">開く →</a>' +
+        '</label>';
+    }).join("");
+    area.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+      cb.addEventListener("change", function () {
+        var idx = this.getAttribute("data-idx");
+        var d = {};
+        try { d = JSON.parse(window.localStorage.getItem("taiho_guide_checklist_v1") || "{}"); } catch (e) { d = {}; }
+        d[idx] = this.checked;
+        try { window.localStorage.setItem("taiho_guide_checklist_v1", JSON.stringify(d)); } catch (e) {}
+        renderChecklist();
+      });
+    });
+    var doneCount = CHECKLIST.filter(function (_, i) { return done[i]; }).length;
+    document.getElementById("progressLabel").textContent = doneCount + " / " + CHECKLIST.length + " 完了";
+    document.getElementById("progressFill").style.width = (doneCount / CHECKLIST.length * 100) + "%";
+  }
+
+  function renderFlow() {
+    var html = "";
+    FLOW.forEach(function (n, i) {
+      html += '<div class="flow-node"><div class="flow-node__num">' + n[0] + '</div><div class="flow-node__label">' + esc(n[1]) + '</div></div>';
+      if (i < FLOW.length - 1) html += '<div class="flow-arrow2">→</div>';
+    });
+    document.getElementById("flowRow").innerHTML = html;
+  }
+
+  function renderModules() {
+    var html = MODULES.map(function (m) {
+      var fieldsHtml = m.fields.map(function (f) {
+        return '<div class="sub-h">' + esc(f[0]) + '</div><table class="field-table"><tr><td>' + esc(f[1]) + '</td></tr></table>';
+      }).join("");
+      var stepsHtml = '<div class="sub-h">操作の流れ</div><ol class="steps">' + m.steps.map(function (s, i) {
+        return '<li><b class="n">' + (i + 1) + '</b><span>' + esc(s) + '</span></li>';
+      }).join("") + '</ol>';
+      return '<div class="mod" id="' + m.id + '">' +
+        '<div class="mod__head" data-toggle="' + m.id + '">' +
+        '<div class="mod__dot" style="background:' + m.color + '22;color:' + m.color + ';">' + m.icon + '</div>' +
+        '<div class="mod__title"><b>' + esc(m.title) + '</b><span>' + esc(m.sub) + '</span></div>' +
+        '<a class="mod__openlink" href="' + m.file + '" target="_blank" onclick="event.stopPropagation();">開く</a>' +
+        '<span class="mod__chevron">▾</span>' +
+        '</div>' +
+        '<div class="mod__body">' +
+        '<p style="font-size:12.5px;color:var(--text-secondary);line-height:1.7;margin:0 0 4px;">' + esc(m.purpose) + '</p>' +
+        '<div class="sub-h">構成</div><p style="font-size:12.5px;color:var(--text-secondary);margin:0;">' + esc(m.tabs) + '</p>' +
+        fieldsHtml + stepsHtml +
+        '<div class="note">💡 ' + esc(m.note) + '</div>' +
+        '</div></div>';
+    }).join("");
+    document.getElementById("modList").innerHTML = html;
+    document.querySelectorAll("[data-toggle]").forEach(function (head) {
+      head.addEventListener("click", function () {
+        document.getElementById(this.getAttribute("data-toggle")).classList.toggle("is-open");
+      });
+    });
+  }
+
+  renderChecklist();
+  renderFlow();
+  renderModules();
+
+  /* =====================================================================
+     3. チャットボット（このページ内だけで動くキーワード検索FAQ）
+     ===================================================================== */
+
+  var FAQ = [];
+  MODULES.forEach(function (m) {
+    FAQ.push({
+      kw: [m.title.replace(/[⓪①-⑭\s]/g, ""), m.file.replace(".html", "").replace(/^[0-9_]+/, "")],
+      q: m.title.replace(/^[⓪①-⑭]\s*/, "") + "の使い方は？",
+      a: "<b>" + esc(m.title) + "</b><br>" + esc(m.purpose) + "<br><br>主な操作：" + m.steps.slice(0, 3).map(esc).join(" → ") + " …<br><a href='#" + m.id + "' onclick=\"document.getElementById('" + m.id + "').classList.add('is-open'); document.getElementById('" + m.id + "').scrollIntoView({behavior:'smooth'});\">ガイドの詳細を見る ↓</a>　<a href='" + m.file + "' target='_blank'>画面を開く →</a>"
+    });
+  });
+  FAQ.push(
+    { kw: ["削除", "消えた", "ゴミ箱", "元に戻す", "復元"], q: "間違えて削除してしまった", a: "削除してもすぐには消えず、各画面の「ゴミ箱」タブに移動します。ゴミ箱タブを開き、「元に戻す」を押せば復元できます。「完全に削除」を押すと本当に消えるのでご注意ください。" },
+    { kw: ["ばっくあっぷ", "バックアップ", "保存されない", "消えた", "他のpc", "他のパソコン", "同期"], q: "データは自動で保存される？他のPCでも見える？", a: "入力した内容は自動でクラウド(Firebase)に保存され、同じアプリを開けば他のPC・スマホでも同じ内容が見られます。ただ念のため、⓪設定画面またはサイドバー下部の「バックアップ保存」から、月1回程度手元にJSONファイルを保存しておくと安心です。" },
+    { kw: ["案件", "登録", "新規作成", "つくる", "作る"], q: "案件を登録するには？", a: "①案件管理の画面右上「作成」ボタンから、案件タイプと案件名（どちらも必須）を入力すれば登録できます。顧客・建物は②顧客・建物管理で先に登録しておくと選択肢に出てきます。<br><a href='01_案件管理.html' target='_blank'>①案件管理を開く →</a>" },
+    { kw: ["見積", "見積書"], q: "見積書を作るには？", a: "⑪見積・実行予算Proを使います。①案件管理の詳細ハブから「見積」タブ経由で開くと、案件情報が自動で入ります。明細を入力し、「御見積書」画面で「🖨 印刷」または「📄 PDFで保存」できます。<br><a href='11_見積実行予算Pro.html' target='_blank'>⑪見積・実行予算Proを開く →</a>" },
+    { kw: ["印刷", "pdf", "プリント"], q: "印刷やPDF保存の方法は？", a: "⑦工程表・⑪見積・⑫工事完了書・⑬注文書・⑭現場写真帳など、書類系の画面には「🖨 印刷」ボタンがあります。押すとブラウザの印刷画面が開き、そのまま印刷、または「PDFに保存」を選ぶとPDFファイルとして保存できます。" },
+    { kw: ["ステータス", "進捗", "状況"], q: "案件のステータスって何？", a: "①案件管理では、依頼受付→現調→見積中→見積提出済→受注→着工前→着工(施工中)→完工→原価確定、という順で案件の進み具合を管理します（失注・精算完了もあります）。ステータスの名称や色は⓪設定画面で編集できます。" },
+    { kw: ["スマホ", "携帯", "タブレット", "モバイル"], q: "スマホでも使える？", a: "はい、スマホ・タブレットからも同じURLで開けます。⑤金銭管理はスマホでも見やすいカード表示になっています。他の画面も画面幅に応じてレイアウトが変わります。" },
+    { kw: ["写真", "現場写真", "アルバム"], q: "現場の写真はどこに記録する？", a: "⑭現場写真帳を使います。右上で案件を選び、表紙情報を入力してから「＋ページを追加」で写真ページを作成し、枠をクリックして写真を追加します。⑫⑬の「📷現場写真帳を開く」ボタンからも同じ案件のまま開けます。<br><a href='14_現場写真帳.html' target='_blank'>⑭現場写真帳を開く →</a>" },
+    { kw: ["注文書", "発注書"], q: "注文書を作るには？", a: "⑬注文書ツールを使います。「＋新規作成」→「📋案件から選んで自動入力」→工事明細を入力→「💾保存」→「🖨表示中を印刷」または「両方を印刷」で、注文書と注文請書の両方を出せます。<br><a href='13_注文書ツール.html' target='_blank'>⑬注文書ツールを開く →</a>" },
+    { kw: ["完了書", "工事完了書"], q: "工事完了書を作るには？", a: "⑫工事完了書ツールを使います。「＋新規作成」→「📋案件管理の案件から選んで自動入力」→検査結果などを入力→「💾保存」→「🖨印刷する」（A4横専用です）。<br><a href='12_工事完了書ツール.html' target='_blank'>⑫工事完了書ツールを開く →</a>" },
+    { kw: ["発注", "支払い", "請求", "協力業者", "下請け", "お金"], q: "発注・支払い・請求の管理は？", a: "⑤金銭管理を使います。「協力業者」タブで発注先を登録→「発注」タブで案件と紐づけて発注→「支払い」タブで支払いを記録→「請求」タブで顧客への請求・入金を管理します。すべてカード表示で、横スクロールなしで使えます。<br><a href='05_金銭管理.html' target='_blank'>⑤金銭管理を開く →</a>" },
+    { kw: ["単価", "単価表", "会社情報", "許可番号"], q: "会社情報や単価表を設定するには？", a: "⓪設定画面で行います。「事業者情報」タブで会社名・住所・許可番号など、「単価表・単位設定」タブでよく使う工事の単価を登録できます。<br><a href='06_設定.html' target='_blank'>⓪設定を開く →</a>" },
+    { kw: ["日報"], q: "日報のつけ方は？", a: "④日報・社内申請の「日報」タブ→「日報を追加」→作業者・作業日・時間・作業内容を入力すると、金額が自動計算されます。月ごとの表示なので、対象月に月送りナビで切り替えてください。<br><a href='04_日報社内申請.html' target='_blank'>④日報・社内申請を開く →</a>" },
+    { kw: ["工程表", "スケジュール", "カレンダー"], q: "工程表の使い方は？", a: "⑦工程表カレンダーを使います。総合・月間・週間の3表示があり、案件を1つだけ絞り込むと工種ごとに管理できる「単一案件モード」になります。印刷はA3よこがおすすめです。<br><a href='07_工程表カレンダー.html' target='_blank'>⑦工程表カレンダーを開く →</a>" },
+    { kw: ["ファイル", "図面", "アップロード"], q: "ファイル（図面・写真など）はどこに入れる？", a: "③ファイル管理を使います。案件とフォルダ(種別)タブを選んで「アップロード」ボタンからファイルを選ぶだけです。1ファイル20MBまで、画像は自動圧縮されます。<br><a href='03_ファイル管理.html' target='_blank'>③ファイル管理を開く →</a>" },
+    { kw: ["ai", "会話", "本物の", "チャットgpt", "生成ai"], q: "このチャットは本物のAIと会話している？", a: "いいえ、このチャットはインターネットに接続せず、このページの中だけでキーワードを検索して近い回答を返す仕組みです。込み入った質問には答えられないことがあります。難しい内容は、このガイドの各画面の説明（上のカードをタップ）をご確認いただくか、担当の方にご確認ください。" }
+  );
+
+  var GREETING = "こんにちは。太豊建設アプリの使い方についてお答えします。下のボタンからよくある質問を選ぶか、質問を直接入力してください。";
+  var SUGGEST = ["案件を登録するには？", "見積書を作るには？", "発注・支払い・請求の管理は？", "間違えて削除してしまった", "データは自動で保存される？"];
+
+  var chatBody = document.getElementById("chatBody");
+  var chatHistoryStarted = false;
+
+  function addMsg(role, html) {
+    var div = document.createElement("div");
+    div.className = "chat-msg " + role;
+    div.innerHTML = html;
+    chatBody.appendChild(div);
+    chatBody.scrollTop = chatBody.scrollHeight;
+    return div;
+  }
+
+  function addChips(list) {
+    var wrap = document.createElement("div");
+    wrap.className = "chat-chips";
+    list.forEach(function (label) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chat-chip"; b.textContent = label;
+      b.addEventListener("click", function () { handleUserText(label); });
+      wrap.appendChild(b);
+    });
+    chatBody.appendChild(wrap);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  function normalize(s) {
+    return String(s || "").toLowerCase().replace(/[\s　。、!?！？「」『』・.,]/g, "");
+  }
+
+  function findAnswer(query) {
+    var q = normalize(query);
+    if (!q) return null;
+    var best = null, bestScore = 0;
+    FAQ.forEach(function (item) {
+      var score = 0;
+      item.kw.forEach(function (k) {
+        var nk = normalize(k);
+        if (!nk) return;
+        if (q.indexOf(nk) !== -1 || nk.indexOf(q) !== -1) score += nk.length;
+      });
+      var nQtitle = normalize(item.q);
+      if (nQtitle && (q.indexOf(nQtitle) !== -1 || nQtitle.indexOf(q) !== -1)) score += nQtitle.length * 1.2;
+      if (score > bestScore) { bestScore = score; best = item; }
+    });
+    return bestScore >= 2 ? best : null;
+  }
+
+  function handleUserText(text) {
+    addMsg("user", esc(text));
+    var typing = document.createElement("div");
+    typing.className = "chat-typing";
+    typing.innerHTML = "<span></span><span></span><span></span>";
+    chatBody.appendChild(typing);
+    chatBody.scrollTop = chatBody.scrollHeight;
+    setTimeout(function () {
+      chatBody.removeChild(typing);
+      var hit = findAnswer(text);
+      if (hit) {
+        addMsg("bot", hit.a);
+      } else {
+        addMsg("bot", "すみません、うまく見つけられませんでした。下のよくある質問から選んでいただくか、画面名（例：金銭管理、見積、写真帳など）を入れて質問してみてください。");
+        addChips(SUGGEST);
+      }
+    }, 420);
+  }
+
+  function openChat() {
+    document.getElementById("chatPanel").classList.add("is-open");
+    if (!chatHistoryStarted) {
+      chatHistoryStarted = true;
+      addMsg("bot", GREETING);
+      addChips(SUGGEST);
+    }
+  }
+
+  document.getElementById("chatFab").addEventListener("click", function () {
+    var panel = document.getElementById("chatPanel");
+    if (panel.classList.contains("is-open")) { panel.classList.remove("is-open"); }
+    else { openChat(); document.getElementById("chatInput").focus(); }
+  });
+  document.getElementById("chatClose").addEventListener("click", function () {
+    document.getElementById("chatPanel").classList.remove("is-open");
+  });
+  document.getElementById("chatSend").addEventListener("click", function () {
+    var input = document.getElementById("chatInput");
+    var v = input.value.trim();
+    if (!v) return;
+    input.value = "";
+    handleUserText(v);
+  });
+  document.getElementById("chatInput").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { document.getElementById("chatSend").click(); }
+  });
+
+})();
+</script>
+</body>
+</html>
