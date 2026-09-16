@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>見積データの読み込み方法</title>
+<style>
+:root{
+  --bg:#ffffff; --bg2:#f6f7f9; --card:#ffffff;
+  --text:#1a1a1a; --text2:#555; --text3:#888;
+  --border:#e2e4e8; --accent:#2563eb; --accent-bg:#eef2ff;
+  --step-num:#2563eb; --code-bg:#f1f3f7;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14161c; --bg2:#1b1e26; --card:#1e212a;
+    --text:#e8e9ec; --text2:#b4b7c0; --text3:#888c96;
+    --border:#2c2f3a; --accent:#6d9bff; --accent-bg:#212a42;
+    --step-num:#6d9bff; --code-bg:#22252f;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14161c; --bg2:#1b1e26; --card:#1e212a;
+  --text:#e8e9ec; --text2:#b4b7c0; --text3:#888c96;
+  --border:#2c2f3a; --accent:#6d9bff; --accent-bg:#212a42;
+  --step-num:#6d9bff; --code-bg:#22252f;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:'Hiragino Sans','Yu Gothic UI','Segoe UI',sans-serif;
+  line-height:1.75;
+}
+.wrap{max-width:760px; margin:0 auto; padding:40px 20px 80px}
+h1{font-size:22px; font-weight:700; margin:0 0 6px}
+.sub{color:var(--text3); font-size:13px; margin-bottom:28px}
+.card{
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  padding:20px 22px; margin-bottom:16px;
+}
+.card h2{font-size:15px; margin:0 0 10px; color:var(--text2)}
+.step-list{list-style:none; margin:0; padding:0}
+.step{
+  display:flex; gap:14px; padding:16px 0; border-bottom:1px dashed var(--border);
+}
+.step:last-child{border-bottom:none}
+.step-num{
+  flex:0 0 30px; height:30px; border-radius:50%; background:var(--accent-bg);
+  color:var(--step-num); font-weight:700; font-size:14px;
+  display:flex; align-items:center; justify-content:center;
+}
+.step-body h3{margin:2px 0 4px; font-size:14.5px}
+.step-body p{margin:0; color:var(--text2); font-size:13.5px}
+.code{
+  display:inline-block; background:var(--code-bg); border:1px solid var(--border);
+  border-radius:6px; padding:2px 8px; font-size:13px; font-family:ui-monospace,Menlo,Consolas,monospace;
+}
+.note{
+  background:var(--accent-bg); border:1px solid var(--border); border-radius:10px;
+  padding:14px 16px; font-size:13.5px; color:var(--text2); margin-top:18px;
+}
+.note b{color:var(--text)}
+.filebox{
+  display:flex; align-items:center; gap:10px; background:var(--code-bg);
+  border:1px solid var(--border); border-radius:10px; padding:12px 16px; margin-bottom:24px;
+}
+.filebox .ic{font-size:22px}
+.filebox .name{font-size:13.5px; font-weight:600}
+.filebox .desc{font-size:12px; color:var(--text3)}
+ul.plain{margin:6px 0 0 18px; padding:0; font-size:13.5px; color:var(--text2)}
+ul.plain li{margin-bottom:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>見積データの読み込み方法</h1>
+  <div class="sub">Construction Estimate Pro（11_見積実行予算Pro.html）への物件データ取り込み手順</div>
+
+  <div class="card">
+    <h2>Part 1　Claudeにログインしてデータを作ってもらう</h2>
+    <ul class="step-list">
+      <li class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>claude.ai にログイン</h3>
+          <p>ブラウザまたはアプリで <span class="code">claude.ai</span> を開き、いつものアカウントでログインします。</p>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>新しいチャットを開始</h3>
+          <p>左上の「新しいチャット」からまっさらな会話を開きます。</p>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>元になる2つのファイルを添付</h3>
+          <p>入力欄の「＋（クリップ）」アイコンから、または直接ドラッグ＆ドロップで次の2つを添付します。</p>
+          <p>・<span class="code">11_見積実行予算Pro.html</span>（読み込ませたいアプリ本体）<br>
+          ・<span class="code">実行予算練習.pdf</span>（元になる見積書）</p>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>依頼文を送信</h3>
+          <p>宛名・工事件名など変更したい内容を書いて送ります。例：</p>
+          <p class="code" style="display:block;white-space:pre-wrap;padding:10px 12px;">この2つのファイルを確認して、PDFの見積書の内容そのままで
+11のファイルに対応するJSONを作って。
+見積宛名：有限会社下組　札幌支店
+工事件名：一本松下組様トイレ設置工事</p>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h3>生成されたJSONをダウンロード</h3>
+          <p>Claudeが内訳を突き合わせて金額を検算した上でJSONファイルを作成するので、返信に表示されるファイルカードからダウンロードします（例：<span class="code">mitsumori_ichimonmatsu_shimogumi.json</span>）。</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="filebox">
+    <div class="ic">📄</div>
+    <div>
+      <div class="name">mitsumori_ichimonmatsu_shimogumi.json</div>
+      <div class="desc">「一本松下組様トイレ設置工事」の物件データ（見積書の内訳をそのまま再現）</div>
+    </div>
+  </div>
+
+  <div class="note">
+    ※ 上記の「一本松下組様トイレ設置工事」「¥1,684,373」などの物件名・金額・ファイル名は、説明のための<b>架空の例</b>です。実際にお使いになるときは、ご自身の案件名・金額・ファイル名に置き換えて読み進めてください。
+  </div>
+
+  <div class="card">
+    <h2>Part 2　できたデータをアプリに読み込む</h2>
+    <ul class="step-list">
+      <li class="step">
+        <div class="step-num">6</div>
+        <div class="step-body">
+          <h3>アプリを開く</h3>
+          <p><span class="code">11_見積実行予算Pro.html</span> をブラウザで開きます。</p>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">7</div>
+        <div class="step-body">
+          <h3>読み込みメニューを開く</h3>
+          <p>画面上部のメニューから読み込み／書き出しのメニューを開きます。</p>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">8</div>
+        <div class="step-body">
+          <h3>「物件を選んで読み込み」を選択</h3>
+          <p><span class="code">📥 物件を選んで読み込み</span> をクリックします。既存のデータは上書きされません。</p>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">9</div>
+        <div class="step-body">
+          <h3>JSONファイルを選択してチェック</h3>
+          <p>ダウンロードした <span class="code">mitsumori_ichimonmatsu_shimogumi.json</span> を選ぶと一覧に「一本松下組様トイレ設置工事」が表示されるので、チェックを入れて読み込みます。</p>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">10</div>
+        <div class="step-body">
+          <h3>内容を確認</h3>
+          <p>物件一覧から選択すると、宛名「有限会社下組　札幌支店」・工事件名「一本松下組様トイレ設置工事」で内訳・見積金額（¥1,684,373）が表示されます。</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>その他の読み込み方法</h2>
+    <ul class="plain">
+      <li><b>全物件を読み込み（追加）</b>：ファイル内の全物件を、既存データに追加します。</li>
+      <li><b>全物件を読み込み（上書き）</b>：既存データを全て置き換えます（通常は使わなくてOKです）。</li>
+    </ul>
+  </div>
+
+  <div class="note">
+    <b>読み込み後に編集したい場合：</b> 取り込んだ物件を選択した状態で、単価・数量・備考などは通常の明細と同じように直接クリックして書き換えられます。
+  </div>
+</div>
+</body>
+</html>
