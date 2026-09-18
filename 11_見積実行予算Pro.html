@@ -519,18 +519,6 @@ table.pq-table tr.total-row td.l{text-align:left}
   </div>
 </div>
 
-<div class="modal-ov" id="caselinkmodal">
-  <div class="modal">
-    <h3 style="margin:0 0 8px;font-size:15px">🔗 案件と紐付ける</h3>
-    <div style="font-size:11.5px;color:var(--text3);margin-bottom:10px;line-height:1.6">紐付けると、①案件管理側のその案件の詳細から「⑪見積・実行予算Proアプリを開く」を押したときに、この物件が正しく開くようになります（未紐付けのままだと、案件管理側から開いたときに空の物件が別途できてしまいます）。</div>
-    <input id="caselink-search" class="proj-new-inp" style="width:100%;margin-bottom:10px;box-sizing:border-box" placeholder="案件名・取引先名で検索" oninput="renderCaseLinkList()">
-    <div id="caselink-list" style="max-height:280px;overflow-y:auto;border:1px solid var(--border2);border-radius:6px;padding:6px 8px"></div>
-    <div class="modal-btns">
-      <button class="btn" onclick="closeCaseLinkModal()">閉じる</button>
-    </div>
-  </div>
-</div>
-
 <div class="ctxmenu" id="ctxmenu">
   <button onclick="ctxCopy()">📋 コピー <span style="float:right;color:#9ca3af">Ctrl+C</span></button>
   <button onclick="ctxCut()">✂️ 切り取り</button>
@@ -1265,86 +1253,9 @@ function renderProjList(){
     <div class="proj-item${p.id===curProjId?' active':''}">
       <div class="proj-item-name" onclick="switchProj('${p.id}')" title="クリックで切り替え">${p.name}</div>
       <div class="proj-item-date">${p.createdAt||''}</div>
-      ${p.caseId
-        ?`<button class="btn" style="font-size:11px;padding:3px 8px;color:#0a7a3d" onclick="unlinkCase('${p.id}')" title="クリックで紐付け解除">🔗 連携済み</button>`
-        :`<button class="btn" style="font-size:11px;padding:3px 8px" onclick="openCaseLinkModal('${p.id}')" title="案件管理の案件と紐付けます">🔗 案件と紐付け</button>`}
       <button class="btn" style="font-size:11px;padding:3px 8px" onclick="renameProj('${p.id}')">✏</button>
       <button class="btn danger" style="font-size:11px;padding:3px 8px" onclick="deleteProj('${p.id}')">🗑</button>
     </div>`).join('')}</div>`;
-}
-
-// ===== 案件と紐付け =====
-// JSONインポートなどで作った物件には caseId が付かないため、案件管理側の
-// 「見積・実行予算Proアプリを開く」から自動で開けない(=二重に物件が作られる)。
-// ここで案件一覧(taiho_projects_v2)を読み、手動で紐付けできるようにする。
-let caseLinkProjId=null;
-let caseListCache=null;
-
-function openCaseLinkModal(projId){
-  caseLinkProjId=projId;
-  const inp=document.getElementById('caselink-search');
-  if(inp)inp.value='';
-  const wrap=document.getElementById('caselink-list');
-  if(wrap)wrap.innerHTML='<div style="font-size:12.5px;color:var(--text3);padding:10px">案件一覧を読み込み中…</div>';
-  document.getElementById('caselinkmodal').className='modal-ov on';
-  loadCaseListForLink().then(renderCaseLinkList);
-}
-function closeCaseLinkModal(){
-  document.getElementById('caselinkmodal').className='modal-ov';
-  caseLinkProjId=null;
-}
-function loadCaseListForLink(force){
-  if(caseListCache&&!force)return Promise.resolve(caseListCache);
-  if(!window.db){caseListCache=[];return Promise.resolve([]);}
-  return window.db.collection('taiho_app_data').doc('taiho_projects_v2').get().then(function(doc){
-    let list=[];
-    if(doc.exists){
-      try{list=JSON.parse(doc.data().value||'[]')||[];}catch(e){list=[];}
-    }
-    caseListCache=list;
-    return list;
-  }).catch(function(e){
-    console.warn('案件一覧の取得に失敗',e);
-    caseListCache=[];
-    return [];
-  });
-}
-function renderCaseLinkList(){
-  const kw=((document.getElementById('caselink-search')||{}).value||'').trim();
-  const wrap=document.getElementById('caselink-list');
-  if(!wrap)return;
-  const linkedIds={};
-  projects.forEach(function(p){if(p.caseId)linkedIds[p.caseId]=p.name;});
-  let list=caseListCache||[];
-  if(kw)list=list.filter(function(c){return (c.name||'').includes(kw)||(c.customerName||'').includes(kw);});
-  if(!list.length){
-    wrap.innerHTML='<div style="font-size:12.5px;color:var(--text3);padding:10px">該当する案件が見つかりません。（案件管理アプリ側で作成した案件のみ表示されます）</div>';
-    return;
-  }
-  wrap.innerHTML=list.map(function(c){
-    const already=linkedIds[c.id];
-    return `<div class="pick-row" style="cursor:${already?'default':'pointer'};opacity:${already?'.5':'1'}" ${already?'':`onclick="confirmCaseLink('${c.id}')"`}>
-      <span style="flex:1">${c.name||'（無題）'}<br><span style="font-size:11px;color:var(--text3)">${c.customerName||''}${already?'　※既に「'+already+'」と連携済み':''}</span></span>
-    </div>`;
-  }).join('');
-}
-function confirmCaseLink(caseId){
-  const p=projects.find(function(x){return x.id===caseLinkProjId;});
-  if(!p)return;
-  const c=(caseListCache||[]).find(function(x){return x.id===caseId;});
-  p.caseId=caseId;
-  saveNow();
-  renderProjList();
-  closeCaseLinkModal();
-  alert('「'+p.name+'」を案件「'+(c?c.name:'')+'」に紐付けました。\n今後は案件管理側の「⑪見積・実行予算Proアプリを開く」から、この物件が開けます。');
-}
-function unlinkCase(projId){
-  const p=projects.find(function(x){return x.id===projId;});
-  if(!p)return;
-  if(!confirm('「'+p.name+'」の案件との紐付けを解除しますか？'))return;
-  delete p.caseId;
-  saveNow();
-  renderProjList();
 }
 
 function switchProj(id){
@@ -1554,23 +1465,23 @@ function renderDetail(){
     const c=ci(it);const hv=it.qty>0&&it.price>0;
     return `<tr>
       <td class="C">${it.no}</td>
-      <td class="L cell-x" data-r="${idx}" data-c="0" onmousedown="cellDown(${idx},0)" onmouseenter="cellEnter(${idx},0)" oncontextmenu="openCtxMenu(event,${idx},0)"><input type="text" value="${it.name}" list="price-dl" onchange="pickPriceItem(${idx},this.value)" onkeydown="cellNav(event,${idx},0)"></td>
-      <td class="L cell-x" data-r="${idx}" data-c="1" onmousedown="cellDown(${idx},1)" onmouseenter="cellEnter(${idx},1)" oncontextmenu="openCtxMenu(event,${idx},1)"><input type="text" value="${it.kei}" onchange="updItem(${idx},'kei',this.value)" onkeydown="cellNav(event,${idx},1)" style="font-size:11px;color:var(--text3)"></td>
-      <td class="cell-x" data-r="${idx}" data-c="2" onmousedown="cellDown(${idx},2)" onmouseenter="cellEnter(${idx},2)" oncontextmenu="openCtxMenu(event,${idx},2)"><input type="text" class="C" value="${it.qty||''}"
+      <td class="L cell-x" data-r="${idx}" data-c="0" onmousedown="cellDown(event,${idx},0)" onmouseenter="cellEnter(${idx},0)" oncontextmenu="openCtxMenu(event,${idx},0)"><input type="text" value="${it.name}" list="price-dl" onchange="pickPriceItem(${idx},this.value)" onkeydown="cellNav(event,${idx},0)"></td>
+      <td class="L cell-x" data-r="${idx}" data-c="1" onmousedown="cellDown(event,${idx},1)" onmouseenter="cellEnter(${idx},1)" oncontextmenu="openCtxMenu(event,${idx},1)"><input type="text" value="${it.kei}" onchange="updItem(${idx},'kei',this.value)" onkeydown="cellNav(event,${idx},1)" style="font-size:11px;color:var(--text3)"></td>
+      <td class="cell-x" data-r="${idx}" data-c="2" onmousedown="cellDown(event,${idx},2)" onmouseenter="cellEnter(${idx},2)" oncontextmenu="openCtxMenu(event,${idx},2)"><input type="text" class="C" value="${it.qty||''}"
         onfocus="this.value=this.value.replace(/,/g,'')"
         onblur="this.value=formatNum(this.value);updItem(${idx},'qty',parseFloat(this.value.replace(/,/g,''))||0)"
         onchange="updItem(${idx},'qty',parseFloat(this.value.replace(/,/g,''))||0)"
         onkeydown="cellNav(event,${idx},2)"
         style="text-align:right"></td>
-      <td class="cell-x" data-r="${idx}" data-c="3" onmousedown="cellDown(${idx},3)" onmouseenter="cellEnter(${idx},3)" oncontextmenu="openCtxMenu(event,${idx},3)"><input type="text" class="C" value="${it.unit}" onchange="updItem(${idx},'unit',this.value)" onkeydown="cellNav(event,${idx},3)"></td>
-      <td class="cell-x" data-r="${idx}" data-c="4" onmousedown="cellDown(${idx},4)" onmouseenter="cellEnter(${idx},4)" oncontextmenu="openCtxMenu(event,${idx},4)"><input type="text" value="${it.price?fmt(it.price):''}"
+      <td class="cell-x" data-r="${idx}" data-c="3" onmousedown="cellDown(event,${idx},3)" onmouseenter="cellEnter(${idx},3)" oncontextmenu="openCtxMenu(event,${idx},3)"><input type="text" class="C" value="${it.unit}" onchange="updItem(${idx},'unit',this.value)" onkeydown="cellNav(event,${idx},3)"></td>
+      <td class="cell-x" data-r="${idx}" data-c="4" onmousedown="cellDown(event,${idx},4)" onmouseenter="cellEnter(${idx},4)" oncontextmenu="openCtxMenu(event,${idx},4)"><input type="text" value="${it.price?fmt(it.price):''}"
         onfocus="this.value=this.value.replace(/,/g,'')"
         onblur="this.value=formatNum(this.value);updItem(${idx},'price',parseFloat(this.value.replace(/,/g,''))||0);maybeOfferRegisterPriceItem(${idx})"
         onchange="updItem(${idx},'price',parseFloat(this.value.replace(/,/g,''))||0)"
         onkeydown="cellNav(event,${idx},4)"
         style="text-align:right"></td>
       <td style="font-weight:600">${hv?fmt(c.exec):''}</td>
-      <td class="cell-x" data-r="${idx}" data-c="5" onmousedown="cellDown(${idx},5)" onmouseenter="cellEnter(${idx},5)" oncontextmenu="openCtxMenu(event,${idx},5)"><input type="text" value="${it.rate}"
+      <td class="cell-x" data-r="${idx}" data-c="5" onmousedown="cellDown(event,${idx},5)" onmouseenter="cellEnter(${idx},5)" oncontextmenu="openCtxMenu(event,${idx},5)"><input type="text" value="${it.rate}"
         onfocus="this.value=this.value.replace(/,/g,'')"
         onblur="updItem(${idx},'rate',(function(v){return isNaN(v)?1:v;})(parseFloat(this.value.replace(/,/g,''))))"
         onkeydown="cellNav(event,${idx},5)"
@@ -1974,7 +1885,8 @@ let cellSel=null;      // {r1,c1,r2,c2}
 let cellSelecting=false;
 let clipGrid=null;     // 内部クリップボード(配列の配列)
 
-function cellDown(r,c){
+function cellDown(e,r,c){
+  if(e&&e.button!==0)return; // 右クリック(2)/中クリック(1)では選択範囲を壊さない
   cellSel={r1:r,c1:c,r2:r,c2:c};
   cellSelecting=true;
   applyCellHighlight();
