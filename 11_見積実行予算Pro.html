@@ -319,11 +319,13 @@ table.pq-table tr.total-row td.l{text-align:left}
         <button onclick="closeIoMenu();document.getElementById('import-pick-file').click()">📥 物件を選んで読み込み</button>
         <button onclick="closeIoMenu();document.getElementById('import-add-file').click()">📥 全物件を読み込み（追加）</button>
         <button onclick="closeIoMenu();document.getElementById('import-file').click()">📥 全物件を読み込み（上書き）</button>
+        <button onclick="closeIoMenu();document.getElementById('import-merge-file').click()">🔗 既存の物件に工種を追加読み込み</button>
       </div>
     </div>
     <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
     <input type="file" id="import-add-file" accept=".json" style="display:none" onchange="importAddData(this)">
     <input type="file" id="import-pick-file" accept=".json" style="display:none" onchange="importPickData(this)">
+    <input type="file" id="import-merge-file" accept=".json" style="display:none" onchange="importMergeData(this)">
     <span class="copyright">© KOUYAMA 2026.6.20&nbsp;|&nbsp;Ver 1.0.0</span>
   </div>
 </div>
@@ -515,6 +517,26 @@ table.pq-table tr.total-row td.l{text-align:left}
     <div class="modal-btns">
       <button class="btn" onclick="closePickModal()">キャンセル</button>
       <button class="btn pri" onclick="confirmPickImport()">選んだ物件を追加</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-ov" id="mergemodal">
+  <div class="modal">
+    <h3 style="margin:0 0 12px;font-size:15px">既存の物件に工種を追加読み込み</h3>
+    <div id="merge-file-name" style="font-size:11px;color:var(--text3);margin-bottom:10px"></div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">追加先の物件</label>
+      <select id="merge-target-select" style="width:100%;padding:6px;border:1px solid var(--border2);border-radius:6px;background:var(--bg2,#fff);color:inherit"></select>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="btn" onclick="mergeSelAll(true)" style="font-size:11px;padding:4px 10px">全て選択</button>
+      <button class="btn" onclick="mergeSelAll(false)" style="font-size:11px;padding:4px 10px">全て解除</button>
+    </div>
+    <div id="merge-list" style="max-height:280px;overflow-y:auto;border:1px solid var(--border2);border-radius:6px;padding:6px 8px"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeMergeModal()">キャンセル</button>
+      <button class="btn pri" onclick="confirmMergeImport()">選んだ工種を追加</button>
     </div>
   </div>
 </div>
@@ -2342,6 +2364,105 @@ function closePickModal(){
 function pickSelAll(v){
   document.querySelectorAll('.pick-chk').forEach(function(el){el.checked=v;});
 }
+
+/* ===== 既存の物件に工種を追加読み込み(マージ) =====
+   通常の読み込みは常に「新しい別の物件」として追加されるが、
+   これは既存物件の cats 配列に、読み込んだ工種(カテゴリ)を追加する。
+   工事が複数の業者見積から少しずつ揃っていく場合、都度この機能で
+   同じ物件に工種を積み増していける。 */
+let mergeParsed=null; // {fileName, cats:[{srcProjName, cat}]}
+
+function importMergeData(input){
+  const file=input.files[0];
+  if(!file)return;
+  if(!projects.length){
+    alert('追加先の物件がありません。先に物件を作成してください。');
+    input.value='';return;
+  }
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const obj=JSON.parse(e.target.result);
+      if(!obj.projects||!Array.isArray(obj.projects)||!obj.projects.length){
+        alert('このファイルは対応していない形式です。');
+        input.value='';return;
+      }
+      const cats=[];
+      obj.projects.forEach(function(p){
+        (p.cats||[]).forEach(function(c){
+          cats.push({srcProjName:p.name||'（無題）',cat:c});
+        });
+      });
+      if(!cats.length){
+        alert('このファイルには工種データが含まれていません。');
+        input.value='';return;
+      }
+      mergeParsed={fileName:file.name,cats:cats};
+      openMergeModal();
+    }catch(ex){
+      alert('読み込みに失敗しました。\n正しいファイルか確認してください。\n'+ex.message);
+    }
+    input.value='';
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+function openMergeModal(){
+  if(!mergeParsed)return;
+  document.getElementById('merge-file-name').textContent='ファイル: '+mergeParsed.fileName+'　（'+mergeParsed.cats.length+'件の工種）';
+  const sel=document.getElementById('merge-target-select');
+  const curId=curProjId;
+  sel.innerHTML=projects.map(function(p,i){
+    const mark=(p.id===curId)?'（現在開いている物件）':'';
+    return '<option value="'+i+'">'+(p.name||'（無題）')+mark+'</option>';
+  }).join('');
+  const curIdx=projects.findIndex(function(p){return p.id===curId;});
+  if(curIdx>=0)sel.value=curIdx;
+  document.getElementById('merge-list').innerHTML=mergeParsed.cats.map(function(item,i){
+    return '<label class="pick-row"><input type="checkbox" class="merge-chk" data-i="'+i+'" checked><span>'+item.srcProjName+' → '+(item.cat.name||'（無題）')+'</span></label>';
+  }).join('');
+  document.getElementById('mergemodal').className='modal-ov on';
+}
+function closeMergeModal(){
+  document.getElementById('mergemodal').className='modal-ov';
+  mergeParsed=null;
+}
+function mergeSelAll(v){
+  document.querySelectorAll('.merge-chk').forEach(function(el){el.checked=v;});
+}
+function confirmMergeImport(){
+  if(!mergeParsed)return;
+  const sel=document.getElementById('merge-target-select');
+  const targetIdx=parseInt(sel.value);
+  const target=projects[targetIdx];
+  if(!target){alert('追加先の物件を選択してください。');return;}
+  const checks=document.querySelectorAll('.merge-chk');
+  const chosen=[];
+  checks.forEach(function(el){
+    if(el.checked)chosen.push(mergeParsed.cats[parseInt(el.getAttribute('data-i'))]);
+  });
+  if(!chosen.length){alert('工種が選択されていません。');return;}
+  snapshot();
+  const startIdx=target.cats.length;
+  chosen.forEach(function(item){
+    const copy=JSON.parse(JSON.stringify(item.cat));
+    target.cats.push(copy);
+  });
+  target.cats.forEach(function(c,i){c.id=i+1;}); // idを振り直して重複を防ぐ
+  const n=chosen.length;
+  const targetName=target.name;
+  closeMergeModal();
+  saveNow();
+  curProjId=target.id;
+  curCat=startIdx;
+  persistAll();
+  updateProjBtn();
+  const coSub=document.getElementById('co-sub');
+  if(coSub)coSub.textContent=curCfg().co1||'';
+  renderAll();
+  alert('「'+targetName+'」に'+n+'件の工種を追加しました！');
+}
+
 function confirmPickImport(){
   if(!pickParsed)return;
   const checks=document.querySelectorAll('.pick-chk');
